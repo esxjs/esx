@@ -1,0 +1,25 @@
+{
+  "name": "esx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tap test.js",
+    "cov": "tap --100 test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "fastbench": "^1.0.1",
+    "preact": "^8.3.1",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "tap": "^12.0.1"
+  },
+  "dependencies": {
+    "debug": "^4.1.0",
+    "escape-html": "^1.0.3",
+    "flatstr": "^1.0.8"
+  }
+}
