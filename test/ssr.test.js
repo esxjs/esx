@@ -1,25 +1,23 @@
 'use strict'
-const { test, only } = require('tap')
+const { test } = require('tap')
 process.env.NODE_ENV = 'production' // stop react warnings
 const { renderToString } = require('react-dom/server')
 const React = require('react')
 const PropTypes = require('prop-types')
 const { createElement } = React
-const init = require('.')
-test('basic', async ({is}) => {
-  const esx = init({})
-  const value = 'test'
-  const { type, props} = esx `
-    <div>${value}</div>
-  `
-  is(type, 'div')
-  is(props.children, value)
+const init = require('..')
+
+test('basic', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div>hi</div>`, renderToString(esx `<div>hi</div>`))
 })
+
 test('function component', async ({ is }) => {
   const Component = () => esx `<div>test</div>`
   const esx = init({ Component })
-  is(renderToString(esx `<Component/>`), renderToString(createElement(Component)))
+  is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
+
 test('class component', async ({ is }) => {
   class Component extends React.Component {
     render () {
@@ -27,351 +25,10 @@ test('class component', async ({ is }) => {
     }
   }
   const esx = init({ Component })
-  is(renderToString(esx `<Component/>`), renderToString(createElement(Component)))
-})
-
-test('attr: interpolated element attribute', async ({ is }) => {
-  const esx = init()
-  const x = '1'
-  const Component = () => {
-    return esx`<div x=${x}>1</div>`
-  }
-  esx.register({Component})
-  is(
-    renderToString(esx`<div x=${x}>1</div>`), 
-    renderToString(createElement('div', {x}, '1'))
-  )
-})
-
-test('attr: function component props', async ({ is }) => {
-  const Component = (props) => {
-    return esx `<div a=${props.a}>${props.text}</div>`
-  }
-  const esx = init({ Component })
-  const value = 'hi'
-  is(renderToString(esx `<Component a=${value} text='hi'/>`), renderToString(createElement(Component, {a:value,text: 'hi'})))
-})
-
-test('attr: class component props', async ({ is }) => {
-  class Component extends React.Component {
-    render () {
-      const props = this.props
-      return esx `<div a=${props.a}>${props.text}</div>`
-    }
-  }
-  const esx = init({ Component })
-  const value = 'hi'
-  is(renderToString(esx `<Component a=${value} text='hi'/>`), renderToString(createElement(Component, {a:value,text: 'hi'})))
-})
-
-test('attr: class component state', async ({ is }) => {
-  const value = 'hi'
-  class Component extends React.Component {
-    constructor (props) {
-      super(props)
-      this.state = {
-        a: value,
-        text: 'hi'
-      }
-    }
-    render () {
-      const state = this.state
-      return esx `<div a=${state.a}>${state.text}</div>`
-    }
-  }
-  const esx = init({ Component })
-  is(renderToString(esx `<Component/>`), renderToString(createElement(Component)))
-})
-
-test('attr: boolean implicit true', async ({ plan, is }) => {
-  const esx = init()
-  plan(3)
-  const Component = (props) => {
-    is(props.test, true)
-    return esx `<img/>`
-  }
-  esx.register({Component})
-  renderToString(esx `<Component test></Component>`)
-  renderToString(esx `<Component test />`)
-  renderToString(esx `<Component test/>`)
-})
-
-test('latest prop wins', async ({is}) => {
-  const esx = init()
-  is(esx `<img b=${'x'} b='y'/>`.props.b, 'y')
-  is(esx `<img b=${'x'} b='y' b='z'/>`.props.b, 'z')
-  is(esx `<img b='x' b=${'y'} b='z'/>`.props.b, 'z')
-  is(esx `<img b='x' b='y' b=${'z'}/>`.props.b, 'z')
-  is(esx `<img b='x' b=${'y'}/>`.props.b, 'y')
-})
-
-test('spread: props', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img ...${{a: 1, b: 2}}/>`
-  const { a, b } = props
-  is(a, 1)
-  is(b, 2)
-})
-
-test('spread: props overwrite prior static props when collision', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img x='y' a='overwrite' ...${{a: 1, b: 2}}/>`
-  const { a, b, x} = props
-  is(a, 1)
-  is(b, 2)
-  is(x, 'y')
-})
-
-test('spread: props overwrite prior dynamic props when collision', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img a=${'overwrite'} ...${{a: 1, b: 2}}/>`
-  const { a, b } = props
-  is(a, 1)
-  is(b, 2)
-})
-
-test('spread: props preserve prior static props when no collision', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img x='keep' ...${{a: 1, b: 2}}/>`
-  const { a, b, x } = props
-  is(a, 1)
-  is(b, 2)
-  is(x, 'keep')
-})
-
-test('spread: props preserve prior dynamic props when no collision', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img x=${'keep'} ...${{a: 1, b: 2}}/>`
-  const { a, b, x } = props
-  is(a, 1)
-  is(b, 2)
-  is(x, 'keep')
-})
-
-test('spread: props overwritten with latter static props', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img ...${{a: 1, b: 2}} b='x'/>`
-  const { a, b } = props
-  is(a, 1)
-  is(b, 'x')
-})
-
-test('spread: props overwritten with latter dynamic props', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img ...${{a: 1, b: 2}} b=${'x'}/>`
-  const { a, b } = props
-  is(a, 1)
-  is(b, 'x')
-})
-
-test('spread: latest prop wins', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img b='a' ...${{a: 1, b: 2}} b=${'x'} b='y'/>`
-  const { a, b } = props
-  is(a, 1)
-  is(b, 'y')
-})
-
-test('spread: multiple objects', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img ...${{a: 1, b: 2}} ...${{c: 3, d: 4}}/>`
-  const { a, b, c, d } = props
-  is(a, 1)
-  is(b, 2)
-  is(c, 3)
-  is(d, 4)
-})
-
-test('spread: multiple objects, later object properties override', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img ...${{a: 1, b: 2}} ...${{a: 3, b: 4}}/>`
-  const { a, b } = props
-  is(a, 3)
-  is(b, 4)
-})
-
-test('spread: multiple objects, static props between spreads', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img ...${{a: 1, b: 2}} x='y' ...${{a: 3, b: 4}}/>`
-  const { a, b, x } = props
-  is(a, 3)
-  is(b, 4)
-  is(x, 'y')
-})
-
-test('spread: multiple objects, dynamic props between spreads', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img ...${{a: 1, b: 2}} x=${'y'} ...${{a: 3, b: 4}}/>`
-  const { a, b, x } = props
-  is(a, 3)
-  is(b, 4)
-  is(x, 'y')
-})
-
-test('spread: multiple objects, duplicate dynamic props between spreads overriden by last spread', async ({is}) => {
-  const esx = init()
-  const { props } = esx `<img ...${{a: 1, b: 2}} a=${3} ...${{a: 3, b: 4}}/>`
-  const { a, b, x } = props
-  is(a, 3)
-  is(b, 4)
-})
-
-test('children: deep element-nested dynamic + inline children', async ({ is }) => {
-  const esx = init()
-  const value = 'dynamic'
-  const ESXComponent = () => esx `<div>${value} inline</div>`
-  const ReactComponent = () => React.createElement('div', null, [value, ' inline'])
-  is(renderToString(createElement(ESXComponent)), renderToString(createElement(ReactComponent)))
-})
-
-test('children: deep inline children + element-nested dynamic', async ({ is }) => {
-  const esx = init()
-  const value = 'dynamic'
-  const ESXComponent = () => esx `<div>inline ${value}</div>`
-  const ReactComponent = () => React.createElement('div', null, ['inline ', value])
-  is(renderToString(createElement(ESXComponent)), renderToString(createElement(ReactComponent)))
-})
-
-test('nested components', async ({ is }) => {
-  const esx = init()
-  const Cmp2 = ({text}) => {
-    return esx `<p>${text}</p>`
-  }
-  esx.register({Cmp2})
-  const Component = (props) => {
-    return esx `<div a=${props.a}><Cmp2 text=${props.text}/></div>`
-  }
-
-  esx.register({Component})
-  const value = 'hia'
-  is(renderToString(esx `<Component a=${value} text='hi'/>`), renderToString(createElement(Component, {a:value,text: 'hi'})))
-})
-
-test('nested closed components', async ({ is }) => {
-  const esx = init()
-  const Cmp2 = ({text}) => {
-    return esx `<p>${text}</p>`
-  }
-  esx.register({Cmp2})
-  const Cmp1 = (props) => {
-    return esx `<div a=${props.a}><Cmp2 text=${props.text}/></div>`
-  }
-
-  esx.register({Cmp1})
-  const value = 'hia'
-  const Component = () => esx `<Cmp1 a=${value} text='hi'/>`
-  esx.register({Component})
-  is(renderToString(esx `<Component/>`), renderToString(createElement(Component)))
-})
-
-test('React.Fragment interopability', async ({is}) => {
-  const esx = init()
-  const { Fragment } = React
-  const EsxCmp = () => esx `
-    <Fragment>
-      <head><title>hi</title></head>
-      <body>woop</body>
-    </Fragment>
-  `
-  const ReactCmp = () => {
-    return createElement(Fragment, null, [
-      createElement('head', null, createElement('title', null, 'hi')),
-      createElement('body', null, 'woop')
-    ])
-  }
-  esx.register({EsxCmp, Fragment})
-  is(
-    renderToString(esx `<div><EsxCmp/></div>`), 
-    renderToString(createElement('div', null, createElement(ReactCmp)))
-  )
-})
-
-test('React.Fragment as a special-case does not need to be a registered component', async ({is}) => {
-  const esx = init()
-  const EsxCmp = () => esx `
-    <Fragment>
-      <head><title>hi</title></head>
-      <body>woop</body>
-    </Fragment>
-  `
-  const ReactCmp = () => {
-    return createElement(React.Fragment, null, [
-      createElement('head', null, createElement('title', null, 'hi')),
-      createElement('body', null, 'woop')
-    ])
-  }
-  esx.register({EsxCmp})
-  is(
-    renderToString(esx `<div><EsxCmp/></div>`), 
-    renderToString(createElement('div', null, createElement(ReactCmp)))
-  )
-})
-
-test('React.Fragment shorthand syntax support (<></>)', async ({is}) => {
-  const esx = init()
-  const EsxCmp = () => esx `
-    <>
-      <head><title>hi</title></head>
-      <body>woop</body>
-    </>
-  `
-  const ReactCmp = () => {
-    return createElement(React.Fragment, null, [
-      createElement('head', null, createElement('title', null, 'hi')),
-      createElement('body', null, 'woop')
-    ])
-  }
-  esx.register({EsxCmp})
-  is(
-    renderToString (esx `<div><EsxCmp/></div>`),
-    renderToString(createElement('div', null, createElement(ReactCmp)))
-  )
-})
-
-test('React.Fragment special-case namespace can be overridden', async ({is}) => {
-  const esx = init()
-  const Fragment = ({children}) => esx `<html>${children}</html>`
-  const EsxCmp = () => esx `
-    <Fragment>
-      <head><title>hi</title></head>
-      <body>woop</body>
-    </Fragment>
-  `
-  const ReactCmp = () => {
-    return createElement(Fragment, null, [
-      createElement('head', null, createElement('title', null, 'hi')),
-      createElement('body', null, 'woop')
-    ])
-  }
-  esx.register({EsxCmp, Fragment})
-  is(
-    renderToString(esx `<EsxCmp/>`), 
-    renderToString(createElement(ReactCmp))
-  )
-})
-
-test('esx.renderToString basic', async ({ is }) => {
-  const esx = init()
-  is(esx.renderToString `<div>hi</div>`, renderToString(esx `<div>hi</div>`))
-})
-
-test('esx.renderToString function component', async ({ is }) => {
-  const Component = () => esx `<div>test</div>`
-  const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString class component', async ({ is }) => {
-  class Component extends React.Component {
-    render () {
-      return esx `<div>test</div>`
-    }
-  }
-  const esx = init({ Component })
-  is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
-})
-
-test('esx.renderToString function component and props', async ({ is }) => {
+test('function component and props', async ({ is }) => {
   const Component = (props) => {
     return esx `<div a=${props.a}>${props.text}</div>`
   }
@@ -381,7 +38,7 @@ test('esx.renderToString function component and props', async ({ is }) => {
   is(esx.renderToString `<Component a=${value} text='hi'/>`, renderToString(esx `<Component a=${value} text='hi'/>`))
 })
 
-test('esx.renderToString class component and props', async ({ is }) => {
+test('class component and props', async ({ is }) => {
   class Component extends React.Component {
     render () {
       const props = this.props
@@ -394,7 +51,7 @@ test('esx.renderToString class component and props', async ({ is }) => {
   is(esx.renderToString `<Component a=${value} text='hi'/>`, renderToString(esx `<Component a=${value} text='hi'/>`))
 })
 
-test('esx.renderToString class component and state', async ({ is }) => {
+test('class component and state', async ({ is }) => {
   const value = 'hia'
   class Component extends React.Component {
     constructor (props) {
@@ -413,61 +70,61 @@ test('esx.renderToString class component and state', async ({ is }) => {
   is(esx.renderToString `<Component/>`, renderToString(esx `<Component/>`))
 })
 
-test('esx.renderToString sibling elements', async ({ is }) => {
+test('sibling elements', async ({ is }) => {
   const Component = () => esx `<div><span>test</span><p>test2</p></div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep element-nested children array', async ({ is }) => {
+test('deep element-nested children array', async ({ is }) => {
   const Component = () => esx `<div><span>${['dynamic', 'inline']}</span></div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep element-nested dynamic + inline children', async ({ is }) => {
+test('deep element-nested dynamic + inline children', async ({ is }) => {
   const Component = () => esx `<div><span>${'dynamic'} inline</span></div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep element-nested dynamic + inline children with prior interpolated value', async ({ is }) => {
+test('deep element-nested dynamic + inline children with prior interpolated value', async ({ is }) => {
   const Component = () => esx `<div><span a=${'a'}>${'dynamic'} inline</span></div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep inline children + element-nested dynamic', async ({ is }) => {
+test('deep inline children + element-nested dynamic', async ({ is }) => {
   const Component = () => esx `<div><span>inline ${'dynamic'}</span></div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString inline children in multiple elements', async ({ is }) => {
+test('inline children in multiple elements', async ({ is }) => {
   const Component = () => esx `<div><span>a</span><span>b</span></div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString dynamic children in multiple elements', async ({ is }) => {
+test('dynamic children in multiple elements', async ({ is }) => {
   const Component = () => esx `<div><span>${'a'}</span><span>${'b'}</span></div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep element-nested dynamic array + inline children', async ({ is }) => {
+test('deep element-nested dynamic array + inline children', async ({ is }) => {
   const Component = () => esx `<div>${['dynamic']} inline</div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep inline children + element-nested dynamic array', async ({ is }) => {
+test('deep inline children + element-nested dynamic array', async ({ is }) => {
   const Component = () => esx `<div>inline ${['dynamic']}</div>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString class component', async ({ is }) => {
+test('class component', async ({ is }) => {
   class Component extends React.Component {
     render () {
       return esx `<div>test</div>`
@@ -477,7 +134,7 @@ test('esx.renderToString class component', async ({ is }) => {
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString nested function components', async ({ is }) => {
+test('nested function components', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({text}) => {
     return esx `<p>${text}</p>`
@@ -492,7 +149,7 @@ test('esx.renderToString nested function components', async ({ is }) => {
   is(esx.renderToString `<Component a=${value} text='hi'/>`, renderToString(esx `<Component a=${value} text='hi'/>`))
 })
 
-test('esx.renderToString deep nested function components', async ({ is }) => {
+test('deep nested function components', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({text}) => {
     return esx `<p>${text}</p>`
@@ -509,7 +166,7 @@ test('esx.renderToString deep nested function components', async ({ is }) => {
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with inline text child', async ({ is }) => {
+test('deep nested, non-self closing components with inline text child', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -526,7 +183,7 @@ test('esx.renderToString deep nested, non-self closing components with inline te
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with dynamic text child', async ({ is }) => {
+test('deep nested, non-self closing components with dynamic text child', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -543,7 +200,7 @@ test('esx.renderToString deep nested, non-self closing components with dynamic t
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with dynamic text + inline text children', async ({ is }) => {
+test('deep nested, non-self closing components with dynamic text + inline text children', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -560,7 +217,7 @@ test('esx.renderToString deep nested, non-self closing components with dynamic t
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with dynamic text array + inline text children', async ({ is }) => {
+test('deep nested, non-self closing components with dynamic text array + inline text children', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -577,7 +234,7 @@ test('esx.renderToString deep nested, non-self closing components with dynamic t
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with array of text children', async ({ is }) => {
+test('deep nested, non-self closing components with array of text children', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -594,7 +251,7 @@ test('esx.renderToString deep nested, non-self closing components with array of 
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString val escaping in deep nested, non-self closing components with array of text children', async ({ is }) => {
+test('val escaping in deep nested, non-self closing components with array of text children', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -610,13 +267,13 @@ test('esx.renderToString val escaping in deep nested, non-self closing component
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString hard coded attribute value escaping', async ({ is }) => {
+test('hard coded attribute value escaping', async ({ is }) => {
   const Component = () => esx `<img x='>>a'/>`
   const esx = init({ Component })
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with child instance', async ({ is }) => {
+test('deep nested, non-self closing components with child instance', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -633,7 +290,7 @@ test('esx.renderToString deep nested, non-self closing components with child ins
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with null child', async ({ is }) => {
+test('deep nested, non-self closing components with null child', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -650,7 +307,7 @@ test('esx.renderToString deep nested, non-self closing components with null chil
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with undefined child', async ({ is }) => {
+test('deep nested, non-self closing components with undefined child', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -667,7 +324,7 @@ test('esx.renderToString deep nested, non-self closing components with undefined
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with function child', async ({ is }) => {
+test('deep nested, non-self closing components with function child', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -684,7 +341,7 @@ test('esx.renderToString deep nested, non-self closing components with function 
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with number child', async ({ is }) => {
+test('deep nested, non-self closing components with number child', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -701,7 +358,7 @@ test('esx.renderToString deep nested, non-self closing components with number ch
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with symbol child', async ({ is }) => {
+test('deep nested, non-self closing components with symbol child', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -718,7 +375,7 @@ test('esx.renderToString deep nested, non-self closing components with symbol ch
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString inline esx child', async ({ is }) => {
+test('inline esx child', async ({ is }) => {
   const esx = init()
   const EsxComponent = () => esx `<div>${esx `<span>test</span>`}</div>`
   esx.register({EsxComponent})
@@ -726,7 +383,7 @@ test('esx.renderToString inline esx child', async ({ is }) => {
   is(esx.renderToString `<EsxComponent/>`, renderToString(ReactComponent))
 })
 
-test('esx.renderToString deep nested, non-self closing components with inline esx child', async ({ is }) => {
+test('deep nested, non-self closing components with inline esx child', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -743,7 +400,7 @@ test('esx.renderToString deep nested, non-self closing components with inline es
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with child element + inline text', async ({ is }) => {
+test('deep nested, non-self closing components with child element + inline text', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -760,7 +417,7 @@ test('esx.renderToString deep nested, non-self closing components with child ele
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, non-self closing components with array of child element + inline text', async ({ is }) => {
+test('deep nested, non-self closing components with array of child element + inline text', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -777,7 +434,7 @@ test('esx.renderToString deep nested, non-self closing components with array of 
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested class components', async ({ is }) => {
+test('deep nested class components', async ({ is }) => {
   const esx = init()
   class Cmp2 extends React.Component {
     render () {
@@ -802,7 +459,7 @@ test('esx.renderToString deep nested class components', async ({ is }) => {
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, no interpolated attrs', async ({ is }) => {
+test('deep nested, no interpolated attrs', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({theme}) => esx`<button>${theme}</button>`
   esx.register({ Cmp2 })
@@ -813,7 +470,7 @@ test('esx.renderToString deep nested, no interpolated attrs', async ({ is }) => 
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString deep nested, no interpolated attrs, second level element wrapped', async ({ is }) => {
+test('deep nested, no interpolated attrs, second level element wrapped', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({theme}) => esx`<button>${theme}</button>`
   esx.register({ Cmp2 })
@@ -824,12 +481,12 @@ test('esx.renderToString deep nested, no interpolated attrs, second level elemen
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString self closing element', async ({ is }) => {
+test('self closing element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<img src="http://example.com"/>`, renderToString(esx `<img src="http://example.com"/>`))
 })
 
-test('esx.renderToString class component context using contextType', async ({ is }) => {
+test('class component context using contextType', async ({ is }) => {
   const esx = init()
   const ThemeContext = React.createContext('light')
   const Button = ({theme}) => esx`<button>${theme}</button>`
@@ -853,7 +510,7 @@ test('esx.renderToString class component context using contextType', async ({ is
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString class component context using contextType w/ provider override', async ({ is }) => {
+test('class component context using contextType w/ provider override', async ({ is }) => {
   const esx = init()
   const ThemeContext = React.createContext('light')
   const { Provider } = ThemeContext
@@ -878,7 +535,7 @@ test('esx.renderToString class component context using contextType w/ provider o
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString class component context using contextType w/ provider override w/ dynamic value', async ({ is }) => {
+test('class component context using contextType w/ provider override w/ dynamic value', async ({ is }) => {
   const esx = init()
   const ThemeContext = React.createContext('light')
   const { Provider } = ThemeContext
@@ -905,7 +562,7 @@ test('esx.renderToString class component context using contextType w/ provider o
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString class component context using Consumer', async ({ is }) => {
+test('class component context using Consumer', async ({ is }) => {
   const esx = init()
   const { Consumer } = React.createContext('light')
   const Button = ({theme}) => esx`<button>${theme}</button>`
@@ -928,7 +585,7 @@ test('esx.renderToString class component context using Consumer', async ({ is })
 })
 
 
-test('esx.renderToString class component context using Consumer w/ Provider', async ({ is }) => {
+test('class component context using Consumer w/ Provider', async ({ is }) => {
   const esx = init()
   const { Consumer, Provider } = React.createContext('light')
   const Button = ({theme}) => esx`<button>${theme}</button>`
@@ -950,7 +607,7 @@ test('esx.renderToString class component context using Consumer w/ Provider', as
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString Consumer `this` context', async ({ is }) => {
+test('Consumer `this` context', async ({ is }) => {
   const esx = init()
   const { Consumer, Provider } = React.createContext('light')
   const Button = ({theme}) => esx`<button>${theme}</button>`
@@ -981,7 +638,7 @@ test('esx.renderToString Consumer `this` context', async ({ is }) => {
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString children render props', async ({ is }) => {
+test('children render props', async ({ is }) => {
   const esx = init()
   const Button = ({children}) => {
     return esx`<button>${children('ok')}</button>`
@@ -1004,7 +661,7 @@ test('esx.renderToString children render props', async ({ is }) => {
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString dynamic component with static element children as prop', async ({ is }) => {
+test('dynamic component with static element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1017,7 +674,7 @@ test('esx.renderToString dynamic component with static element children as prop'
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString dynamic component with dynamic element children as prop', async ({ is }) => {
+test('dynamic component with dynamic element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1031,7 +688,7 @@ test('esx.renderToString dynamic component with dynamic element children as prop
   childTest.validate()
 })
 
-test('esx.renderToString dynamic component with component children as prop', async ({ is }) => {
+test('dynamic component with component children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is)
   const A = ({value, children}) => {
@@ -1046,7 +703,7 @@ test('esx.renderToString dynamic component with component children as prop', asy
   childTest.validate()
 })
 
-test('esx.renderToString dynamic component with component children nested in static element children as prop', async ({ is }) => {
+test('dynamic component with component children nested in static element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1061,7 +718,7 @@ test('esx.renderToString dynamic component with component children nested in sta
   childTest.validate()
 })
 
-test('esx.renderToString dynamic component with multiple static element children as prop', async ({ is }) => {
+test('dynamic component with multiple static element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is)
   const A = (props) => {
@@ -1075,7 +732,7 @@ test('esx.renderToString dynamic component with multiple static element children
   childTest.validate()
 })
 
-test('esx.renderToString dynamic component with multiple component children as prop', async ({ is }) => {
+test('dynamic component with multiple component children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is)
   const A = ({value, children}) => {
@@ -1091,7 +748,7 @@ test('esx.renderToString dynamic component with multiple component children as p
   childTest.validate()
 })
 
-test('esx.renderToString dynamic component with multiple component children nested in static element children as prop', async ({ is }) => {
+test('dynamic component with multiple component children nested in static element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1107,7 +764,7 @@ test('esx.renderToString dynamic component with multiple component children nest
   childTest.validate()
 })
 
-test('esx.renderToString dynamic component with multiple component children nested in multiple static element children as prop', async ({ is }) => {
+test('dynamic component with multiple component children nested in multiple static element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1123,7 +780,7 @@ test('esx.renderToString dynamic component with multiple component children nest
   childTest.validate()
 })
 
-test('esx.renderToString dynamic component with multiple component children peers to multiple static element children at varied nesting depths as prop', async ({ is }) => {
+test('dynamic component with multiple component children peers to multiple static element children at varied nesting depths as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1139,7 +796,7 @@ test('esx.renderToString dynamic component with multiple component children peer
   childTest.validate()
 })
 
-test('esx.renderToString child values injected into child elements which are children of components which are injected in as children of elements', async ({ is }) => {
+test('child values injected into child elements which are children of components which are injected in as children of elements', async ({ is }) => {
   const esx = init()
   const A = ({children}) => esx `<a>${children}</a>`
   const B = ({children}) => esx `<b>${children}</b>`
@@ -1156,7 +813,7 @@ test('esx.renderToString child values injected into child elements which are chi
   is(esx.renderToString `<App text='test'/>`, renderToString(createElement(App, {text: 'test'})))
 })
 
-test('esx.renderToString dynamic component with multiple component children peers to multiple static element children at varied nesting depths as prop with interpolated expression children', async ({ is }) => {
+test('dynamic component with multiple component children peers to multiple static element children at varied nesting depths as prop with interpolated expression children', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1172,7 +829,7 @@ test('esx.renderToString dynamic component with multiple component children peer
   childTest.validate()
 })
 
-test('esx.renderToString: interpolated properties after component', async ({is}) => {
+test(' interpolated properties after component', async ({is}) => {
   const esx = init({
     A: () => esx `<a>foo</a>`
   })
@@ -1182,7 +839,7 @@ test('esx.renderToString: interpolated properties after component', async ({is})
   )
 })
 
-test('esx.renderToString multiple component children peers', async ({ is }) => {
+test('multiple component children peers', async ({ is }) => {
   const esx = init()
   const A = () => esx `<a>test1</a>`
   const B = () => esx `<a>test2</a>`
@@ -1193,7 +850,7 @@ test('esx.renderToString multiple component children peers', async ({ is }) => {
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString multiple component and element children peers', async ({ is }) => {
+test('multiple component and element children peers', async ({ is }) => {
   const esx = init()
   const A = () => esx `<a>test1</a>`
   const B = () => esx `<a>test2</a>`
@@ -1204,7 +861,7 @@ test('esx.renderToString multiple component and element children peers', async (
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString multiple component and element children peers with one interpolated component prop', async ({ is }) => {
+test('multiple component and element children peers with one interpolated component prop', async ({ is }) => {
   const esx = init()
   const A = () => esx `<a>test1</a>`
   const B = () => esx `<a>test2</a>`
@@ -1215,7 +872,7 @@ test('esx.renderToString multiple component and element children peers with one 
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString multiple component and element children peers with multiple interpolated component props', async ({ is }) => {
+test('multiple component and element children peers with multiple interpolated component props', async ({ is }) => {
   const esx = init()
   const A = () => esx `<a>test1</a>`
   const B = () => esx `<a>test2</a>`
@@ -1226,7 +883,7 @@ test('esx.renderToString multiple component and element children peers with mult
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString multiple component and element children peers with multiple interpolated component props over multiple components', async ({ is }) => {
+test('multiple component and element children peers with multiple interpolated component props over multiple components', async ({ is }) => {
   const esx = init()
   const A = () => esx `<a>test1</a>`
   const B = () => esx `<a>test2</a>`
@@ -1237,7 +894,7 @@ test('esx.renderToString multiple component and element children peers with mult
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString multiple component and element children peers with multiple interpolated element and component props over multiple elements and components', async ({ is }) => {
+test('multiple component and element children peers with multiple interpolated element and component props over multiple elements and components', async ({ is }) => {
   const esx = init()
   const A = () => esx `<a>test1</a>`
   const B = () => esx `<a>test2</a>`
@@ -1248,7 +905,7 @@ test('esx.renderToString multiple component and element children peers with mult
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
 })
 
-test('esx.renderToString dynamic component with multiple component children peers to multiple static element children containing interpolated values within at varied nesting depths as prop', async ({ is }) => {
+test('dynamic component with multiple component children peers to multiple static element children containing interpolated values within at varied nesting depths as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1266,7 +923,7 @@ test('esx.renderToString dynamic component with multiple component children peer
   childTest.validate()
 })
 
-test('esx.renderToString conditional rendering', async ({ is }) => {
+test('conditional rendering', async ({ is }) => {
   const esx = init()
   const Component = (props) => {
     return props.loaded === true ? 
@@ -1278,7 +935,7 @@ test('esx.renderToString conditional rendering', async ({ is }) => {
   is(esx.renderToString `<Component loaded/>`, renderToString(esx `<Component loaded/>`))
 })
 
-test('esx.renderToString default props.children value should be null', async ({ is }) => {
+test('default props.children value should be null', async ({ is }) => {
   const esx = init()
   const Component = (props) => {
     is(props.children, null)
@@ -1288,7 +945,7 @@ test('esx.renderToString default props.children value should be null', async ({ 
   esx.renderToString `<Component/>`
 })
 
-test('esx.renderToString render props', async ({ is }) => {
+test('render props', async ({ is }) => {
   const esx = init()
   const Component = ({render, value}) => {
     return  esx `<div>${render({value})}</div>`
@@ -1303,7 +960,7 @@ test('esx.renderToString render props', async ({ is }) => {
   )
 })
 
-test('esx.renderToString child render props – children as attribute', async ({ is }) => {
+test('child render props – children as attribute', async ({ is }) => {
   const esx = init()
   const Component = ({children, value}) => {
     return  esx `<div>${children({value})}</div>`
@@ -1316,7 +973,7 @@ test('esx.renderToString child render props – children as attribute', async ({
   )
 })
 
-test('esx.renderToString child render props – children as nested value', async ({ is }) => {
+test('child render props – children as nested value', async ({ is }) => {
   const esx = init()
   const Component = ({children, value}) => {
     return  esx `<div>${children({value})}</div>`
@@ -1329,7 +986,7 @@ test('esx.renderToString child render props – children as nested value', async
   )
 })
 
-test('esx.renderToString componentWillMount', async ({ pass, plan }) => {
+test('componentWillMount', async ({ pass, plan }) => {
   const esx = init()
   plan(1)
   class Component extends React.Component {
@@ -1344,7 +1001,7 @@ test('esx.renderToString componentWillMount', async ({ pass, plan }) => {
   esx.renderToString `<Component/>`
 })
 
-test('esx.renderToString UNSAFE_componentWillMount', async ({ pass, plan }) => {
+test('UNSAFE_componentWillMount', async ({ pass, plan }) => {
   const esx = init()
   plan(1)
   class Component extends React.Component {
@@ -1359,7 +1016,7 @@ test('esx.renderToString UNSAFE_componentWillMount', async ({ pass, plan }) => {
   esx.renderToString `<Component/>`
 })
 
-test('esx.renderToString React.PureComponent', async ({ is }) => {
+test('React.PureComponent', async ({ is }) => {
   const esx = init()
   class Component extends React.PureComponent {
     render() {
@@ -1370,7 +1027,7 @@ test('esx.renderToString React.PureComponent', async ({ is }) => {
   is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
 })
 
-test('esx.renderToString key prop', async ({ is }) => {
+test('key prop', async ({ is }) => {
   const esx = init()
   const Component = () => {
     return esx`<li key="1">1</li>`
@@ -1382,7 +1039,7 @@ test('esx.renderToString key prop', async ({ is }) => {
   )
 })
 
-test('esx.renderToString key interpolated prop', async ({ is }) => {
+test('key interpolated prop', async ({ is }) => {
   const esx = init()
   const Component = () => {
     return esx`<li key=${'1'}>1</li>`
@@ -1394,7 +1051,7 @@ test('esx.renderToString key interpolated prop', async ({ is }) => {
   )
 })
 
-test('esx.renderToString dynamic ref prop', async ({ is }) => {
+test('dynamic ref prop', async ({ is }) => {
   const esx = init()
   const Component = () => {
     const ref = React.createRef()
@@ -1407,7 +1064,7 @@ test('esx.renderToString dynamic ref prop', async ({ is }) => {
   )
 })
 
-test('esx.renderToString dynamic ref prop, followed by another dynamic prop', async ({ is }) => {
+test('dynamic ref prop, followed by another dynamic prop', async ({ is }) => {
   const esx = init()
   const Component = () => {
     const ref = React.createRef()
@@ -1420,7 +1077,7 @@ test('esx.renderToString dynamic ref prop, followed by another dynamic prop', as
   )
 })
 
-test('esx.renderToString dynamic ref prop, followed by a static prop', async ({ is }) => {
+test('dynamic ref prop, followed by a static prop', async ({ is }) => {
   const esx = init()
   const Component = () => {
     const ref = React.createRef()
@@ -1433,7 +1090,7 @@ test('esx.renderToString dynamic ref prop, followed by a static prop', async ({ 
   )
 })
 
-test('esx.renderToString ref prop', async ({ is }) => {
+test('ref prop', async ({ is }) => {
   const esx = init()
   const Component = () => {
     return esx`<div><input ref="ref"/></div>`
@@ -1445,7 +1102,7 @@ test('esx.renderToString ref prop', async ({ is }) => {
   )
 })
 
-test('esx.renderToString rendering object attribute values', async ({ is }) => {
+test('rendering object attribute values', async ({ is }) => {
   const esx = init()
   const Component = () => {
     const obj = {}
@@ -1458,7 +1115,7 @@ test('esx.renderToString rendering object attribute values', async ({ is }) => {
   )
 })
 
-test('esx.renderToString createElement interopability', async ({ is }) => {
+test('createElement interopability', async ({ is }) => {
   const esx = init()
   const A = ({value, children}) => createElement('p', {value}, children)
   esx.register({A})
@@ -1472,7 +1129,7 @@ test('esx.renderToString createElement interopability', async ({ is }) => {
   )
 })
 
-test('esx.renderToString React.memo interopability', async ({is}) => {
+test('React.memo interopability', async ({is}) => {
   const esx = init()
   const Component = React.memo(() => {
     return esx`<div>hi</div>`
@@ -1484,7 +1141,7 @@ test('esx.renderToString React.memo interopability', async ({is}) => {
   )
 })
 
-test('esx.renderToString React.forwardRef interopability', async ({is}) => {
+test('React.forwardRef interopability', async ({is}) => {
   const esx = init()
   const ref = React.createRef()
   const Component = React.forwardRef((props, fRef) => {
@@ -1499,7 +1156,7 @@ test('esx.renderToString React.forwardRef interopability', async ({is}) => {
 })
 
 
-test('esx.renderToString React.Fragment interopability', async ({is}) => {
+test('React.Fragment interopability', async ({is}) => {
   const esx = init()
   const { Fragment } = React
   const EsxCmp = () => esx `
@@ -1521,7 +1178,7 @@ test('esx.renderToString React.Fragment interopability', async ({is}) => {
   )
 })
 
-test('esx.renderToString React.Fragment as a special-case does not need to be a registered component', async ({is}) => {
+test('React.Fragment as a special-case does not need to be a registered component', async ({is}) => {
   const esx = init()
   const EsxCmp = () => esx `
     <Fragment>
@@ -1542,7 +1199,7 @@ test('esx.renderToString React.Fragment as a special-case does not need to be a 
   )
 })
 
-test('esx.renderToString React.Fragment shorthand syntax support (<></>)', async ({is}) => {
+test('React.Fragment shorthand syntax support (<></>)', async ({is}) => {
   const esx = init()
   const EsxCmp = () => esx `
     <>
@@ -1563,7 +1220,7 @@ test('esx.renderToString React.Fragment shorthand syntax support (<></>)', async
   )
 })
 
-test('esx.renderToString React.Fragment special-case namespace can be overridden', async ({is}) => {
+test('React.Fragment special-case namespace can be overridden', async ({is}) => {
   const esx = init()
   const Fragment = ({children}) => esx `<html>${children}</html>`
   const EsxCmp = () => esx `
@@ -1585,7 +1242,7 @@ test('esx.renderToString React.Fragment special-case namespace can be overridden
   )
 })
 
-test('esx.renderToString defaultProps', async ({is}) => {
+test('defaultProps', async ({is}) => {
   const esx = init()
   const Component = ({a, b}) => {
     return esx `<img a=${a} b=${b}/>`
@@ -1595,7 +1252,7 @@ test('esx.renderToString defaultProps', async ({is}) => {
   is(esx.renderToString `<Component/>`, renderToString(esx `<Component/>`))
 })
 
-test('esx.renderToString defaultProps override', async ({is}) => {
+test('defaultProps override', async ({is}) => {
   const esx = init()
   const Component = ({a, b}) => {
     return esx `<img a=${a} b=${b}/>`
@@ -1605,7 +1262,7 @@ test('esx.renderToString defaultProps override', async ({is}) => {
   is(esx.renderToString `<Component b='test-b'/>`, renderToString(esx `<Component b='test-b'/>`))
 })
 
-test('esx.renderToString unexpected token, expression in open element', async ({throws}) => {
+test('unexpected token, expression in open element', async ({throws}) => {
   const esx = init()
   const Component = (props) => {
     return esx `<div${props}></div>`
@@ -1614,7 +1271,7 @@ test('esx.renderToString unexpected token, expression in open element', async ({
   throws(() => esx.renderToString `<Component/>`, SyntaxError('ESX: Unexpected token in element. Expressions may only be spread, embedded in attributes be included as children.'))
 })
 
-test('esx.renderToString unexpected token, missing attribute name', async ({throws}) => {
+test('unexpected token, missing attribute name', async ({throws}) => {
   const esx = init()
   const Component = (props) => {
     return esx `<div =${props}></div>`
@@ -1623,7 +1280,7 @@ test('esx.renderToString unexpected token, missing attribute name', async ({thro
   throws(() => esx.renderToString `<Component/>`, SyntaxError('Unexpected token. Attributes must have a name.'))
 })
 
-test('esx.renderToString unexpected token, missing attribute name', async ({throws}) => {
+test('unexpected token, missing attribute name', async ({throws}) => {
   const esx = init()
   const Component = (props) => {
     return esx `<div =${props}></div>`
@@ -1632,7 +1289,7 @@ test('esx.renderToString unexpected token, missing attribute name', async ({thro
   throws(() => esx.renderToString `<Component/>`, SyntaxError('Unexpected token. Attributes must have a name.'))
 })
 
-test('esx.renderToString unexpected token, quotes around expression', async ({throws}) => {
+test('unexpected token, quotes around expression', async ({throws}) => {
   const esx = init()
   const Component1 = (props) => {
     return esx `<div x="${props.a}"></div>`
@@ -1645,7 +1302,7 @@ test('esx.renderToString unexpected token, quotes around expression', async ({th
   throws(() => esx.renderToString `<Component2 a="1"/>`, SyntaxError('Unexpected token. Attribute expressions must not be surround in quotes.'))
 })
 
-test('esx.renderToString unexpected token', async ({throws}) => {
+test('unexpected token', async ({throws}) => {
   const esx = init()
   const Component = (props) => {
     return esx `<div .${props}></div>`
@@ -1654,7 +1311,7 @@ test('esx.renderToString unexpected token', async ({throws}) => {
   throws(() => esx.renderToString `<Component a=1/>`, SyntaxError('ESX: Unexpected token.'))
 })
 
-test('esx.renderToString spread props', async ({is}) => {
+test('spread props', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img ...${{a: 1, b: 2}}/>`,
@@ -1662,7 +1319,7 @@ test('esx.renderToString spread props', async ({is}) => {
   )
 })
 
-test('esx.renderToString spread props do not overwrite prior static props when no collision', async ({is}) => {
+test('spread props do not overwrite prior static props when no collision', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img x='y' ...${{a: 1, b: 2}}/>`,
@@ -1670,7 +1327,7 @@ test('esx.renderToString spread props do not overwrite prior static props when n
   )
 })
 
-test('esx.renderToString spread props do not overwrite dynamic static props when no collision', async ({is}) => {
+test('spread props do not overwrite dynamic static props when no collision', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img x=${'y'} ...${{a: 1, b: 2}}/>`,
@@ -1678,7 +1335,7 @@ test('esx.renderToString spread props do not overwrite dynamic static props when
   )
 })
 
-test('esx.renderToString spread props overwrite prior static props when collision', async ({is}) => {
+test('spread props overwrite prior static props when collision', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img x='y' a='overwrite' ...${{a: 1, b: 2}}/>`,
@@ -1686,7 +1343,7 @@ test('esx.renderToString spread props overwrite prior static props when collisio
   )
 })
 
-test('esx.renderToString spread props overwrite prior dynamic props when collision', async ({is}) => {
+test('spread props overwrite prior dynamic props when collision', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img x='y' a=${'overwrite'} ...${{a: 1, b: 2}}/>`,
@@ -1694,7 +1351,7 @@ test('esx.renderToString spread props overwrite prior dynamic props when collisi
   )
 })
 
-test('esx.renderToString spread props preserve prior static props when no collision', async ({is}) => {
+test('spread props preserve prior static props when no collision', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img x='keep' ...${{a: 1, b: 2}}/>`,
@@ -1702,7 +1359,7 @@ test('esx.renderToString spread props preserve prior static props when no collis
   )
 })
 
-test('esx.renderToString spread props preserve prior dynamic props when no collision', async ({is}) => {
+test('spread props preserve prior dynamic props when no collision', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img x=${'keep'} ...${{a: 1, b: 2}}/>`,
@@ -1710,7 +1367,7 @@ test('esx.renderToString spread props preserve prior dynamic props when no colli
   )
 })
 
-test('esx.renderToString spread props overwritten with latter static props', async ({is}) => {
+test('spread props overwritten with latter static props', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img ...${{a: 1, b: 2}} b='x'/>`,
@@ -1718,7 +1375,7 @@ test('esx.renderToString spread props overwritten with latter static props', asy
   )
 })
 
-test('esx.renderToString spread props overwritten with latter dynamic props', async ({is}) => {
+test('spread props overwritten with latter dynamic props', async ({is}) => {
   const esx = init()
   const out = esx.renderToString `<img ...${{a: 1, b: 2}} b=${'x'}/>`
   is(
@@ -1727,7 +1384,7 @@ test('esx.renderToString spread props overwritten with latter dynamic props', as
   )
 })
 
-test('esx.renderToString spread multiple objects', async ({is}) => {
+test('spread multiple objects', async ({is}) => {
   const esx = init() 
   is(
     esx.renderToString `<img ...${{a: 1, b: 2}} ...${{c: 3, d: 4}}/>`,
@@ -1735,7 +1392,7 @@ test('esx.renderToString spread multiple objects', async ({is}) => {
   )
 })
 
-test('esx.renderToString spread multiple objects, later object properties override', async ({is}) => {
+test('spread multiple objects, later object properties override', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img ...${{a: 1, b: 2}} ...${{a: 3, b: 4}}/>`,
@@ -1743,7 +1400,7 @@ test('esx.renderToString spread multiple objects, later object properties overri
   )
 })
 
-test('esx.renderToString spread multiple objects, static props between spreads', async ({is}) => {
+test('spread multiple objects, static props between spreads', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img ...${{a: 1, b: 2}} x='y' ...${{a: 3, b: 4}}/>`,
@@ -1751,7 +1408,7 @@ test('esx.renderToString spread multiple objects, static props between spreads',
   )
 })
 
-test('esx.renderToString spread multiple objects, dynamic props between spreads', async ({is}) => {
+test('spread multiple objects, dynamic props between spreads', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img ...${{a: 1, b: 2}} x=${'y'} ...${{a: 3, b: 4}}/>`,
@@ -1759,7 +1416,7 @@ test('esx.renderToString spread multiple objects, dynamic props between spreads'
   )
 })
 
-test('esx.renderToString spread multiple objects, duplicate dynamic props between spreads overriden by last spread', async ({is}) => {
+test('spread multiple objects, duplicate dynamic props between spreads overriden by last spread', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img ...${{a: 1, b: 2}} a=${7} ...${{a: 3, b: 4}}/>`,
@@ -1767,7 +1424,7 @@ test('esx.renderToString spread multiple objects, duplicate dynamic props betwee
   )
 })
 
-test('esx.renderToString spread props and defaultProps', async ({is}) => {
+test('spread props and defaultProps', async ({is}) => {
   const esx = init()
   const Component = (props) => {
     return esx `<img ...${props}/>`
@@ -1777,7 +1434,7 @@ test('esx.renderToString spread props and defaultProps', async ({is}) => {
   is(esx.renderToString `<Component/>`, renderToString(esx `<Component/>`))
 })
 
-test('esx.renderToString component spread props', async ({is, plan}) => {
+test('component spread props', async ({is, plan}) => {
   const esx = init()
   plan(2)
   const Cmp = ({a, b}) => {
@@ -1790,7 +1447,7 @@ test('esx.renderToString component spread props', async ({is, plan}) => {
 })
 
 
-test('esx.renderToString component spread props do not overwrite prior static props when no collision', async ({is, plan}) => {
+test('component spread props do not overwrite prior static props when no collision', async ({is, plan}) => {
   const esx = init()
   plan(3)
   const Cmp = ({x, a, b}) => {
@@ -1803,7 +1460,7 @@ test('esx.renderToString component spread props do not overwrite prior static pr
   esx.renderToString `<Cmp x='y' ...${{a: 1, b: 2}}/>`
 })
 
-test('esx.renderToString component spread props do not overwrite dynamic static props when no collision', async ({is, plan}) => {
+test('component spread props do not overwrite dynamic static props when no collision', async ({is, plan}) => {
   const esx = init()
   plan(3)
   const Cmp = ({x, a, b}) => {
@@ -1816,7 +1473,7 @@ test('esx.renderToString component spread props do not overwrite dynamic static 
   esx.renderToString `<Cmp x=${'y'} ...${{a: 1, b: 2}}/>`
 })
 
-test('esx.renderToString component spread props overwrite prior static props when collision', async ({is, plan}) => {
+test('component spread props overwrite prior static props when collision', async ({is, plan}) => {
   const esx = init()
   plan(3)
   const Cmp = ({x, a, b}) => {
@@ -1829,7 +1486,7 @@ test('esx.renderToString component spread props overwrite prior static props whe
   esx.renderToString `<Cmp x='y' a='overwrite' ...${{a: 1, b: 2}}/>`
 })
 
-test('esx.renderToString component spread props overwrite prior dynamic props when collision', async ({is, plan}) => {
+test('component spread props overwrite prior dynamic props when collision', async ({is, plan}) => {
   const esx = init()
   plan(3)
   const Cmp = ({x, a, b}) => {
@@ -1842,7 +1499,7 @@ test('esx.renderToString component spread props overwrite prior dynamic props wh
   esx.renderToString `<Cmp x='y' a=${'overwrite'} ...${{a: 1, b: 2}}/>`
 })
 
-test('esx.renderToString component spread props preserve prior static props when no collision', async ({is, plan}) => {
+test('component spread props preserve prior static props when no collision', async ({is, plan}) => {
   const esx = init()
   plan(3)
   const Cmp = ({x, a, b}) => {
@@ -1855,7 +1512,7 @@ test('esx.renderToString component spread props preserve prior static props when
   esx.renderToString `<Cmp x='keep' ...${{a: 1, b: 2}}/>`
 })
 
-test('esx.renderToString component spread props preserve prior dynamic props when no collision', async ({is, plan}) => {
+test('component spread props preserve prior dynamic props when no collision', async ({is, plan}) => {
   const esx = init()
   plan(3)
   const Cmp = ({x, a, b}) => {
@@ -1868,7 +1525,7 @@ test('esx.renderToString component spread props preserve prior dynamic props whe
   esx.renderToString `<Cmp x=${'keep'} ...${{a: 1, b: 2}}/>`
 })
 
-test('esx.renderToString component spread props overwritten with latter static props', async ({is, plan}) => {
+test('component spread props overwritten with latter static props', async ({is, plan}) => {
   const esx = init()
   plan(2)
   const Cmp = ({a, b}) => {
@@ -1880,7 +1537,7 @@ test('esx.renderToString component spread props overwritten with latter static p
   esx.renderToString `<Cmp ...${{a: 1, b: 2}} b='x'/>`
 })
 
-test('esx.renderToString component spread props overwritten with latter dynamic props', async ({is, plan}) => {
+test('component spread props overwritten with latter dynamic props', async ({is, plan}) => {
   const esx = init()
   plan(2)
   const Cmp = ({a, b}) => {
@@ -1892,7 +1549,7 @@ test('esx.renderToString component spread props overwritten with latter dynamic 
   esx.renderToString `<Cmp ...${{a: 1, b: 2}} b=${'x'}/>`
 })
 
-test('esx.renderToString component spread multiple objects', async ({is, plan}) => {
+test('component spread multiple objects', async ({is, plan}) => {
   const esx = init()
   plan(4)
   const Cmp = ({a, b, c, d}) => {
@@ -1906,7 +1563,7 @@ test('esx.renderToString component spread multiple objects', async ({is, plan}) 
   esx.renderToString `<Cmp ...${{a: 1, b: 2}} ...${{c: 3, d: 4}}/>`
 })
 
-test('esx.renderToString component spread multiple objects, later object properties override', async ({is, plan}) => {
+test('component spread multiple objects, later object properties override', async ({is, plan}) => {
   const esx = init()
   plan(2)
   const Cmp = ({a, b}) => {
@@ -1918,7 +1575,7 @@ test('esx.renderToString component spread multiple objects, later object propert
   esx.renderToString `<Cmp ...${{a: 1, b: 2}} ...${{a: 3, b: 4}}/>`
 })
 
-test('esx.renderToString component spread multiple objects, static props between spreads', async ({is, plan}) => {
+test('component spread multiple objects, static props between spreads', async ({is, plan}) => {
   const esx = init()
   plan(3)
   const Cmp = ({x, a, b}) => {
@@ -1931,7 +1588,7 @@ test('esx.renderToString component spread multiple objects, static props between
   esx.renderToString `<Cmp ...${{a: 1, b: 2}} x='y' ...${{a: 3, b: 4}}/>`
 })
 
-test('esx.renderToString component spread multiple objects, dynamic props between spreads', async ({is, plan}) => {
+test('component spread multiple objects, dynamic props between spreads', async ({is, plan}) => {
   const esx = init()
   plan(3)
   const Cmp = ({x, a, b}) => {
@@ -1944,7 +1601,7 @@ test('esx.renderToString component spread multiple objects, dynamic props betwee
   esx.renderToString `<Cmp ...${{a: 1, b: 2}} x=${'y'} ...${{a: 3, b: 4}}/>`
 })
 
-test('esx.renderToString component spread multiple objects, duplicate dynamic props between spreads overriden by last spread', async ({is, plan}) => {
+test('component spread multiple objects, duplicate dynamic props between spreads overriden by last spread', async ({is, plan}) => {
   const esx = init()
   plan(2)
   const Cmp = ({a, b}) => {
@@ -1956,7 +1613,7 @@ test('esx.renderToString component spread multiple objects, duplicate dynamic pr
   esx.renderToString `<Cmp ...${{a: 1, b: 2}} a=${7} ...${{a: 3, b: 4}}/>`
 })
 
-test('esx.renderToString spread props and defaultProps', async ({is}) => {
+test('spread props and defaultProps', async ({is}) => {
   const esx = init()
   const Component = (props) => {
     return esx `<img ...${props}/>`
@@ -1975,22 +1632,22 @@ test('esx.renderToString spread props and defaultProps', async ({is}) => {
 // hocs
 // react lazy/suspense -- fallback + lazy load (how?)
 
-test('esx.renderToString null value attributes', async ({ is }) => {
+test('null value attributes', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<img x=${null}/>`, renderToString(esx `<img x=${null}/>`))
 })
 
-test('esx.renderToString undefined value attributes', async ({ is }) => {
+test('undefined value attributes', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<img x=${undefined}/>`, renderToString(esx `<img x=${undefined}/>`))
 })
 
-test('esx.renderToString attribute single quotes are converted to double quotes', async ({ is }) => {
+test('attribute single quotes are converted to double quotes', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<img src='http://example.com'/>`, renderToString(esx `<img src='http://example.com'/>`))
 })
 
-test('esx.renderToString expects corresponding closing tag, as with JSX compilation', async ({ throws }) => {
+test('expects corresponding closing tag, as with JSX compilation', async ({ throws }) => {
   const esx = init()
   const Component = () => {
     return esx `<div>loaded</span>`
@@ -1999,7 +1656,7 @@ test('esx.renderToString expects corresponding closing tag, as with JSX compilat
   throws(() => esx.renderToString `<Component/>`, SyntaxError('Expected corresponding ESX closing tag for <div>'))
 })
 
-test('esx.renderToString whitespace variations', async ({ is }) => {
+test('whitespace variations', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<img  src="http://example.com"/>`, renderToString(esx `<img  src="http://example.com"/>`))
   is(esx.renderToString `<img src="http://example.com" />`, renderToString(esx `<img src="http://example.com" />`))
@@ -2330,7 +1987,7 @@ test('esx.renderToString whitespace variations', async ({ is }) => {
   }
 })
 
-only('esx.renderToString props.children.props.children of dynamic component with multiple component children peers to multiple static element children containing interpolated values within at varied nesting depths as prop', async ({ is }) => {
+test('props.children.props.children of dynamic component with multiple component children peers to multiple static element children containing interpolated values within at varied nesting depths as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is)
   const A = ({value, children}) => {
@@ -2346,7 +2003,7 @@ only('esx.renderToString props.children.props.children of dynamic component with
   childTest.validate()
 })
 
-test('deviation: esx.renderToString spread duplicate props are rendered', async ({is}) => {
+test('deviation: spread duplicate props are rendered', async ({is}) => {
   const esx = init()
   is(
     esx.renderToString `<img b='a' ...${{a: 1, b: 2}} b=${'x'} b='y'/>`,
@@ -2354,7 +2011,7 @@ test('deviation: esx.renderToString spread duplicate props are rendered', async 
   )
 })
 
-test('deviation: esx.renderToString deep nested, non-self closing components with object child', async ({ is, throws, doesNotThrow }) => {
+test('deviation:deep nested, non-self closing components with object child', async ({ is, throws, doesNotThrow }) => {
   const esx = init()
   const Cmp2 = ({children}) => {
     return esx `<p>${children}</p>`
@@ -2375,7 +2032,7 @@ test('deviation: esx.renderToString deep nested, non-self closing components wit
   is(esx.renderToString `<Component/>`, '<div a="hia" data-reactroot=""><p>[object Object]</p></div>')
 })
 
-test('deviation: esx.renderToString propTypes invalidation will *not* throw, even in dev mode', async ({doesNotThrow}) => {
+test('deviation: propTypes invalidation will *not* throw, even in dev mode', async ({doesNotThrow}) => {
   // esx server side rendering will not validate propTypes in production *or* development mode
   // This allows for lower production server side rendering overhead 
   // and in development allows for browser debugging of propTypes invalidation
