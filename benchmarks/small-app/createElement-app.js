@@ -32,7 +32,7 @@ const Cmp2 = ({ text }) => {
             ),
             createElement(
               'span',
-              { href: 'http://www.example.com' },
+              null,
               createElement('em', null, 'some'),
               ' text'
             )

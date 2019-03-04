@@ -1139,7 +1139,24 @@ test('esx.renderToString dynamic component with multiple component children peer
   childTest.validate()
 })
 
-only('esx.renderToString esx.renderToString dynamic component with multiple component children peers to multiple static element children at varied nesting depths as prop with interpolated expression children', async ({ is }) => {
+test('esx.renderToString child values injected into child elements which are children of components which are injected in as children of elements', async ({ is }) => {
+  const esx = init()
+  const A = ({children}) => esx `<a>${children}</a>`
+  const B = ({children}) => esx `<b>${children}</b>`
+  const C = ({children}) => esx `<c>${children}</c>`
+  esx.register({ A, B, C })
+  const App = ({text}) =>  esx`
+    <div>
+      <A><div>${text}</div></A>
+      <B><div>${text}</div></B>
+      <C><div>${text}</div></C>
+    </div>
+  `
+  esx.register({ App })
+  is(esx.renderToString `<App text='test'/>`, renderToString(createElement(App, {text: 'test'})))
+})
+
+test('esx.renderToString dynamic component with multiple component children peers to multiple static element children at varied nesting depths as prop with interpolated expression children', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is) 
   const A = ({value, children}) => {
@@ -1149,7 +1166,7 @@ only('esx.renderToString esx.renderToString dynamic component with multiple comp
   const B = () => esx `<a>test1</a>`
   const C = () => esx `<a>test3</a>`
   esx.register({ A, B, C })
-  const App = () =>  esx`<A value=${'a'}><p><div>${'test0'}</div><B/><a href=${'interoplatedprop'}>${'test2'}</a><div><C/></div></p></A>`
+  const App = () =>  esx`<A value=${'a'}><p><div>${'test0'}</div><B/><a href=${'interpolatedprop'}>${'test2'}</a><div><C/></div></p></A>`
   esx.register({ App })
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
   childTest.validate()
@@ -1241,7 +1258,7 @@ test('esx.renderToString dynamic component with multiple component children peer
   const B = () => esx `<a>test1</a>`
   const C = () => esx `<a>test3</a>`
   esx.register({ A, B, C })
-  const App = () =>  esx`<A value=${'a'}><div>${'test0'}</div><B/><x href=${'interoplatedprop'}>${'test2'}</x><div><C/></div></A>`
+  const App = () =>  esx`<A value=${'a'}><div>${'test0'}</div><B/><x href=${'interpolatedprop'}>${'test2'}</x><div><C/></div></A>`
   esx.register({ App })
 
   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
@@ -2313,22 +2330,21 @@ test('esx.renderToString whitespace variations', async ({ is }) => {
   }
 })
 
-// only('esx.renderToString props.children.props.children of dynamic component with multiple component children peers to multiple static element children containing interpolated values within at varied nesting depths as prop', async ({ is }) => {
-//   const esx = init()
-//   const childTest = childValidator(is) 
-//   const A = ({value, children}) => {
-//     console.log(children.props.children)
-//     childTest.register(children)
-//     return esx `<div><span>${value}</span>${children}</div>`
-//   }
-//   const B = () => esx `<a>test1</a>`
-//   const C = () => esx `<a>test3</a>`
-//   esx.register({ A, B, C })
-//   const App = () =>  esx`<A value=${'a'}><p><div>${'test0'}</div><B/><a href=${'interoplatedprop'}>${'test2'}</a><div><C/></div></p></A>`
-//   esx.register({ App })
-//   is(esx.renderToString `<App/>`, renderToString(createElement(App)))
-//   childTest.validate()
-// })
+only('esx.renderToString props.children.props.children of dynamic component with multiple component children peers to multiple static element children containing interpolated values within at varied nesting depths as prop', async ({ is }) => {
+  const esx = init()
+  const childTest = childValidator(is)
+  const A = ({value, children}) => {
+    childTest.register(children.props.children)
+    return esx `<div><span>${value}</span>${children}</div>`
+  }
+  const B = () => esx `<a>test1</a>`
+  const C = () => esx `<a>test3</a>`
+  esx.register({ A, B, C })
+  const App = () =>  esx`<A value=${'a'}><p><div>${'test0'}</div><B/><a href=${'interpolatedprop'}>${'test2'}</a><div><C/></div></p></A>`
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(createElement(App)))
+  childTest.validate()
+})
 
 test('deviation: esx.renderToString spread duplicate props are rendered', async ({is}) => {
   const esx = init()

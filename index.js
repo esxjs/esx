@@ -27,6 +27,7 @@ const isEsx = Symbol('esx')
 const marker = Symbol('esx.valuePlaceholder')
 const skip = Symbol('esx.skip')
 const provider = Symbol('esx.provider')
+const esxValues = Symbol('esx.value')
 // singleton state for ssr
 var ssr = false 
 var current = null
@@ -154,6 +155,7 @@ const inject = (val, attrKey = '') => {
 }
 
 function compileChildRenderer (item, tree, top) {
+  
   const meta = item[3]
   const { openTagStart, openTagEnd, selfClosing, closeTagEnd, attrPos } = meta
   const to = selfClosing ? openTagEnd[0] : closeTagEnd[0] 
@@ -164,16 +166,16 @@ function compileChildRenderer (item, tree, top) {
     const item = tree[cmi][3]
     if (item.isComponent === false) continue
     const ix = item.openTagStart[0]
-    if (ix < to) continue
-    if (ix > from) continue
+    if (ix > to || ix < from) continue
     const sPos = item.openTagStart[1]
     if (sPos < openTagEnd[1]) continue
+    
     const ePos = item.selfClosing ? item.openTagEnd[1] : item.closeTagEnd[1]
     if (ePos > (selfClosing ? openTagEnd[1] : closeTagEnd[1])) continue
     if (snips[ix - from]) snips[ix - from].push(tree[cmi])
     else snips[ix - from] = [tree[cmi]]
   }
-  const values = (top[3].values || currentValues).slice(from, to)
+  const values = tree[esxValues].slice(from, to)
   replace(fields[from], 0, openTagStart[1] - 1)
   fields[to].length = (selfClosing ? openTagEnd[1] : closeTagEnd[1]) + 1
   const body = generate(fields.slice(from, to + 1), values, snips, attrPos, tree, from)
@@ -184,7 +186,7 @@ function compileChildRenderer (item, tree, top) {
   return fn
 }
 
-function resolveChildren (childMap, dynChildren, tree, top) { 
+function resolveChildren (childMap, dynChildren, tree, top) {
   const children = []
 
   for (var i = 0; i < childMap.length; i++) {
@@ -193,8 +195,8 @@ function resolveChildren (childMap, dynChildren, tree, top) {
       if (tree[childMap[i]]) {
         const [ tag, props, elChildMap, elMeta ] = tree[childMap[i]]
         if (typeof tag === 'function') {
-          const element = renderComponent(tree[childMap[i]], currentValues)
-          children[i] = {
+          const element = renderComponent(tree[childMap[i]], tree[esxValues])
+          element.props[parent] = children[i] = {
             $$typeof: REACT_ELEMENT_TYPE,
             type: tag,
             render: element.render,
@@ -208,19 +210,18 @@ function resolveChildren (childMap, dynChildren, tree, top) {
           if (elMeta.dynAttrs) {
             for (var p in elMeta.dynAttrs) {
               if (!(p in props)) {
-                props[p] = currentValues[elMeta.dynAttrs[p]]
+                props[p] = tree[esxValues][elMeta.dynAttrs[p]]
               }
             }
           }
-
           tree[childMap[i]][3].render = tree[childMap[i]][3].render || 
             compileChildRenderer(tree[childMap[i]], tree, top)
           
-          children[i] = {
+          props[parent] = children[i] = {
             $$typeof: REACT_ELEMENT_TYPE,
             type: tag,
             render: tree[childMap[i]][3].render,
-            values: top[3].values || currentValues,
+            values: tree[esxValues],
             props: props,
             current: tree[childMap[i]],
             [isEsx]: true,
@@ -233,7 +234,7 @@ function resolveChildren (childMap, dynChildren, tree, top) {
     }
     if (dynChildren) {
       for (var n in dynChildren) {
-        const val = currentValues[dynChildren[n]]
+        const val = tree[esxValues][dynChildren[n]]
         children[n] = val
       }
     }
@@ -245,12 +246,11 @@ function resolveChildren (childMap, dynChildren, tree, top) {
 }
 
 function childPropsGetter () {
-  console.log(ssr, current)
   if (!ssr) return null
   if (this[parent]) current = this[parent].current
   const [ , , childMap, meta ] = current
   const { dynChildren } = meta 
-  return resolveChildren(childMap, dynChildren, currentTree, current)
+  return resolveChildren(childMap, dynChildren, meta.tree, current)
 }
 
 const parent = Symbol('esx.parent')
@@ -310,7 +310,7 @@ function esx (components = {}) {
     }
     return root
   }
-
+  var X = 0
   const render = function (strings, ...values) {
     if (ssr === false) return raw(strings, ...values)
     currentValues = values
@@ -323,6 +323,8 @@ function esx (components = {}) {
     current = currentTree[0]
     const props = current[1]
     current[3].values = values
+    tree[esxValues] = values
+
     const el = {
       $$typeof: REACT_ELEMENT_TYPE,
       type: current[0],
@@ -372,7 +374,8 @@ function grow (r, index, c, tree, components, fields, attrPos) {
     spread: null,
     keys: [],
     dynAttrs: {},
-    dynChildren: {}
+    dynChildren: {},
+    tree
   }
   const props = (isComponent && typeof tag.defaultProps === 'object') ? 
     Object.assign({}, tag.defaultProps) : 
@@ -395,7 +398,7 @@ function renderComponent(item, values) {
 
   if (tag.$$typeof === REACT_PROVIDER_TYPE) {
     for (var p in meta.dynAttrs) props[p] = currentValues[meta.dynAttrs[p]]
-    return resolveChildren(childMap, meta.dynChildren, currentTree, current)
+    return resolveChildren(childMap, meta.dynChildren, meta.tree, current)
   }
   current = item
   const { dynAttrs, dynChildren } = meta
@@ -862,6 +865,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
   var valdex = 0
   var priorCmpBounds = {}
   for (var i = 0; i < fields.length; i++) {
+    
     const field = fields[i]
     const priorChar = field[field.length - 1]
     if (priorChar === '') continue
@@ -929,6 +933,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         }
         priorCmpBounds = {to, end}
         if (typeof snip[0] === 'symbol') {
+          tree[esxValues] = values
           snip[2] = resolveChildren(snip[2], snip[3].dynChildren, tree, tree[0])
           field[start] = `\${this.inject(this.snips[${i}][${ix}][2])}`
         } else {

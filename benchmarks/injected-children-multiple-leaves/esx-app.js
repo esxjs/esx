@@ -5,7 +5,6 @@ const Cmp4 = ({children}) => {
   return esx `<p>${children}</p>`
 }
 const Cmp3 = ({children}) => {
-  console.log(children)
   return esx `<p>${children}</p>`
 }
 const Cmp2 = ({children}) => {
