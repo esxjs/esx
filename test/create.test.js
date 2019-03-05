@@ -1,7 +1,6 @@
 'use strict'
-const { test } = require('tap')
+const test = require('blue-tape')
 process.env.NODE_ENV = 'production' // stop react warnings
-const { renderToString } = require('react-dom/server')
 const renderer = require('react-test-renderer')
 const render = (o) => renderer.create(o).toJSON()
 const React = require('react')

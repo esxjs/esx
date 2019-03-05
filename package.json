@@ -3,16 +3,19 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "browser": "./client.js",
   "scripts": {
     "test": "tap test/*.test.js",
-    "cov": "tap --100 test/*.test.js"
+    "browser-test": "airtap --local test/create.test.js",
+    "cov": "tap --100  test/*.test.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "David Mark Clements <david.mark.clements@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "airtap": "^2.0.1",
+    "blue-tape": "^1.0.0",
     "fastbench": "^1.0.1",
-    "preact": "^8.3.1",
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
     "react-test-renderer": "^16.8.2",
@@ -20,7 +23,6 @@
   },
   "dependencies": {
     "debug": "^4.1.0",
-    "escape-html": "^1.0.3",
-    "flatstr": "^1.0.8"
+    "escape-html": "^1.0.3"
   }
 }
