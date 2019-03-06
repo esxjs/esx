@@ -5,9 +5,14 @@ const renderer = require('react-test-renderer')
 const render = (o) => renderer.create(o).toJSON()
 const React = require('react')
 const { createElement } = React
-const init = require('..')
+const init = process.env.TEST_CLIENT_CODE ? require('../browser') : require('..')
 
-test('basic', async ({ is }) => {
+test('element and text child', async ({ same }) => {
+  const esx = init()
+  same(render(esx `<div>hi</div>`), render(createElement('div', null, 'hi')))
+})
+
+test('interpolation', async ({ is }) => {
   const esx = init({})
   const value = 'test'
   const { type, props} = esx `

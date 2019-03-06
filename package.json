@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "browser": "./client.js",
+  "browser": "./browser.js",
   "scripts": {
     "test": "tap test/*.test.js",
-    "browser-test": "airtap --local test/create.test.js",
+    "test:browser": "airtap -w --local test/create.test.js",
+    "test:client": "TEST_CLIENT_CODE=1 tap test/create.test.js",
     "cov": "tap --100  test/*.test.js"
   },
   "keywords": [],
