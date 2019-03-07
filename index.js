@@ -1,33 +1,21 @@
 'use strict'
 const debug = require('debug')('esx')
-const escapeHtml = require('./escape')
-const tokens = debug.extend('tokens')
-
-if (process.env.TRACE) tokens.log = (...args) => {
-  console.log(...args, Error('trace').stack)
-}
-const { createElement, createContext, memo, forwardRef, Fragment, Suspense } = tryToLoad('react')
+const { createElement } = tryToLoad('react')
 const { renderToStaticMarkup } = tryToLoad('react-dom/server')
-const { Provider, Consumer } = createContext()
-const REACT_PROVIDER_TYPE = Provider.$$typeof
-const REACT_CONSUMER_TYPE = Consumer.$$typeof
-const REACT_MEMO_TYPE = memo(()=>{}).$$typeof
-const REACT_ELEMENT_TYPE = createElement('div').$$typeof
-const REACT_FORWARD_REF_TYPE = forwardRef(() => {}).$$typeof
-const [
-  VAR, TEXT, OPEN, CLOSE, 
-  ATTR, KEY, KW, VW, VAL,
-  SQ, DQ, EQ, BRK, SC, SPREAD
-] = tokens.enabled === false ? Array.from(Array(14)).map((_, i) => i) : [
-  'VAR', 'TEXT', 'OPEN', 'CLOSE', 
-  'ATTR', 'KEY', 'KW', 'VW', 'VAL',
-  'SQ', 'DQ', 'EQ', 'BRK', 'SC', 'SPREAD'
-]
-const isEsx = Symbol('esx')
-const marker = Symbol('esx.valuePlaceholder')
-const skip = Symbol('esx.skip')
-const provider = Symbol('esx.provider')
-const esxValues = Symbol('esx.value')
+const escapeHtml = require('./lib/escape')
+const parse = require('./lib/parse')
+const validate = require('./lib/validate')
+const {
+  REACT_PROVIDER_TYPE,
+  REACT_CONSUMER_TYPE,
+  REACT_MEMO_TYPE,
+  REACT_ELEMENT_TYPE,
+  REACT_FORWARD_REF_TYPE
+} = require('./lib/constants')
+const {
+  isEsx, marker, skip, provider, esxValues, parent
+} = require('./lib/symbols')
+
 // singleton state for ssr
 var ssr = false 
 var current = null
@@ -35,34 +23,9 @@ var currentValues = null
 var currentTree = null
 var ssrReactRootAdded = false
 
-function validateComponents (components) {
-  if (typeof components !== 'object' || components === null) {
-    throw Error('ESX: supplied components must be an object')
-  }
-  const keys = Object.keys(components)
-  for (var i = 0; i < keys.length; i++) {
-    const key = keys[i]
-    if (key[0].toUpperCase() !== key[0]) {
-      throw Error('ESX: all components should use PascalCase')
-    }
-    // if (typeof components[key] !== 'function') {
-    //   console.trace(key, components, components[key])
-    //   throw Error('ESX: all components must be functions or classes')
-    // }
-  }
-}
 const elementToMarkup = (el) => {
   const result = renderToStaticMarkup(el)
   return result
-}
-
-const attr = (key, val) => {
-  if (typeof val === 'boolean') {
-    if (val === true) return ' '+ key
-  } else {
-    return inject(val, ` ${key}=`)
-  }
-  return ''
 }
 
 const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
@@ -154,108 +117,8 @@ const inject = (val, attrKey = '') => {
   return val
 }
 
-function compileChildRenderer (item, tree, top) {
-  
-  const meta = item[3]
-  const { openTagStart, openTagEnd, selfClosing, closeTagEnd, attrPos } = meta
-  const to = selfClosing ? openTagEnd[0] : closeTagEnd[0] 
-  const from = openTagStart[0]
-  const fields = meta.fields.map((f) => f.split(''))
-  const snips = {}
-  for (var cmi in tree) {
-    const item = tree[cmi][3]
-    if (item.isComponent === false) continue
-    const ix = item.openTagStart[0]
-    if (ix > to || ix < from) continue
-    const sPos = item.openTagStart[1]
-    if (sPos < openTagEnd[1]) continue
-    
-    const ePos = item.selfClosing ? item.openTagEnd[1] : item.closeTagEnd[1]
-    if (ePos > (selfClosing ? openTagEnd[1] : closeTagEnd[1])) continue
-    if (snips[ix - from]) snips[ix - from].push(tree[cmi])
-    else snips[ix - from] = [tree[cmi]]
-  }
-  const values = tree[esxValues].slice(from, to)
-  replace(fields[from], 0, openTagStart[1] - 1)
-  fields[to].length = (selfClosing ? openTagEnd[1] : closeTagEnd[1]) + 1
-  const body = generate(fields.slice(from, to + 1), values, snips, attrPos, tree, from)
-  const fn = Function('values', 'return (`' + body.join('') + '`)').bind({
-    inject, spread, snips, renderComponent, addRoot
-  })
-
-  return fn
-}
-
-function resolveChildren (childMap, dynChildren, tree, top) {
-  const children = []
-
-  for (var i = 0; i < childMap.length; i++) {
-
-    if (typeof childMap[i] === 'number') {
-      if (tree[childMap[i]]) {
-        const [ tag, props, elChildMap, elMeta ] = tree[childMap[i]]
-        if (typeof tag === 'function') {
-          const element = renderComponent(tree[childMap[i]], tree[esxValues])
-          element.props[parent] = children[i] = {
-            $$typeof: REACT_ELEMENT_TYPE,
-            type: tag,
-            render: element.render,
-            values: element.values,
-            props: element.props,
-            current: tree[childMap[i]],
-            [isEsx]: true,
-            ref: null
-          }
-        } else {              
-          if (elMeta.dynAttrs) {
-            for (var p in elMeta.dynAttrs) {
-              if (!(p in props)) {
-                props[p] = tree[esxValues][elMeta.dynAttrs[p]]
-              }
-            }
-          }
-          tree[childMap[i]][3].render = tree[childMap[i]][3].render || 
-            compileChildRenderer(tree[childMap[i]], tree, top)
-          
-          props[parent] = children[i] = {
-            $$typeof: REACT_ELEMENT_TYPE,
-            type: tag,
-            render: tree[childMap[i]][3].render,
-            values: tree[esxValues],
-            props: props,
-            current: tree[childMap[i]],
-            [isEsx]: true,
-            ref: null
-          }
-        }
-      }
-    } else {
-      children[i] = childMap[i]
-    }
-    if (dynChildren) {
-      for (var n in dynChildren) {
-        const val = tree[esxValues][dynChildren[n]]
-        children[n] = val
-      }
-    }
-  }
-
-  if (children.length === 0) return null 
-  if (children.length === 1) return children[0]
-  return children
-}
-
-function childPropsGetter () {
-  if (!ssr) return null
-  if (this[parent]) current = this[parent].current
-  const [ , , childMap, meta ] = current
-  const { dynChildren } = meta 
-  return resolveChildren(childMap, dynChildren, meta.tree, current)
-}
-
-const parent = Symbol('esx.parent')
 function esx (components = {}) {
-  validateComponents(components)
+  validate(components)
   const cache = new WeakMap()
   const raw = (strings, ...values) => {
     const key = strings
@@ -310,7 +173,6 @@ function esx (components = {}) {
     }
     return root
   }
-  var X = 0
   const render = function (strings, ...values) {
     if (ssr === false) return raw(strings, ...values)
     currentValues = values
@@ -318,7 +180,7 @@ function esx (components = {}) {
     const state = cache.has(key) ? 
       cache.get(key) : 
       cache.set(key, parse(components, strings, values)).get(key)
-    const { tree, fn, fields } = recompile(state, values)
+    const { tree, fn } = recompile(state, values)
     currentTree = tree
     current = currentTree[0]
     const props = current[1]
@@ -334,7 +196,6 @@ function esx (components = {}) {
       current: current,
       [isEsx]: true
     }
-    el.ref = el
     if (!(parent in el.props)) el.props[parent] = el
     return el
   }
@@ -351,45 +212,11 @@ function esx (components = {}) {
     return output
   }
   render.register = (additionalComponents) => {
-    validateComponents(additionalComponents)
+    validate(additionalComponents)
     Object.assign(components, additionalComponents)
   }
   render.renderToString = renderToString
   return render
-}
-
-function grow (r, index, c, tree, components, fields, attrPos) {
-  const parent = getParent(tree)
-  if (parent !== null) parent[2].push(tree.length)
-  const isComponent = r in components || r === 'Fragment'
-  const tag = isComponent ? (components[r] || Fragment) : r
-  const meta = {
-    closed: false,
-    isComponent, 
-    openTagStart: [c, index],
-    fields,
-    attrPos,
-    lasKey: '',
-    spreadIndices: [],
-    spread: null,
-    keys: [],
-    dynAttrs: {},
-    dynChildren: {},
-    tree
-  }
-  const props = (isComponent && typeof tag.defaultProps === 'object') ? 
-    Object.assign({}, tag.defaultProps) : 
-    {}
-  if (!('children' in props)) {
-    Object.defineProperty(props, 'children', { get: childPropsGetter, configurable: true })
-  }
-  const item = [tag, props, [], meta]
-  if (tag.$$typeof === REACT_PROVIDER_TYPE) {
-    meta.isProvider = true
-    tag._context[provider] = item
-  }
-  tree.push(item)
-  return meta
 }
 
 function renderComponent(item, values) { 
@@ -450,329 +277,12 @@ function renderComponent(item, values) {
   return tag(props, context)
 }
 
-function parse (components, strings, values) {
-  var ctx = TEXT
-  const tree = []
-  const fields = []
-  const attrPos = {}
-  for (var c = 0; c < strings.length; c++) {
-    const s = (ctx === VW ? strings[c].trimRight() : strings[c].trim())
-      .replace(/<(\s+)?(\/)?>/g, '<$2Fragment>')
-    var field = ''
-    var r = ''
-    if (ctx === VW) {
-      ctx = ATTR
-      tokens(ATTR)
-    }
-    for (var i = 0; i < s.length; i++) {
-      var ch = s[i]
-      if (/\s/.test(ch) && /\s/.test(s[i-1])) {
-        continue
-      }
-      if (ctx === OPEN && r === '/' && /\s/.test(ch)) {
-        if (!tree[tree.length-1][3].isComponent) {
-          continue
-        }
-      }
-      switch (true) {
-        case (ctx === TEXT && ch === '<'): 
-          if (r.length > 0  && !/^\s$|-/.test(r)) {
-            tokens(TEXT, r)
-            const parent = getParent(tree)
-            if (parent !== null) {
-              if (s.length < strings[c].length) {
-                const match = strings[c].match(/^\s+/)
-                if (match !== null && s[0] !== '<') {
-                  r = ' ' + r
-                  field = ' ' + field
-                }
-              }
-              parent[2].push(r)
-            }
-          }
-          ctx = OPEN
-          r = ''
-          const trim = field.trimRight() 
-          if (trim.slice(-1) === '>') field = trim
-          field += ch
-          break
-        case (ch === '>' && s[i - 1] === '/'):
-          const node = tree[tree.length -1][3]
-          node.closed = true
-          node.selfClosing = true
-          ctx = TEXT
-          const { isComponent } = node
-          if (!isComponent && /\s/.test(s[i - 2])) {
-            field = field.slice(0, -1).trimRight() + '/'
-          }
-          if (r.length && r !== '/') {
-            addProp(tree, r.slice(0, r.length - 1))
-          }
-          tokens(SC)
-          r = ''
-          field += ch
-          node.openTagEnd = [c, field.length - 1]
-          if (node.spread) {
-            node.spread[Object.keys(node.spread).pop()].after = node.keys 
-            node.keys = []
-          }
-          break
-        case (ch === '>' && ctx !== DQ && ctx !== SQ):
-          if (ctx === KEY) {
-            addProp(tree, r)
-          } else if (ctx === OPEN) {
-            tokens(OPEN, r)
-            var top = tree.length
-            if (r[0] !== '/') {
-              grow(r, field.length - r.length - 1, c, tree, components, fields, attrPos)
-            } else {
-              var top = tree.length
-              while (top-- > 0) {
-                const meta = tree[top][3] 
-                const tag = tree[top][0]
-                if (meta.closed === false) {
-                  const name = r.slice(1)
-                  if (name === tag || components[name] === tag || tag === Fragment) {
-                    meta.closed = true
-                    meta.closeTagStart = [c, field.length - r.length - 1]
-                    meta.closeTagEnd = [c, field.length]
-                    break
-                  } else {
-                    throw SyntaxError(`Expected corresponding ESX closing tag for <${tag.name || tag.toString()}>`)
-                  }
-                }
-              }
-            }
-          }
-          else if (ctx === VAL && r.length > 0) {
-            tokens(VAL, r)
-          }
-          tokens(CLOSE, r)
-          if (r[0] !== '/') {
-            tree[tree.length-1][3].openTagEnd = [c, i + 1]
-            if (tree[tree.length-1][3].spread) {
-              tree[tree.length -1][3].spread[Object.keys(tree[tree.length -1][3].spread).pop()].after = tree[tree.length -1][3].keys
-              tree[tree.length -1][3].keys = []
-            }
-          }
-          r = ''
-          ctx = TEXT
-          if (tree[tree.length-1][3].isComponent === false) {
-            field = field.trimRight()
-          }
-          field += ch
-          break
-        case (ctx === TEXT): 
-          r += ch
-          field += ch
-          break
-        case (ctx === OPEN && ch === '/' && r.length > 0):
-          tokens(OPEN, r)
-          grow(r, field.length - r.length - 1, c, tree, components, fields, attrPos)
-          r = ''
-          ctx = TEXT
-          field += ch
-          break
-        case (ctx === OPEN && /\s/.test(ch)):
-          // ignore all whitespace in closing elements
-          if (r[0] === '/') {
-            continue
-          }
-          // ignore whitespace in opening tags prior to the tag name
-          if (r.length === 0) {
-            continue 
-          }
-          tokens(OPEN, r)
-          grow(r, field.length - r.length - 1, c, tree, components, fields, attrPos)
-          r = ''
-          ctx = ATTR
-          tokens(ATTR)
-          field += ch
-          break
-        case (ctx === OPEN):
-          r += ch
-          field += ch
-          break
-          case (ctx === ATTR):
-            if (/[^\s=]/.test(ch)) {
-              ctx = KEY
-              r = ch
-              field += ch
-              break
-            }
-            if (ctx === KEY && /\s/.test(ch)) {
-              if (r.length > 0) {
-                addProp(tree, r)
-              }
-              tokens(BRK)
-              field += ch
-              break
-            }
-            field += ch
-            break
-        case (ctx === KEY): 
-          if (/\s/.test(ch)) {
-            addProp(tree, r)
-            r = ''
-            ctx = KW
-            tokens(KW)
-            field += ch
-            break
-          }
-          if (ch === '=') {
-            addProp(tree, r)
-            tokens(EQ)
-            r = ''
-            ctx = VW
-            field += ch
-            break
-          }
-          r += ch
-          if (r === '...' && i === s.length - 1) {
-            ctx = SPREAD
-            field = field.slice(0, -2)
-            ch = '…'
-            tokens(SPREAD)
-          }
-          field += ch
-          break
-        case (ctx === KW || ctx === ATTR): 
-          if (ch === '=') {
-            tokens(EQ)
-            ctx = VW
-            field += ch
-            break
-          }
-          if (/\s/.test(ch) === false) {
-            tokens(BRK)
-            if (/[\w-]/.test(ch)) {
-              r += c
-              ctx = KEY
-              field += ch
-              break
-            }
-            ctx = ATTR
-            tokens(ATTR)
-          }
-          field += ch
-          break
-        case (ctx === VW): 
-          if (ch === `"`) {
-            ctx = DQ 
-            field += ch
-            break
-          }
-          if (ch === `'`) {
-            ctx = SQ 
-            field += '"'
-            break
-          }
-          if (/\s/.test(ch) === false) {
-            ctx = VAL
-            i -= 1
-            field += ch
-            break
-          }
-        case (ctx === DQ && ch === `"`):
-        case (ctx === SQ && ch === `'`):
-        case (ctx === VAL && /\s/.test(ch)):
-          tokens(BRK)
-          const { lastKey } = tree[tree.length-1][3]
-          if (r.length > 0) {
-            tokens(VAL, r, BRK)
-            const val = r
-            const esc = escapeHtml(val)
-            addValue(tree, val)
-            
-            if (val !== esc) field = field.replace(RegExp(`${val}$`, 'm'), esc)
-          }
-          
-          ctx = ATTR
-          tokens(ATTR)
-          if (lastKey === 'key' || lastKey === 'ref') {
-            field = field.slice(0, field.length - r.length - lastKey.length - 3)
-          } else { 
-            if (ch === `'`) ch = '"'
-            field += ch
-          }
-          r = '' 
-          break
-        case (ctx === VAL || ctx === DQ || ctx === SQ):
-          r += ch
-          if (ch === `'`) ch = '"'
-          field += ch
-          break 
-      }
-    }
-    if (r.length === 0) {
-      if (ctx === KEY) {
-        addProp(tree, r)
-      }
-    } else {
-      if (ctx === TEXT) {
-        const parent = getParent(tree)
-        if (parent !== null) {
-          if (s.length < strings[c].length) {
-            const match = strings[c].match(/\s+$/)
-            if (match !== null) {
-              r += match[0]
-              field += match[0]
-            }
-          }
-          parent[2].push(r)
-        }
-        tokens(TEXT, r)
-      }
-      if (ctx === VAL || ctx === DQ || ctx === SQ) tokens(VAL, r)
-    }
-    fields[c] = field
-    if (c in values === false) break
-    if (ctx === ATTR) throw SyntaxError('Unexpected token. Attributes must have a name.')
-    tokens(VAR)
-    if (ctx === VW) {
-      tokens(VAL, values[c], VW)
-      const pMeta = tree[tree.length-1][3]
-      attrPos[c] = {s: field.length - 1 - pMeta.lastKey.length, e: field.length - 1}
-      addInterpolatedAttr(tree, c, i)
-    }
-    else if (ctx === VAL || ctx === SQ || ctx === DQ) { // value interpolated between quote marks
-      throw SyntaxError('Unexpected token. Attribute expressions must not be surround in quotes.')
-    }
-    else if (ctx === ATTR) {
-      addProp(tree, values[c])
-    }
-    else if (ctx === TEXT) { // dynamic children
-      tokens(TEXT, values[c])
-      addInterpolatedChild(tree, c)
-    }  
-    else if (ctx === SPREAD) {
-      ctx = ATTR
-      r = ''
-      const props = tree[tree.length-1][1]
-      const meta = tree[tree.length-1][3]
-      meta.spread = meta.spread || {}
-      meta.spread[c] = {
-        before: meta.keys,
-        after: []
-      }
-      meta.spreadIndices.push(c)
-      meta.dynAttrs['…' + c] = c
-      meta.keys = []
-      tokens(ATTR)
-    } else {
-      tokens(ctx, values[c])
-      switch (ctx) {
-        case OPEN: 
-          throw SyntaxError('ESX: Unexpected token in element. Expressions may only be spread, embedded in attributes be included as children.')
-        default: 
-          throw SyntaxError('ESX: Unexpected token.')
-      }
-    }
-  }
-  
-  debug('tree parsed from string')
-  
-  return { tree, fields: fields.map((f) => f.split('')), attrPos, fn: null }
+function childPropsGetter () {
+  if (!ssr) return null
+  if (this[parent]) current = this[parent].current
+  const [ , , childMap, meta ] = current
+  const { dynChildren } = meta 
+  return resolveChildren(childMap, dynChildren, meta.tree, current)
 }
 
 function recompile (state, values) {
@@ -780,7 +290,10 @@ function recompile (state, values) {
   const {tree, fields, attrPos } = state
   const snips = {}
   for (var cmi in tree) {
-    // if (tree[cmi][3].isComponent === false) continue
+    const props = tree[cmi][1]
+    if (!('children' in props)) {
+      Object.defineProperty(props, 'children', { get: childPropsGetter, configurable: true })
+    }
     const ix = tree[cmi][3].openTagStart[0]
     if (snips[ix]) snips[ix].push(tree[cmi])
     else snips[ix] = [tree[cmi]]
@@ -819,21 +332,6 @@ function reverseSeek (array, pos, rx) {
   return -1
 }
 
-function seek2 (array, pos, rx) {
-  var i = pos - 1
-  const end = array.length - 1
-  while (i++ < end) {
-    if (rx.test(array[i])) return i - 1
-  }
-  return pos
-}
-function reverseSeek2 (array, pos, rx) {
-  var i = pos
-  while (i--) {
-    if (rx.test(array[i])) return i
-  }
-  return pos
-}
 
 function seekToElementStart (fields, ix) {
   do {
@@ -972,50 +470,96 @@ function addRoot () {
   return result
 }
 
-function addInterpolatedChild (tree, valuesIndex) {
-  const node = getParent(tree)
-  if (node === null) return
-  const children = node[2]
-  const meta = node[3]
-  meta.dynChildren[children.length] = valuesIndex
-  children.push(marker)
-}
-
-function addInterpolatedAttr (tree, valuesIndex) {
-  const node = tree[tree.length-1]
-  const props = node[1]
-  const meta = node[3]
-  props[meta.lastKey] = marker
-  meta.dynAttrs[meta.lastKey] = valuesIndex
-}
-
-function addValue (tree, val) {
-  const node = tree[tree.length-1]
-  const props = node[1]
-  const meta = node[3]
-  props[meta.lastKey] = val
-}
-
-function addProp (tree, name) {
-  tokens(KEY, name)
-  const node = tree[tree.length-1]
-  const props = node[1]
-  const meta = node[3]
-  if (name === 'children') {
-    meta.childrenAttribute = true
-    Object.defineProperty(props, name, {value: true, writable: true})
+function compileChildRenderer (item, tree, top) {
+  
+  const meta = item[3]
+  const { openTagStart, openTagEnd, selfClosing, closeTagEnd, attrPos } = meta
+  const to = selfClosing ? openTagEnd[0] : closeTagEnd[0] 
+  const from = openTagStart[0]
+  const fields = meta.fields.map((f) => f.split(''))
+  const snips = {}
+  for (var cmi in tree) {
+    const item = tree[cmi][3]
+    if (item.isComponent === false) continue
+    const ix = item.openTagStart[0]
+    if (ix > to || ix < from) continue
+    const sPos = item.openTagStart[1]
+    if (sPos < openTagEnd[1]) continue
+    
+    const ePos = item.selfClosing ? item.openTagEnd[1] : item.closeTagEnd[1]
+    if (ePos > (selfClosing ? openTagEnd[1] : closeTagEnd[1])) continue
+    if (snips[ix - from]) snips[ix - from].push(tree[cmi])
+    else snips[ix - from] = [tree[cmi]]
   }
-  else props[name] = true
-  meta.lastKey = name
-  meta.keys.push(name)
+  const values = tree[esxValues].slice(from, to)
+  replace(fields[from], 0, openTagStart[1] - 1)
+  fields[to].length = (selfClosing ? openTagEnd[1] : closeTagEnd[1]) + 1
+  const body = generate(fields.slice(from, to + 1), values, snips, attrPos, tree, from)
+  const fn = Function('values', 'return (`' + body.join('') + '`)').bind({
+    inject, spread, snips, renderComponent, addRoot
+  })
+
+  return fn
 }
 
-function getParent (tree) {
-  var top = tree.length
-  while (top-- > 0) {
-    if (tree[top][3].closed === false) return tree[top]
+
+function resolveChildren (childMap, dynChildren, tree, top) {
+  const children = []
+
+  for (var i = 0; i < childMap.length; i++) {
+
+    if (typeof childMap[i] === 'number') {
+      if (tree[childMap[i]]) {
+        const [ tag, props, elChildMap, elMeta ] = tree[childMap[i]]
+        if (typeof tag === 'function') {
+          const element = renderComponent(tree[childMap[i]], tree[esxValues])
+          element.props[parent] = children[i] = {
+            $$typeof: REACT_ELEMENT_TYPE,
+            type: tag,
+            render: element.render,
+            values: element.values,
+            props: element.props,
+            current: tree[childMap[i]],
+            [isEsx]: true,
+            ref: null
+          }
+        } else {              
+          if (elMeta.dynAttrs) {
+            for (var p in elMeta.dynAttrs) {
+              if (!(p in props)) {
+                props[p] = tree[esxValues][elMeta.dynAttrs[p]]
+              }
+            }
+          }
+          tree[childMap[i]][3].render = tree[childMap[i]][3].render || 
+            compileChildRenderer(tree[childMap[i]], tree, top)
+          
+          props[parent] = children[i] = {
+            $$typeof: REACT_ELEMENT_TYPE,
+            type: tag,
+            render: tree[childMap[i]][3].render,
+            values: tree[esxValues],
+            props: props,
+            current: tree[childMap[i]],
+            [isEsx]: true,
+            ref: null
+          }
+        }
+      }
+    } else {
+      children[i] = childMap[i]
+    }
+    if (dynChildren) {
+      for (var n in dynChildren) {
+        const val = tree[esxValues][dynChildren[n]]
+        children[n] = val
+      }
+    }
   }
-  return null
+
+  if (children.length === 0) return null 
+  if (children.length === 1) return children[0]
+  return children
 }
 
 function tryToLoad (peer) {
