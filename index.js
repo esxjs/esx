@@ -10,7 +10,8 @@ const {
   REACT_CONSUMER_TYPE,
   REACT_MEMO_TYPE,
   REACT_ELEMENT_TYPE,
-  REACT_FORWARD_REF_TYPE
+  REACT_FORWARD_REF_TYPE,
+  VOID_ELEMENTS
 } = require('./lib/constants')
 const {
   isEsx, marker, skip, provider, esxValues, parent
@@ -289,12 +290,29 @@ function recompile (state, values) {
   if (state.fn) return state
   const {tree, fields, attrPos } = state
   const snips = {}
-  for (var cmi in tree) {
-    const props = tree[cmi][1]
+  for (var cmi = 0; cmi < tree.length; cmi++) {
+    const [ tag, props, , meta ] = tree[cmi]
     if (!('children' in props)) {
       Object.defineProperty(props, 'children', { get: childPropsGetter, configurable: true })
     }
-    const ix = tree[cmi][3].openTagStart[0]
+    const ix = meta.openTagStart[0]
+    if (meta.isComponent === false) {
+      const [ ix, pos ] = meta.openTagEnd
+      const isVoidElement = VOID_ELEMENTS.has(tag)
+      if (isVoidElement === true && meta.selfClosing === false) {
+        fields[ix][pos - 1] = '/>'
+        meta.selfClosing === true
+        if (meta.closeTagStart) {
+          const [ ix, pos ] = meta.closeTagStart
+          replace(fields[ix], pos, meta.closeTagEnd[1])
+        }
+      }
+      if (isVoidElement === false && meta.selfClosing === true && !meta.closeTagStart) {
+        const [ ix, pos ] = meta.openTagEnd
+        fields[ix][pos - 1] = '>'
+        fields[ix][pos] = `</${tag}>`
+      }
+    }
     if (snips[ix]) snips[ix].push(tree[cmi])
     else snips[ix] = [tree[cmi]]
   }
@@ -371,7 +389,11 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       const { s, e } = attrPos[i + offset]
       const key = field.slice(s, e + 1).join('')      
       const pos = s === 0 ? 0 : reverseSeek(field, s, /^[^\s]$/) + 1
-      if (key !== 'ref=' && key !== 'key=') {
+      if (key === 'dangerouslySetInnerHTML=') {
+        replace(field, pos, e)
+        const [ix, p] = seekToElementEnd(fields, i + 1)
+        fields[ix][p + 1] = fields[ix][p + 1] + `\${values[${offset + valdex++}].__html}`
+      } else if (key !== 'ref=' && key !== 'key=') {
         field[pos] = `\${this.inject(values[${offset + valdex++}], ' ${key}')}`
         replace(field, pos + 1, e)
         if (pos > 0) replace(field, 0, seek(field, 0, /^[^\s]$/)) // trim left
@@ -387,7 +409,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         item = snips[--ix]
       }
       item = item[0]
-      const [ tag, props, , meta] = item
+      const [ tag, , , meta] = item
       if (typeof tag === 'function') {
         // setting the field to a space instead of ellipsis
         // and rewinding i allows for a second pass where it's
@@ -399,7 +421,6 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         i--
         continue
       }
-      const { spread } = meta
       const [openIx, openPos] = seekToElementStart(fields, i)
       const [closeIx, closePos] = seekToElementEnd(fields, i + 1)
 

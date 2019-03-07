@@ -360,3 +360,48 @@ test('React.Fragment special-case namespace can be overridden', async ({ same })
   )
 })
 
+test('self closing elements', async ({ same }) => {
+  const esx = init()
+  same(render(esx `<div/>`), render(createElement('div')))
+  same(
+    render(esx `<div><div/><p>hi</p></div>`),
+    render(createElement(
+      'div', 
+      null, 
+      createElement('div', null), 
+      createElement('p', null, 'hi')
+      )
+    )
+  )
+})
+
+test('unexpected token, expression in open element', async ({throws}) => {
+  throws(() =>  esx `<div${'value'}></div>`, SyntaxError('ESX: Unexpected token in element. Expressions may only be spread, embedded in attributes be included as children.'))
+})
+
+test('unexpected token, quotes around expression', async ({throws}) => {
+  const esx = init()
+  throws(
+    () => esx `<div x="${props.a}"></div>`, 
+    SyntaxError('Unexpected token. Attribute expressions must not be surrounded in quotes.')
+  )
+})
+
+test('void elements must not have children', async ({throws}) => {
+  const esx = init()
+  throws(() => esx `<img>child</img>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+  throws(() => esx `<img>${'child'}</img>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+  throws(() => esx `<img><div>hi</div></img>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+  esx.register({Cmp() { return esx `<p>hi</p>`}})
+  throws(() => esx `<img><Cmp/></img>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+})
+
+test('void elements must not use dangerouslySetInnerHTML', async ({throws}) => {
+  const esx = init()
+  throws(() => esx `<img dangerouslySetInnerHTML=${{__html: '<p>no</p>'}}/>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+})
+
+test('unexpected token', async ({throws}) => {
+  const esx = init()
+  throws(() => esx `<div .${props}></div>`, SyntaxError('ESX: Unexpected token.'))
+})

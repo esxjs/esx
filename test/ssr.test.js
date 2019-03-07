@@ -1,5 +1,5 @@
 'use strict'
-const { test } = require('tap')
+const { test, only } = require('tap')
 process.env.NODE_ENV = 'production' // stop react warnings
 const { renderToString } = require('react-dom/server')
 const React = require('react')
@@ -1298,8 +1298,8 @@ test('unexpected token, quotes around expression', async ({throws}) => {
     return esx `<div x="${props.a}"></div>`
   }
   esx.register({Component1, Component2})
-  throws(() => esx.renderToString `<Component1 a="1"/>`, SyntaxError('Unexpected token. Attribute expressions must not be surround in quotes.'))
-  throws(() => esx.renderToString `<Component2 a="1"/>`, SyntaxError('Unexpected token. Attribute expressions must not be surround in quotes.'))
+  throws(() => esx.renderToString `<Component1 a="1"/>`, SyntaxError('Unexpected token. Attribute expressions must not be surrounded in quotes.'))
+  throws(() => esx.renderToString `<Component2 a="1"/>`, SyntaxError('Unexpected token. Attribute expressions must not be surrounded in quotes.'))
 })
 
 test('unexpected token', async ({throws}) => {
@@ -1424,7 +1424,7 @@ test('spread multiple objects, duplicate dynamic props between spreads overriden
   )
 })
 
-test('spread props and defaultProps', async ({is}) => {
+only('spread props and defaultProps', async ({is}) => {
   const esx = init()
   const Component = (props) => {
     return esx `<img ...${props}/>`
@@ -1626,11 +1626,131 @@ test('spread props and defaultProps', async ({is}) => {
 // fail fast when Cmp not registered
 // benchmark for props spread
 // cloneElement (+ benchmark)
-// dangersoulySetInnerHtml
-// hooks
+// react lazy/suspense -- fallback + lazy load (how?)
 // legacy context api
 // hocs
-// react lazy/suspense -- fallback + lazy load (how?)
+// hooks
+// no root el scenario (insert fragments?)
+// special attr
+
+test('self closing void elements do not render with closing tag', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<area/>`, renderToString(esx`<area/>`))
+  is(esx.renderToString `<base/>`, renderToString(esx`<base/>`))
+  is(esx.renderToString `<br/>`, renderToString(esx`<br/>`))
+  is(esx.renderToString `<col/>`, renderToString(esx`<col/>`))
+  is(esx.renderToString `<embed/>`, renderToString(esx`<embed/>`))
+  is(esx.renderToString `<hr/>`, renderToString(esx`<hr/>`))
+  is(esx.renderToString `<img/>`, renderToString(esx`<img/>`))
+  is(esx.renderToString `<input/>`, renderToString(esx`<input/>`))
+  is(esx.renderToString `<link/>`, renderToString(esx`<link/>`))
+  is(esx.renderToString `<meta/>`, renderToString(esx`<meta/>`))
+  is(esx.renderToString `<param/>`, renderToString(esx`<param/>`))
+  is(esx.renderToString `<source/>`, renderToString(esx`<source/>`))
+  is(esx.renderToString `<track/>`, renderToString(esx`<track/>`))
+  is(esx.renderToString `<wbr/>`, renderToString(esx`<wbr/>`))
+})
+test('unclosed void elements render as self closing', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<area>`, renderToString(esx`<area>`))
+  is(esx.renderToString `<base>`, renderToString(esx`<base>`))
+  is(esx.renderToString `<br>`, renderToString(esx`<br>`))
+  is(esx.renderToString `<col>`, renderToString(esx`<col>`))
+  is(esx.renderToString `<embed>`, renderToString(esx`<embed>`))
+  is(esx.renderToString `<hr>`, renderToString(esx`<hr>`))
+  is(esx.renderToString `<img>`, renderToString(esx`<img>`))
+  is(esx.renderToString `<input>`, renderToString(esx`<input>`))
+  is(esx.renderToString `<link>`, renderToString(esx`<link>`))
+  is(esx.renderToString `<meta>`, renderToString(esx`<meta>`))
+  is(esx.renderToString `<param>`, renderToString(esx`<param>`))
+  is(esx.renderToString `<source>`, renderToString(esx`<source>`))
+  is(esx.renderToString `<track>`, renderToString(esx`<track>`))
+  is(esx.renderToString `<wbr>`, renderToString(esx`<wbr>`))
+})
+test('void elements with a closing tag render as self closing, without the closing tag', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<area></area>`, renderToString(esx`<area></area>`))
+  is(esx.renderToString `<base></base>`, renderToString(esx`<base></base>`))
+  is(esx.renderToString `<br></br>`, renderToString(esx`<br></br>`))
+  is(esx.renderToString `<col></col>`, renderToString(esx`<col></col>`))
+  is(esx.renderToString `<embed></embed>`, renderToString(esx`<embed></embed>`))
+  is(esx.renderToString `<hr></hr>`, renderToString(esx`<hr></hr>`))
+  is(esx.renderToString `<img></img>`, renderToString(esx`<img></img>`))
+  is(esx.renderToString `<input></input>`, renderToString(esx`<input></input>`))
+  is(esx.renderToString `<link></link>`, renderToString(esx`<link></link>`))
+  is(esx.renderToString `<meta></meta>`, renderToString(esx`<meta></meta>`))
+  is(esx.renderToString `<param></param>`, renderToString(esx`<param></param>`))
+  is(esx.renderToString `<source></source>`, renderToString(esx`<source></source>`))
+  is(esx.renderToString `<track></track>`, renderToString(esx`<track></track>`))
+  is(esx.renderToString `<wbr></wbr>`, renderToString(esx`<wbr></wbr>`))
+})
+
+test('self closing normal elements render with closing tag', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div/>`, renderToString(esx `<div/>`))
+  is(esx.renderToString `<div><div/><p>hi</p></div>`, 
+    renderToString(createElement(
+      'div', 
+      null, 
+      createElement('div', null), 
+      createElement('p', null, 'hi')
+      )
+    )
+  )
+})
+
+test('dangerouslySetInnerHTML', async ({ is }) => {
+  const esx = init()
+  is(
+    esx.renderToString`
+      <div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}></div>
+    `, renderToString(esx`
+      <div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}></div>
+    `)
+  )
+  is(
+    esx.renderToString`
+      <div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}} another='prop'></div>
+    `, renderToString(esx`
+      <div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}} another='prop'></div>
+    `)
+  )
+  is(
+    esx.renderToString`
+      <div another='prop' dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}></div>
+    `, renderToString(esx`
+      <div another='prop' dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}></div>
+    `)
+  )
+  is(
+    esx.renderToString`
+      <div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}} another=${'prop'}></div>
+    `, renderToString(esx`
+      <div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}} another=${'prop'}></div>
+    `)
+  )
+  is(
+    esx.renderToString`
+      <div another=${'prop'} dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}></div>
+    `, renderToString(esx`
+      <div another=${'prop'} dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}></div>
+    `)
+  )
+  is(
+    esx.renderToString`
+      <div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}/>
+    `, renderToString(esx`
+      <div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}/>
+    `)
+  )
+  is(
+    esx.renderToString`
+      <div><div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}/><p>hi</p></div>
+    `, renderToString(esx`
+      <div><div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}/><p>hi</p></div>
+    `)
+  )
+})
 
 test('null value attributes', async ({ is }) => {
   const esx = init()
@@ -1985,6 +2105,11 @@ test('whitespace variations', async ({ is }) => {
     })
     is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
   }
+  is(esx.renderToString `<img />`, renderToString(esx`<img />`))
+  is(esx.renderToString `<img >`, renderToString(esx`<img >`))
+  is(esx.renderToString `<img ></img>`, renderToString(esx`<img ></img>`))
+  is(esx.renderToString `<div ></div>`, renderToString(esx`<div ></div>`))
+  is(esx.renderToString `<div />`, renderToString(esx`<div />`))
 })
 
 test('props.children.props.children of dynamic component with multiple component children peers to multiple static element children containing interpolated values within at varied nesting depths as prop', async ({ is }) => {
