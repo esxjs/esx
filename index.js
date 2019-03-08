@@ -320,7 +320,7 @@ function recompile (state, values) {
 
   const body = generate(fields, values, snips, attrPos, tree)
   const fn = Function('values', 'return `' + body.join('') + '`').bind({
-    inject, spread, snips, renderComponent, addRoot
+    inject, style, spread, snips, renderComponent, addRoot
   })
   state.fn = fn
   state.snips = snips
@@ -378,6 +378,17 @@ function seekToElementEnd (fields, ix) {
   return [ix, pos]
 }
 
+function style (obj) {
+  if (typeof obj !== 'object' && obj != null) {
+    throw TypeError('The `style` prop expects a mapping from style properties to values, not a string.')
+  }
+  const str = renderToStaticMarkup({
+    $$typeof: REACT_ELEMENT_TYPE,
+    type: 'x',
+    props: {style: obj}
+  }).slice(3, -5)
+  return str.length > 0 ? ' ' + str : str
+}
 
 function generate (fields, values, snips, attrPos, tree, offset = 0) {
   var valdex = 0
@@ -391,7 +402,10 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       const { s, e } = attrPos[i + offset]
       const key = field.slice(s, e).join('')
       const pos = s === 0 ? 0 : reverseSeek(field, s, /^[^\s]$/) + 1
-      if (key === 'dangerouslySetInnerHTML') {
+      if (key === 'style') {
+        replace(field, pos, e)
+        field[s] = `\${this.style(values[${offset + valdex++}])}`
+      } else if (key === 'dangerouslySetInnerHTML') {
         replace(field, pos, e)
         const [ix, p] = seekToElementEnd(fields, i + 1)
         fields[ix][p + 1] = fields[ix][p + 1] + `\${values[${offset + valdex++}].__html}`
@@ -519,7 +533,7 @@ function compileChildRenderer (item, tree, top) {
   fields[to].length = (selfClosing ? openTagEnd[1] : closeTagEnd[1]) + 1
   const body = generate(fields.slice(from, to + 1), values, snips, attrPos, tree, from)
   const fn = Function('values', 'return (`' + body.join('') + '`)').bind({
-    inject, spread, snips, renderComponent, addRoot
+    inject, style, spread, snips, renderComponent, addRoot
   })
 
   return fn

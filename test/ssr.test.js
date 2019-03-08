@@ -1723,7 +1723,7 @@ test('acceptCharset', async ({ is }) => {
   is(esx.renderToString `<form acceptCharset=${'ISO-8859-1'}></form>`, renderToString(esx `<form acceptCharset=${'ISO-8859-1'}></form>`))
 })
 
-only('innerHTML', async ({ is }) => {
+test('innerHTML', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<form innerHTML='<p></p>'></form>`, renderToString(esx `<form innerHTML='<p></p>'></form>`))
   is(esx.renderToString `<form innerHTML=${'<p></p>'}></form>`, renderToString(esx `<form innerHTML=${'<p></p>'}></form>`))
@@ -1742,6 +1742,31 @@ only('defaultChecked', async ({ is }) => {
   // is(esx.renderToString `<input defaultChecked>`,z renderToString(esx `<input defaultChecked>`))
   // is(esx.renderToString `<input defaultChecked=${true}>`, renderToString(esx `<input defaultChecked=${true}>`))
   // is(esx.renderToString `<input defaultChecked=${false}>`, renderToString(esx `<input defaultChecked=${false}>`))
+})
+
+test('suppressContentEditableWarning', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div suppressContentEditableWarning=""></div>`, renderToString(esx `<div suppressContentEditableWarning=""></div>`))
+  is(esx.renderToString `<div suppressContentEditableWarning=${true}></div>`, renderToString(esx `<div suppressContentEditableWarning=${true}></div>`))
+})
+
+test('suppressHydrationWarning', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div suppressHydrationWarning=""></div>`, renderToString(esx `<div suppressHydrationWarning=""></div>`))
+  is(esx.renderToString `<div suppressHydrationWarning=${true}></div>`, renderToString(esx `<div suppressHydrationWarning=${true}></div>`))
+})
+
+test('style', async ({ is }) => {
+  const esx = init()
+  const style = {color: 'red',display: '-ms-grid', '-o-transition': 'all .25s', userSelect: 'none'}
+  is(esx.renderToString `<div style=${style}></div>`, renderToString(esx `<div style=${style}></div>`))
+  is(esx.renderToString `<div style=${null}></div>`, renderToString(esx `<div style=${null}></div>`))
+})
+
+only('style throws error when not an object', async ({ throws }) => {
+  const esx = init()
+  throws(() => esx.renderToString `<div style='color:red'></div>`, TypeError('The `style` prop expects a mapping from style properties to values, not a string.'))
+  throws(() => esx.renderToString `<div style=${'color:red'}></div>`, TypeError('The `style` prop expects a mapping from style properties to values, not a string.'))
 })
 
 test('dangerouslySetInnerHTML', async ({ is }) => {
