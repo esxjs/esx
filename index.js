@@ -51,7 +51,7 @@ const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
     const key = keys[k]
     if (spread[ix].after.indexOf(key) > -1) continue
     const val = typeof object[key] === 'number' ? object[key] + '' : object[key]
-    result += inject(val, ` ${key}=`)
+    result += inject(val, key)
     if (spread[ix].before.indexOf(key) > -1) {
       dirtyBefore = true
       continue
@@ -67,9 +67,9 @@ const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
       const key = spread[ix].before[i]
       if (keys.indexOf(key) > -1) continue
       if (props[key] === marker) {
-        strBefore += inject(values[meta.dynAttrs[key]], ` ${key}=`)
+        strBefore += inject(values[meta.dynAttrs[key]], key)
       } else {
-       strBefore += inject(props[key], ` ${key}=`)
+       strBefore += inject(props[key], key)
       }
     }
   }
@@ -78,12 +78,13 @@ const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
   return out[0] === ' ' ? out : ' ' + out
 }
 
-const inject = (val, attrKey = '') => {
+const inject = (val, key = '') => {
   if (val == null) return ''
+  const attrKey = key.length > 0 ? ` ${key}=` : ''
   const type = typeof val
   if (type === 'function' || type === 'symbol') return ''
-  if (type === 'string' && val.length) {
-    val = attrKey.length > 0 ? attrKey + '"' + escapeHtml(val) + '"' : escapeHtml(val)
+  if (type === 'string') {
+    val = key.length > 0 ? attrKey + '"' + escapeHtml(val) + '"' : escapeHtml(val)
   } else if (type === 'object') {
     if (val.$$typeof === REACT_ELEMENT_TYPE) {
       val = 'render' in val ? val.render(val.values) : elementToMarkup(val)
@@ -410,7 +411,16 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         const [ix, p] = seekToElementEnd(fields, i + 1)
         fields[ix][p + 1] = fields[ix][p + 1] + `\${values[${offset + valdex++}].__html}`
       } else if (attr.reserved(key) === false) {
-        field[pos] = `\${this.inject(values[${offset + valdex++}], ' ${attr.mapping(key) + '='}')}`
+        const [ix, tPos] = seekToElementStart(fields, i)  
+        const tag = fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')
+        const mappedKey = attr.mapping(key, tag)
+        if (mappedKey.length > 0) {
+          field[pos] = `\${this.inject(values[${offset + valdex++}], '${mappedKey}')}`
+        } else {
+          // if the mapped key is empty, clear the attribute from the output and ignore the value
+          replace(field, pos, e)
+          valdex++ 
+        }
         replace(field, pos + 1, e)
         if (pos > 0) replace(field, 0, seek(field, 0, /^[^\s]$/)) // trim left
       } else {
