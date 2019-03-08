@@ -1424,7 +1424,7 @@ test('spread multiple objects, duplicate dynamic props between spreads overriden
   )
 })
 
-only('spread props and defaultProps', async ({is}) => {
+test('spread props and defaultProps', async ({is}) => {
   const esx = init()
   const Component = (props) => {
     return esx `<img ...${props}/>`
@@ -1631,7 +1631,7 @@ test('spread props and defaultProps', async ({is}) => {
 // hocs
 // hooks
 // no root el scenario (insert fragments?)
-// special attr
+// special attr - also special attr in spread props
 
 test('self closing void elements do not render with closing tag', async ({ is }) => {
   const esx = init()
@@ -1699,6 +1699,51 @@ test('self closing normal elements render with closing tag', async ({ is }) => {
   )
 })
 
+test('className', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<img className='x'>`, renderToString(esx `<img className='x'>`))
+  is(esx.renderToString `<img className=${'x'}>`, renderToString(esx `<img className=${'x'}>`))
+})
+
+test('htmlFor', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<label htmlFor='x'></label>`, renderToString(esx `<label htmlFor='x'></label>`))
+  is(esx.renderToString `<label htmlFor=${'x'}></label>`, renderToString(esx `<label htmlFor=${'x'}></label>`))
+})
+
+test('httpEquiv', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<meta httpEquiv='content-type'>`, renderToString(esx `<meta httpEquiv='content-type'>`))
+  is(esx.renderToString `<meta httpEquiv=${'content-type'}>`, renderToString(esx `<meta httpEquiv=${'content-type'}>`))
+})
+
+test('acceptCharset', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form acceptCharset='ISO-8859-1'></form>`, renderToString(esx `<form acceptCharset='ISO-8859-1'></form>`))
+  is(esx.renderToString `<form acceptCharset=${'ISO-8859-1'}></form>`, renderToString(esx `<form acceptCharset=${'ISO-8859-1'}></form>`))
+})
+
+only('innerHTML', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form innerHTML='<p></p>'></form>`, renderToString(esx `<form innerHTML='<p></p>'></form>`))
+  is(esx.renderToString `<form innerHTML=${'<p></p>'}></form>`, renderToString(esx `<form innerHTML=${'<p></p>'}></form>`))
+})
+
+
+only('children attribute on element', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form children='test'></form>`, renderToString(esx `<form children='test'></form>`))
+  is(esx.renderToString `<form children=${'test'}></form>`, renderToString(esx `<form innerHTML=${'test'}></form>`))
+})
+
+only('defaultChecked', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<input defaultChecked foo="1">`, renderToString(esx`<input defaultChecked foo="1">`))
+  // is(esx.renderToString `<input defaultChecked>`,z renderToString(esx `<input defaultChecked>`))
+  // is(esx.renderToString `<input defaultChecked=${true}>`, renderToString(esx `<input defaultChecked=${true}>`))
+  // is(esx.renderToString `<input defaultChecked=${false}>`, renderToString(esx `<input defaultChecked=${false}>`))
+})
+
 test('dangerouslySetInnerHTML', async ({ is }) => {
   const esx = init()
   is(
@@ -1750,6 +1795,12 @@ test('dangerouslySetInnerHTML', async ({ is }) => {
       <div><div dangerouslySetInnerHTML=${{__html: '<p>test</p>'}}/><p>hi</p></div>
     `)
   )
+})
+
+only('implicit boolean attributes', async ({ is }) => {
+  const esx = init()
+  console.log(esx.renderToString `<img x/>`, (esx `<img x/>`))
+  console.log(esx.renderToString `<img x foo="1"/>`, renderToString(esx `<img x foo="1"/>`))
 })
 
 test('null value attributes', async ({ is }) => {

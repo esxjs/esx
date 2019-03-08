@@ -93,9 +93,9 @@ test('attr: class component state', async ({ same }) => {
   same(render(esx `<Component/>`), render(createElement(Component)))
 })
 
-test('attr: boolean implicit true', async ({ plan, is }) => {
+test('attr: boolean implicit true', async ({ plan, is, same }) => {
   const esx = init()
-  plan(3)
+  plan(5)
   const Component = (props) => {
     is(props.test, true)
     return esx `<img/>`
@@ -104,6 +104,8 @@ test('attr: boolean implicit true', async ({ plan, is }) => {
   render(esx `<Component test></Component>`)
   render(esx `<Component test />`)
   render(esx `<Component test/>`)
+  same(render(esx `<input checked/>`), render(createElement('input', {checked: true})))
+  same(render(esx `<input checked foo="test"/>`), render(createElement('input', {checked: true, foo: 'test'})))
 })
 
 test('latest prop wins', async ({ is }) => {
@@ -374,6 +376,16 @@ test('self closing elements', async ({ same }) => {
     )
   )
 })
+
+test('className', async ({ same }) => {
+  const esx = init()
+  same(render(esx `<img className='x'>`), render(createElement('img', {className: 'x'})))
+  same(render(esx `<img className=${'x'}>`), render(createElement('img', {className: 'x'})))
+})
+
+// test('unclosed tag', async ({throws}) => {
+//   throws(() =>  esx `<div prop='x'`, SyntaxError(''))
+// })
 
 test('unexpected token, expression in open element', async ({throws}) => {
   throws(() =>  esx `<div${'value'}></div>`, SyntaxError('ESX: Unexpected token in element. Expressions may only be spread, embedded in attributes be included as children.'))

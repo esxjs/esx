@@ -5,6 +5,7 @@ const { renderToStaticMarkup } = tryToLoad('react-dom/server')
 const escapeHtml = require('./lib/escape')
 const parse = require('./lib/parse')
 const validate = require('./lib/validate')
+const attr = require('./lib/attr')
 const {
   REACT_PROVIDER_TYPE,
   REACT_CONSUMER_TYPE,
@@ -377,6 +378,7 @@ function seekToElementEnd (fields, ix) {
   return [ix, pos]
 }
 
+
 function generate (fields, values, snips, attrPos, tree, offset = 0) {
   var valdex = 0
   var priorCmpBounds = {}
@@ -387,14 +389,14 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
     if (priorChar === '') continue
     if (priorChar === '=') {
       const { s, e } = attrPos[i + offset]
-      const key = field.slice(s, e + 1).join('')      
+      const key = field.slice(s, e).join('')
       const pos = s === 0 ? 0 : reverseSeek(field, s, /^[^\s]$/) + 1
-      if (key === 'dangerouslySetInnerHTML=') {
+      if (key === 'dangerouslySetInnerHTML') {
         replace(field, pos, e)
         const [ix, p] = seekToElementEnd(fields, i + 1)
         fields[ix][p + 1] = fields[ix][p + 1] + `\${values[${offset + valdex++}].__html}`
-      } else if (key !== 'ref=' && key !== 'key=') {
-        field[pos] = `\${this.inject(values[${offset + valdex++}], ' ${key}')}`
+      } else if (attr.reserved(key) === false) {
+        field[pos] = `\${this.inject(values[${offset + valdex++}], ' ${attr.mapping(key) + '='}')}`
         replace(field, pos + 1, e)
         if (pos > 0) replace(field, 0, seek(field, 0, /^[^\s]$/)) // trim left
       } else {
