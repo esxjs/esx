@@ -15,17 +15,15 @@
   "license": "MIT",
   "devDependencies": {
     "airtap": "^2.0.1",
-    "blue-tape": "^1.0.0",
+    "aquatap": "^1.0.0",
     "fastbench": "^1.0.1",
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
     "react-test-renderer": "^16.8.2",
-    "standard": "^12.0.1",
-    "tap": "^12.0.1"
+    "standard": "^12.0.1"
   },
   "dependencies": {
     "debug": "^4.1.0",
-    "escape-html": "^1.0.3",
-    "only-react-css-property-operations": "^1.0.1"
+    "escape-html": "^1.0.3"
   }
 }

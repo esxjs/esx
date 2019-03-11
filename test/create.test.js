@@ -1,5 +1,5 @@
 'use strict'
-const test = require('blue-tape')
+const { test } = require('aquatap')
 process.env.NODE_ENV = 'production' // stop react warnings
 const renderer = require('react-test-renderer')
 const render = (o) => renderer.create(o).toJSON()
@@ -21,6 +21,7 @@ test('interpolation', async ({ is }) => {
   is(type, 'div')
   is(props.children, value)
 })
+
 test('function component', async ({ same }) => {
   const Component = () => esx `<div>test</div>`
   const esx = init({ Component })
@@ -388,13 +389,14 @@ test('className', async ({ same }) => {
 // })
 
 test('unexpected token, expression in open element', async ({throws}) => {
+  const esx = init()
   throws(() =>  esx `<div${'value'}></div>`, SyntaxError('ESX: Unexpected token in element. Expressions may only be spread, embedded in attributes be included as children.'))
 })
 
 test('unexpected token, quotes around expression', async ({throws}) => {
   const esx = init()
   throws(
-    () => esx `<div x="${props.a}"></div>`, 
+    () => esx `<div x="${'t'}"></div>`, 
     SyntaxError('Unexpected token. Attribute expressions must not be surrounded in quotes.')
   )
 })
@@ -415,5 +417,6 @@ test('void elements must not use dangerouslySetInnerHTML', async ({throws}) => {
 
 test('unexpected token', async ({throws}) => {
   const esx = init()
+  const props = {}
   throws(() => esx `<div .${props}></div>`, SyntaxError('ESX: Unexpected token.'))
 })

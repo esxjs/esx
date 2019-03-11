@@ -1,5 +1,5 @@
 'use strict'
-const { test, only } = require('tap')
+const { test, only } = require('aquatap')
 process.env.NODE_ENV = 'production' // stop react warnings
 const { renderToString } = require('react-dom/server')
 const React = require('react')
@@ -1736,7 +1736,7 @@ test('children attribute on element', async ({ is }) => {
   is(esx.renderToString `<form children=${'test'}></form>`, renderToString(esx `<form children=${'test'}></form>`))
 })
 
-only('defaultChecked', async ({ is }) => {
+test('defaultChecked', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<input defaultChecked>`, renderToString(esx `<input defaultChecked>`))
   is(esx.renderToString `<input defaultChecked=${true}>`, renderToString(esx `<input defaultChecked=${true}>`))
