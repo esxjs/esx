@@ -413,6 +413,10 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         replace(field, pos, e)
         const [ix, p] = seekToElementEnd(fields, i + 1)
         fields[ix][p + 1] = fields[ix][p + 1] + `\${values[${offset + valdex++}].__html}`
+      } else if (key === 'children') {
+          replace(field, pos, e)
+          const [ix, p] = seekToElementEnd(fields, i + 1)
+          fields[ix][p + 1] = fields[ix][p + 1] + `\${this.inject(values[${offset + valdex++}])}`
       } else if (attr.reserved(key) === false) {
         const [ix, tPos] = seekToElementStart(fields, i)  
         const tag = fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')

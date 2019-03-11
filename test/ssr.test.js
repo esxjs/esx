@@ -1,5 +1,5 @@
 'use strict'
-const { test, only } = require('aquatap')
+const test = require('aquatap')
 process.env.NODE_ENV = 'production' // stop react warnings
 const { renderToString } = require('react-dom/server')
 const React = require('react')
@@ -1729,11 +1729,14 @@ test('innerHTML', async ({ is }) => {
   is(esx.renderToString `<form innerHTML=${'<p></p>'}></form>`, renderToString(esx `<form innerHTML=${'<p></p>'}></form>`))
 })
 
-
-test('children attribute on element', async ({ is }) => {
+test.only('children attribute on element', async ({ is }) => {
   const esx = init()
-  is(esx.renderToString `<form children='test'></form>`, renderToString(esx `<form children='test'></form>`))
+  is(esx.renderToString `<form children></form>`, renderToString(esx `<form children></form>`))
+  esx.renderToString `<form children='test'></form>`, renderToString(esx `<form children='test'></form>`)
+  esx.renderToString `<form children='<p></p>'></form>`, renderToString(esx `<form children='<p></p>'></form>`)
   is(esx.renderToString `<form children=${'test'}></form>`, renderToString(esx `<form children=${'test'}></form>`))
+  is(esx.renderToString `<form children=${'<p></p>'}></form>`, renderToString(esx `<form children=${'<p></p>'}></form>`))
+  is(esx.renderToString `<form children=${esx `<p></p>`}></form>`, renderToString(esx `<form children=${esx `<p></p>`}></form>`))
 })
 
 test('defaultChecked', async ({ is }) => {

@@ -1,5 +1,5 @@
 'use strict'
-const { test } = require('aquatap')
+const test = require('aquatap')
 process.env.NODE_ENV = 'production' // stop react warnings
 const renderer = require('react-test-renderer')
 const render = (o) => renderer.create(o).toJSON()
