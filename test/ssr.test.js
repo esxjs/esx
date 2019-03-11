@@ -1733,15 +1733,16 @@ test('innerHTML', async ({ is }) => {
 test('children attribute on element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<form children='test'></form>`, renderToString(esx `<form children='test'></form>`))
-  is(esx.renderToString `<form children=${'test'}></form>`, renderToString(esx `<form innerHTML=${'test'}></form>`))
+  is(esx.renderToString `<form children=${'test'}></form>`, renderToString(esx `<form children=${'test'}></form>`))
 })
 
-test('defaultChecked', async ({ is }) => {
+only('defaultChecked', async ({ is }) => {
   const esx = init()
-  is(esx.renderToString `<input defaultChecked foo="1">`, renderToString(esx`<input defaultChecked foo="1">`))
-  // is(esx.renderToString `<input defaultChecked>`,z renderToString(esx `<input defaultChecked>`))
-  // is(esx.renderToString `<input defaultChecked=${true}>`, renderToString(esx `<input defaultChecked=${true}>`))
-  // is(esx.renderToString `<input defaultChecked=${false}>`, renderToString(esx `<input defaultChecked=${false}>`))
+  is(esx.renderToString `<input defaultChecked>`, renderToString(esx `<input defaultChecked>`))
+  is(esx.renderToString `<input defaultChecked=${true}>`, renderToString(esx `<input defaultChecked=${true}>`))
+  is(esx.renderToString `<input defaultChecked=${false}>`, renderToString(esx `<input defaultChecked=${false}>`))
+  // deviation: react re-orders attributes (checked comes after foo), esx preserves attribute order
+  is(esx.renderToString `<input defaultChecked foo="1">`, '<input checked="" foo="1" data-reactroot=""/>')
 })
 
 test('defaultValue', async ({ is }) => {
@@ -1863,7 +1864,7 @@ test('attribute names recognized as string types are not rendered when the stati
   is(esx.renderToString `<div id="" foo="1"/>`, renderToString(esx `<div id="" foo="1"/>`))
 })
 
-only('attribute names recognized as string types are rendered when the dynamic value is an empty string', async ({ is }) => {
+test('attribute names recognized as string types are rendered when the dynamic value is an empty string', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<div id=${''}/>`, renderToString(esx `<div id=${''}/>`))
   is(esx.renderToString `<div id=${''}></div>`, renderToString(esx `<div id=${''}></div>`))
@@ -1871,7 +1872,33 @@ only('attribute names recognized as string types are rendered when the dynamic v
 })
 
 test('boolean attributes with string values are rendered with empty strings', async ({ is }) => {
-  
+  const esx = init()
+  is(esx.renderToString `<input readOnly="a string"/>`, renderToString(esx `<input readOnly="a string"/>`))
+  is(esx.renderToString `<input readOnly="a string"></input>`, renderToString(esx `<input readOnly="a string"></input>`))
+  is(esx.renderToString `<input readOnly="a string" foo="1"/>`, renderToString(esx `<input readOnly="a string" foo="1"/>`))
+  is(esx.renderToString `<input readOnly=${'a string'}/>`, renderToString(esx `<input readOnly=${'a string'}/>`))
+  is(esx.renderToString `<input readOnly=${'a string'}></input>`, renderToString(esx `<input readOnly=${'a string'}></input>`))
+  is(esx.renderToString `<input readOnly=${'a string'} foo="1"/>`, renderToString(esx `<input readOnly=${'a string'} foo="1"/>`))  
+})
+
+test('booleanish-string attributes dynamic boolean values are coerced to strings', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div draggable=${true}/>`, renderToString(esx `<div draggable=${true}/>`))
+  is(esx.renderToString `<div draggable=${true}></div>`, renderToString(esx `<div draggable=${true}></div>`))
+  is(esx.renderToString `<div draggable=${true} foo="1"/>`, renderToString(esx `<div draggable=${true} foo="1"/>`))  
+  is(esx.renderToString `<div draggable=${false}/>`, renderToString(esx `<div draggable=${false}/>`))
+  is(esx.renderToString `<div draggable=${false}></div>`, renderToString(esx `<div draggable=${false}></div>`))
+  is(esx.renderToString `<div draggable=${false} foo="1"/>`, renderToString(esx `<div draggable=${false} foo="1"/>`))  
+})
+
+test('string attributes with dynamic boolean values are not rendered', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div id=${true}/>`, renderToString(esx `<div id=${true}/>`))
+  is(esx.renderToString `<div id=${true}></div>`, renderToString(esx `<div id=${true}></div>`))
+  is(esx.renderToString `<div id=${true} foo="1"/>`, renderToString(esx `<div id=${true} foo="1"/>`))  
+  is(esx.renderToString `<div id=${false}/>`, renderToString(esx `<div id=${false}/>`))
+  is(esx.renderToString `<div id=${false}></div>`, renderToString(esx `<div id=${false}></div>`))
+  is(esx.renderToString `<div id=${false} foo="1"/>`, renderToString(esx `<div id=${false} foo="1"/>`))  
 })
 
 test('known camel case attributes are converted to special case equivlents (or not) as neccessary', async ({ is }) => {

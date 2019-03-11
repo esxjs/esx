@@ -78,13 +78,16 @@ const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
   return out[0] === ' ' ? out : ' ' + out
 }
 
-const inject = (val, key = '') => {
+const inject = (val, attrKey = '', propKey = '') => {
   if (val == null) return ''
-  const attrKey = key.length > 0 ? ` ${key}=` : ''
   const type = typeof val
   if (type === 'function' || type === 'symbol') return ''
-  if (type === 'string') {
-    val = key.length > 0 ? attrKey + '"' + escapeHtml(val) + '"' : escapeHtml(val)
+  if (type === 'boolean' && attrKey.length > 0) {
+    const serialized = attr.bool(propKey) ? attr.serializeBool(propKey, val) : ''
+    val = serialized.length > 0 ? ` ${attrKey}=${serialized}` : ''
+  } else if (type === 'string') {
+    if (attr.bool(propKey, true)) val = ''
+    val = attrKey.length > 0 ? ` ${attrKey}="${escapeHtml(val)}"` : escapeHtml(val)
   } else if (type === 'object') {
     if (val.$$typeof === REACT_ELEMENT_TYPE) {
       val = 'render' in val ? val.render(val.values) : elementToMarkup(val)
@@ -114,7 +117,7 @@ const inject = (val, key = '') => {
       }
     } else {
       debug('Objects are not valid as a React child', val)
-      val = attrKey.length > 0 ? attrKey + '"' + val + '"' : val
+      val = attrKey.length > 0 ? ` ${attrKey}="${val}"` : val
     }
   }
   return val
@@ -415,7 +418,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         const tag = fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')
         const mappedKey = attr.mapping(key, tag)
         if (mappedKey.length > 0) {
-          field[pos] = `\${this.inject(values[${offset + valdex++}], '${mappedKey}')}`
+          field[pos] = `\${this.inject(values[${offset + valdex++}], '${mappedKey}', '${key}')}`
         } else {
           // if the mapped key is empty, clear the attribute from the output and ignore the value
           replace(field, pos, e)
