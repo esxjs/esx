@@ -1774,6 +1774,12 @@ test('children attribute on element', async ({ is }) => {
   is(esx.renderToString `<form children=${'test'}></form>`, renderToString(esx `<form children=${'test'}></form>`))
   is(esx.renderToString `<form children=${'<p></p>'}></form>`, renderToString(esx `<form children=${'<p></p>'}></form>`))
   is(esx.renderToString `<form children=${esx `<p></p>`}></form>`, renderToString(esx `<form children=${esx `<p></p>`}></form>`))
+  is(esx.renderToString `<form children/>`, renderToString(esx `<form children/>`))
+  is(esx.renderToString `<form children='test'/>`, renderToString(esx `<form children='test'/>`))
+  is(esx.renderToString `<form children='<p></p>'/>`, renderToString(esx `<form children='<p></p>'/>`))
+  is(esx.renderToString `<form children=${'test'}/>`, renderToString(esx `<form children=${'test'}/>`))
+  is(esx.renderToString `<form children=${'<p></p>'}/>`, renderToString(esx `<form children=${'<p></p>'}/>`))
+  is(esx.renderToString `<form children=${esx `<p></p>`}/>`, renderToString(esx `<form children=${esx `<p></p>`}/>`))
 })
 
 test('children attribute on element that has children is ignored', async ({ is }) => {
@@ -1782,7 +1788,7 @@ test('children attribute on element that has children is ignored', async ({ is }
   is(esx.renderToString `<form children=${'test'}>child</form>`, renderToString(esx `<form children=${'test'}>child</form>`))
 })
 
-test.only('children in spread props on element', async ({ is }) => {
+test('children in spread props on element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<form ...${{children: 'test'}}></form>`, renderToString(esx `<form ...${{children: 'test'}}></form>`))
   is(esx.renderToString `<form ...${{children: '<p></p>'}}></form>`, renderToString(esx `<form ...${{children: '<p></p>'}}></form>`))
@@ -1790,6 +1796,13 @@ test.only('children in spread props on element', async ({ is }) => {
   is(esx.renderToString `<form ...${{children: 'test'}} ...${{children: 'test2'}}></form>`, renderToString(esx `<form ...${{children: 'test'}} ...${{children: 'test2'}}></form>`))
   is(esx.renderToString `<form children='test' ...${{children: 'test2'}}></form>`, renderToString(esx `<form children='test' ...${{children: 'test2'}}></form>`))
   is(esx.renderToString `<form ...${{children: 'test2'}} children='test'></form>`, renderToString(esx `<form ...${{children: 'test2'}} children='test'></form>`))
+  is(esx.renderToString `<form ...${{children: 'test'}}/>`, renderToString(esx `<form ...${{children: 'test'}}></form>`))
+  is(esx.renderToString `<form ...${{children: 'test'}}/>`, renderToString(esx `<form ...${{children: 'test'}}/>`))
+  is(esx.renderToString `<form ...${{children: '<p></p>'}}/>`, renderToString(esx `<form ...${{children: '<p></p>'}}/>`))
+  is(esx.renderToString `<form ...${{children: esx `<p></p>`}}/>`, renderToString(esx `<form ...${{children: esx `<p></p>`}}/>`))
+  is(esx.renderToString `<form ...${{children: 'test'}} ...${{children: 'test2'}}/>`, renderToString(esx `<form ...${{children: 'test'}} ...${{children: 'test2'}}/>`))
+  is(esx.renderToString `<form children='test' ...${{children: 'test2'}}/>`, renderToString(esx `<form children='test' ...${{children: 'test2'}}/>`))
+  is(esx.renderToString `<form ...${{children: 'test2'}} children='test'/>`, renderToString(esx `<form ...${{children: 'test2'}} children='test'/>`))
 })
 
 test('children in spread props on element that has children is ignored', async ({ is }) => {
@@ -1977,6 +1990,7 @@ test('boolean attributes with string values are rendered with empty strings', as
   is(esx.renderToString `<input readOnly=${'a string'}/>`, renderToString(esx `<input readOnly=${'a string'}/>`))
   is(esx.renderToString `<input readOnly=${'a string'}></input>`, renderToString(esx `<input readOnly=${'a string'}></input>`))
   is(esx.renderToString `<input readOnly=${'a string'} foo="1"/>`, renderToString(esx `<input readOnly=${'a string'} foo="1"/>`))  
+  is(esx.renderToString `<input ...${{readOnly:'a string'}}/>`, renderToString(esx `<input ...${{readOnly:'a string'}}/>`))
 })
 
 test('booleanish-string attributes dynamic boolean values are coerced to strings', async ({ is }) => {
@@ -1986,7 +2000,9 @@ test('booleanish-string attributes dynamic boolean values are coerced to strings
   is(esx.renderToString `<div draggable=${true} foo="1"/>`, renderToString(esx `<div draggable=${true} foo="1"/>`))  
   is(esx.renderToString `<div draggable=${false}/>`, renderToString(esx `<div draggable=${false}/>`))
   is(esx.renderToString `<div draggable=${false}></div>`, renderToString(esx `<div draggable=${false}></div>`))
-  is(esx.renderToString `<div draggable=${false} foo="1"/>`, renderToString(esx `<div draggable=${false} foo="1"/>`))  
+  is(esx.renderToString `<div draggable=${false} foo="1"/>`, renderToString(esx `<div draggable=${false} foo="1"/>`))
+  is(esx.renderToString `<div ...${{draggable:false}}></div>`, renderToString(esx `<div ...${{draggable:false}}></div>`))
+  is(esx.renderToString `<div ...${{draggable:true}}></div>`, renderToString(esx `<div ...${{draggable:true}}></div>`))
 })
 
 test('string attributes with dynamic boolean values are not rendered', async ({ is }) => {
@@ -1997,9 +2013,11 @@ test('string attributes with dynamic boolean values are not rendered', async ({ 
   is(esx.renderToString `<div id=${false}/>`, renderToString(esx `<div id=${false}/>`))
   is(esx.renderToString `<div id=${false}></div>`, renderToString(esx `<div id=${false}></div>`))
   is(esx.renderToString `<div id=${false} foo="1"/>`, renderToString(esx `<div id=${false} foo="1"/>`))  
+  is(esx.renderToString `<div ...${{id:true}}/>`, renderToString(esx `<div ...${{id:true}}/>`))
+  is(esx.renderToString `<div ...${{id:false}}/>`, renderToString(esx `<div ...${{id:false}}/>`))
 })
 
-test('known camel case attributes are converted to special case equivlents (or not) as neccessary', async ({ is }) => {
+test('known camel case attributes are converted to special case equivalents (or not) as neccessary', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<x acceptCharset="1"/>`, renderToString(esx`<x acceptCharset="1"/>`))
   is(esx.renderToString `<x accessKey="1"/>`, renderToString(esx`<x accessKey="1"/>`))
@@ -2601,6 +2619,213 @@ test('known camel case attributes are converted to special case equivlents (or n
   is(esx.renderToString `<x xmlSpace="1" foo="1"></x>`, renderToString(esx`<x xmlSpace="1" foo="1"></x>`))
   is(esx.renderToString `<x yChannelSelector="1" foo="1"></x>`, renderToString(esx`<x yChannelSelector="1" foo="1"></x>`))
   is(esx.renderToString `<x zoomAndPan="1" foo="1"></x>`, renderToString(esx`<x zoomAndPan="1" foo="1"></x>`))
+})
+
+test('spread props are converted to special case equivalents (or not) as neccessary', async ({ is }) => {
+  const esx = init()
+  const props = {
+    acceptCharset: 1,
+    accessKey: 1,
+    autoCapitalize: 1,
+    autoComplete: 1,
+    autoCorrect: 1,
+    autoFocus: true,
+    autoPlay: true,
+    autoSave: 1,
+    cellPadding: 1,
+    cellSpacing: 1,
+    charSet: 1,
+    classID: 1,
+    colSpan: 1,
+    contentEditable: 1,
+    contextMenu: 1,
+    controlsList: 1,
+    crossOrigin: 1,
+    dateTime: 1,
+    encType: 1,
+    formMethod: 1,
+    formAction: 1,
+    formEncType: 1,
+    formNoValidate: true,
+    formTarget: 1,
+    frameBorder: 1,
+    hrefLang: 1,
+    inputMode: 1,
+    itemID: 1,
+    itemProp: 1,
+    itemRef: 1,
+    itemScope: true,
+    itemType: 1,
+    keyParams: 1,
+    keyType: 1,
+    marginWidth: 1,
+    marginHeight: 1,
+    maxLength: 1,
+    mediaGroup: 1,
+    minLength: 1,
+    noModule: true,
+    noValidate: true,
+    playsInline: true,
+    radioGroup: 1,
+    readOnly: true,
+    referrerPolicy: 1,
+    rowSpan: 1,
+    spellCheck: 1,
+    srcDoc: 1,
+    srcLang: 1,
+    srcSet: 1,
+    tabIndex: 1,
+    useMap: 1,
+    accentHeight: 1,
+    alignmentBaseline: 1,
+    allowReorder: 1,
+    arabicForm: 1,
+    attributeName: 1,
+    attributeType: 1,
+    autoReverse: 1,
+    baseFrequency: 1,
+    baselineShift: 1,
+    baseProfile: 1,
+    calcMode: 1,
+    capHeight: 1,
+    clipPath: 1,
+    clipPathUnits: 1,
+    clipRule: 1,
+    colorInterpolation: 1,
+    colorInterpolationFilters: 1,
+    colorProfile: 1,
+    colorRendering: 1,
+    contentScriptType: 1,
+    contentStyleType: 1,
+    diffuseConstant: 1,
+    dominantBaseline: 1,
+    edgeMode: 1,
+    enableBackground: 1,
+    externalResourcesRequired: 1,
+    fillOpacity: 1,
+    fillRule: 1,
+    filterRes: 1,
+    filterUnits: 1,
+    floodOpacity: 1,
+    floodColor: 1,
+    fontFamily: 1,
+    fontSize: 1,
+    fontSizeAdjust: 1,
+    fontStretch: 1,
+    fontStyle: 1,
+    fontVariant: 1,
+    fontWeight: 1,
+    glyphName: 1,
+    glyphOrientationHorizontal: 1,
+    glyphOrientationVertical: 1,
+    glyphRef: 1,
+    gradientTransform: 1,
+    gradientUnits: 1,
+    horizAdvX: 1,
+    horizOriginX: 1,
+    imageRendering: 1,
+    kernelMatrix: 1,
+    kernelUnitLength: 1,
+    keyPoints: 1,
+    keySplines: 1,
+    keyTimes: 1,
+    lengthAdjust: 1,
+    letterSpacing: 1,
+    lightingColor: 1,
+    limitingConeAngle: 1,
+    markerEnd: 1,
+    markerHeight: 1,
+    markerMid: 1,
+    markerStart: 1,
+    markerUnits: 1,
+    markerWidth: 1,
+    maskContentUnits: 1,
+    maskUnits: 1,
+    numOctaves: 1,
+    overlinePosition: 1,
+    overlineThickness: 1,
+    paintOrder: 1,
+    panose1: 1,
+    pathLength: 1,
+    patternContentUnits: 1,
+    patternTransform: 1,
+    patternUnits: 1,
+    pointerEvents: 1,
+    pointsAtX: 1,
+    pointsAtY: 1,
+    pointsAtZ: 1,
+    preserveAlpha: 1,
+    preserveAspectRatio: 1,
+    primitiveUnits: 1,
+    refX: 1,
+    refY: 1,
+    renderingIntent: 1,
+    repeatCount: 1,
+    repeatDur: 1,
+    requiredExtensions: 1,
+    requiredFeatures: 1,
+    shapeRendering: 1,
+    specularConstant: 1,
+    specularExponent: 1,
+    spreadMethod: 1,
+    startOffset: 1,
+    stdDeviation: 1,
+    stitchTiles: 1,
+    stopColor: 1,
+    stopOpacity: 1,
+    strikethroughPosition: 1,
+    strikethroughThickness: 1,
+    strokeDasharray: 1,
+    strokeDashoffset: 1,
+    strokeLinecap: 1,
+    strokeLinejoin: 1,
+    strokeMiterlimit: 1,
+    strokeWidth: 1,
+    strokeOpacity: 1,
+    surfaceScale: 1,
+    systemLanguage: 1,
+    tableValues: 1,
+    targetX: 1,
+    targetY: 1,
+    textAnchor: 1,
+    textDecoration: 1,
+    textLength: 1,
+    textRendering: 1,
+    underlinePosition: 1,
+    underlineThickness: 1,
+    unicodeBidi: 1,
+    unicodeRange: 1,
+    unitsPerEm: 1,
+    vAlphabetic: 1,
+    vectorEffect: 1,
+    vertAdvY: 1,
+    vertOriginX: 1,
+    vertOriginY: 1,
+    vHanging: 1,
+    vIdeographic: 1,
+    viewBox: 1,
+    viewTarget: 1,
+    vMathematical: 1,
+    wordSpacing: 1,
+    writingMode: 1,
+    xChannelSelector: 1,
+    xHeight: 1,
+    xlinkActuate: 1,
+    xlinkArcrole: 1,
+    xlinkHref: 1,
+    xlinkRole: 1,
+    xlinkShow: 1,
+    xlinkTitle: 1,
+    xlinkType: 1,
+    xmlBase: 1,
+    xmlLang: 1,
+    xmlSpace: 1,
+    xmlnsXlink: 1,
+    xmlSpace: 1,
+    yChannelSelector: 1,
+    zoomAndPan: 1
+  }
+  is(esx.renderToString `<x ...${props}></x>`, renderToString(esx`<x ...${props}></x>`))
 })
 
 test('null value attributes', async ({ is }) => {

@@ -61,7 +61,8 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
     const val = typeof object[key] === 'number' ? object[key] + '' : object[key]
     const mappedKey = attr.mapping(key, tag)
     if (mappedKey.length === 0) continue
-    result += inject(val, mappedKey, key)
+    if (mappedKey === 'style') result += style(val)
+    else result += inject(val, mappedKey, key)
     if (spread[ix].before.indexOf(key) > -1) {
       dirtyBefore = true
       continue
@@ -430,7 +431,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       } else if (key === 'children') {
           replace(field, pos, e)
           const [ix, p] = seekToElementEnd(fields, i + 1)
-          if (fields[ix][p + 1] === '<') {
+          if (fields[ix][p + 1][0] === '<') {
             fields[ix][p] = fields[ix][p] + `\${this.inject(values[${offset + valdex++}])}`
           } else {
             //children attribute has clashed with element that has children,
@@ -486,7 +487,6 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       if (str[0] === '$') fields[openIx][openPos] += str
       fields[closeIx][closePos] = '`)}' + fields[closeIx][closePos]
 
-
       if (childMap.length === 0) {
         if (meta.spread[ix] && meta.spread[ix].before.indexOf('children') > -1) {
           childMap[0] = props.children
@@ -494,7 +494,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         }
         // this handles where the props object being spread has a `children`
         // attribute and there element itself has no children:
-        if (fields[closeIx][closePos + 1] === '<' || fields[closeIx][closePos + 1] === '') {
+        if (fields[closeIx][closePos + 1][0] === '<' || fields[closeIx][closePos + 1] === '') {
           // when this.spread is called, if childMap is empty (so, no children)
           // childMap[0] is set to the value of the children attribute, now we can
           // so we can inject that value from the childMap
