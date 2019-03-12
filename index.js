@@ -343,7 +343,7 @@ function seek (array, pos, rx) {
   var i = pos - 1
   const end = array.length - 1
   while (i++ < end) {
-    if (rx.test(array[i])) return i - 1
+    if (rx.test(array[i])) return i
   }
   return -1
 }
@@ -363,7 +363,7 @@ function seekToElementStart (fields, ix) {
   } while (boundary === fields[ix].length - 1 && --ix >= 0)
   
   while (ix < fields.length) {
-    var pos = seek(fields[ix], boundary, /(^[\s/>]$)|^\$/)
+    var pos = seek(fields[ix], boundary, /(^[\s/>]$)|^\$/) - 1
     if (pos === -1) pos === boundary
     if (pos !== boundary) break
     boundary = 0
@@ -378,7 +378,9 @@ function seekToElementEnd (fields, ix) {
   do {
     var pos = seek(fields[ix], 0, rx)
   } while (rx.test(fields[ix][pos]) === false && ++ix < fields.length)
-  ix--
+  
+  if (/\//.test(fields[ix][pos - 1])) pos -= 1
+
   return [ix, pos]
 }
 
@@ -412,11 +414,11 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       } else if (key === 'dangerouslySetInnerHTML') {
         replace(field, pos, e)
         const [ix, p] = seekToElementEnd(fields, i + 1)
-        fields[ix][p + 1] = fields[ix][p + 1] + `\${values[${offset + valdex++}].__html}`
+        fields[ix][p] = fields[ix][p] + `\${values[${offset + valdex++}].__html}`
       } else if (key === 'children') {
           replace(field, pos, e)
           const [ix, p] = seekToElementEnd(fields, i + 1)
-          fields[ix][p + 1] = fields[ix][p + 1] + `\${this.inject(values[${offset + valdex++}])}`
+          fields[ix][p] = fields[ix][p] + `\${this.inject(values[${offset + valdex++}])}`
       } else if (attr.reserved(key) === false) {
         const [ix, tPos] = seekToElementStart(fields, i)  
         const tag = fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')
@@ -429,7 +431,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
           valdex++ 
         }
         replace(field, pos + 1, e)
-        if (pos > 0) replace(field, 0, seek(field, 0, /^[^\s]$/)) // trim left
+        if (pos > 0) replace(field, 0, seek(field, 0, /^[^\s]$/) - 1) // trim left
       } else {
         replace(field, pos, e)
         valdex++

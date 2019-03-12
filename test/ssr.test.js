@@ -1623,6 +1623,10 @@ test('spread props and defaultProps', async ({is}) => {
   is(esx.renderToString `<Component/>`, renderToString(esx `<Component/>`))
 })
 
+
+// ALL THAT ATTR STUFF... FOR SPREAD±!!!! DO THAT.
+// also defaultValue for <select>
+
 // fail fast when Cmp not registered
 // benchmark for props spread
 // cloneElement (+ benchmark)
@@ -1633,23 +1637,31 @@ test('spread props and defaultProps', async ({is}) => {
 // no root el scenario (insert fragments?)
 // special attr - also special attr in spread props
 
-test('self closing void elements do not render with closing tag', async ({ is }) => {
+test.only('self closing void elements do not render with closing tag', async ({ is }) => {
   const esx = init()
-  is(esx.renderToString `<area/>`, renderToString(esx`<area/>`))
-  is(esx.renderToString `<base/>`, renderToString(esx`<base/>`))
-  is(esx.renderToString `<br/>`, renderToString(esx`<br/>`))
-  is(esx.renderToString `<col/>`, renderToString(esx`<col/>`))
-  is(esx.renderToString `<embed/>`, renderToString(esx`<embed/>`))
-  is(esx.renderToString `<hr/>`, renderToString(esx`<hr/>`))
-  is(esx.renderToString `<img/>`, renderToString(esx`<img/>`))
-  is(esx.renderToString `<input/>`, renderToString(esx`<input/>`))
-  is(esx.renderToString `<link/>`, renderToString(esx`<link/>`))
-  is(esx.renderToString `<meta/>`, renderToString(esx`<meta/>`))
-  is(esx.renderToString `<param/>`, renderToString(esx`<param/>`))
-  is(esx.renderToString `<source/>`, renderToString(esx`<source/>`))
-  is(esx.renderToString `<track/>`, renderToString(esx`<track/>`))
-  is(esx.renderToString `<wbr/>`, renderToString(esx`<wbr/>`))
+  // is(esx.renderToString `<area/>`, renderToString(esx`<area/>`))
+  // is(esx.renderToString `<base/>`, renderToString(esx`<base/>`))
+  // is(esx.renderToString `<br/>`, renderToString(esx`<br/>`))
+  // is(esx.renderToString `<col/>`, renderToString(esx`<col/>`))
+  // is(esx.renderToString `<embed/>`, renderToString(esx`<embed/>`))
+  // is(esx.renderToString `<hr/>`, renderToString(esx`<hr/>`))
+  // is(esx.renderToString `<img/>`, renderToString(esx`<img/>`))
+  // is(esx.renderToString `<input/>`, renderToString(esx`<input/>`))
+  // is(esx.renderToString `<link/>`, renderToString(esx`<link/>`))
+  // is(esx.renderToString `<meta/>`, renderToString(esx`<meta/>`))
+  // is(esx.renderToString `<param/>`, renderToString(esx`<param/>`))
+  // is(esx.renderToString `<source/>`, renderToString(esx`<source/>`))
+  // is(esx.renderToString `<track/>`, renderToString(esx`<track/>`))
+  // is(esx.renderToString `<wbr/>`, renderToString(esx`<wbr/>`))
+  // is(esx.renderToString `<img a="1"/>`, renderToString(esx`<img a="1"/>`))
+  // is(esx.renderToString `<img a=${'1'}/>`, renderToString(esx`<img a=${'1'}/>`))
+  // is(esx.renderToString `<img ...${{a: 1}}/>`, renderToString(esx`<img ...${{a: 1}}/>`))
+  is(
+    esx.renderToString `<img ...${{a: 1}} ...${{a: 3}}/>`,
+    renderToString(esx `<img ...${{a: 1}} ...${{a: 3}}/>`)
+  )
 })
+
 test('unclosed void elements render as self closing', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<area>`, renderToString(esx`<area>`))
@@ -1729,7 +1741,37 @@ test('innerHTML', async ({ is }) => {
   is(esx.renderToString `<form innerHTML=${'<p></p>'}></form>`, renderToString(esx `<form innerHTML=${'<p></p>'}></form>`))
 })
 
-test.only('children attribute on element', async ({ is }) => {
+
+test('className in spreaded object', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<img ...${{a: 'x'}}>`, renderToString(esx `<img ...${{a: 'x'}}/>`))
+})
+
+test('htmlFor in spreaded object', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<label htmlFor='x'></label>`, renderToString(esx `<label htmlFor='x'></label>`))
+  is(esx.renderToString `<label htmlFor=${'x'}></label>`, renderToString(esx `<label htmlFor=${'x'}></label>`))
+})
+
+test('httpEquiv in spreaded object', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<meta httpEquiv='content-type'>`, renderToString(esx `<meta httpEquiv='content-type'>`))
+  is(esx.renderToString `<meta httpEquiv=${'content-type'}>`, renderToString(esx `<meta httpEquiv=${'content-type'}>`))
+})
+
+test('acceptCharset in spreaded object', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form acceptCharset='ISO-8859-1'></form>`, renderToString(esx `<form acceptCharset='ISO-8859-1'></form>`))
+  is(esx.renderToString `<form acceptCharset=${'ISO-8859-1'}></form>`, renderToString(esx `<form acceptCharset=${'ISO-8859-1'}></form>`))
+})
+
+test('innerHTML in spreaded object', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form innerHTML='<p></p>'></form>`, renderToString(esx `<form innerHTML='<p></p>'></form>`))
+  is(esx.renderToString `<form innerHTML=${'<p></p>'}></form>`, renderToString(esx `<form innerHTML=${'<p></p>'}></form>`))
+})
+
+test('children attribute on element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<form children></form>`, renderToString(esx `<form children></form>`))
   esx.renderToString `<form children='test'></form>`, renderToString(esx `<form children='test'></form>`)
