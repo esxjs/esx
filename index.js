@@ -30,7 +30,7 @@ const elementToMarkup = (el) => {
   return result
 }
 
-const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
+const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAfter = '') => {
   const object = values[ix]
   const keys = Object.keys(object)
   const { spread, spreadIndices } = meta
@@ -38,7 +38,6 @@ const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
   var priorSpreadKeys = spreadCount > 0 && new Set()
   var result = ''
   var dirtyBefore = false
-
   if (spreadCount > 0) {
     for (var si = 0; si < spreadCount; si++) {
       const sIx = spreadIndices[si]
@@ -47,18 +46,29 @@ const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
     }
     spread[ix].dynamic = keys
   }
+
   for (var k in keys) {
     const key = keys[k]
+    if (attr.reserved(key)) continue
     if (spread[ix].after.indexOf(key) > -1) continue
+    if (key === 'children') {
+      const overrideChildren = spread[ix].before.indexOf('children') > -1 ||
+        priorSpreadKeys && priorSpreadKeys.has('children') ||
+        childMap.length === 0
+      if (overrideChildren) childMap[0] = object[key]
+      continue
+    }
     const val = typeof object[key] === 'number' ? object[key] + '' : object[key]
-    result += inject(val, key)
+    const mappedKey = attr.mapping(key, tag)
+    if (mappedKey.length === 0) continue
+    result += inject(val, mappedKey, key)
     if (spread[ix].before.indexOf(key) > -1) {
       dirtyBefore = true
       continue
     }
     if (priorSpreadKeys && priorSpreadKeys.has(key)) {
       dirtyBefore = true
-    } 
+    }
   }
   
   if (dirtyBefore) {
@@ -66,16 +76,18 @@ const spread = (ix, [,props,,meta], values, strBefore = '', strAfter = '') => {
     for (var i = 0; i < spread[ix].before.length; i++) {
       const key = spread[ix].before[i]
       if (keys.indexOf(key) > -1) continue
+      const mappedKey = attr.mapping(key, tag)
+      if (mappedKey.length === 0) continue
       if (props[key] === marker) {
-        strBefore += inject(values[meta.dynAttrs[key]], key)
+        strBefore += inject(values[meta.dynAttrs[key]], mappedKey, key)
       } else {
-       strBefore += inject(props[key], key)
+       strBefore += inject(props[key], mappedKey, key)
       }
     }
   }
   if (strAfter.length > 0 && strAfter[0] !== ' ') strAfter = ' ' + strAfter
   const out = `${strBefore}${result}${strAfter}`
-  return out[0] === ' ' ? out : ' ' + out
+  return (out.length === 0 || out[0] === ' ') ? out : ' ' + out
 }
 
 const inject = (val, attrKey = '', propKey = '') => {
@@ -418,7 +430,13 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       } else if (key === 'children') {
           replace(field, pos, e)
           const [ix, p] = seekToElementEnd(fields, i + 1)
-          fields[ix][p] = fields[ix][p] + `\${this.inject(values[${offset + valdex++}])}`
+          if (fields[ix][p + 1] === '<') {
+            fields[ix][p] = fields[ix][p] + `\${this.inject(values[${offset + valdex++}])}`
+          } else {
+            //children attribute has clashed with element that has children,
+            //increase valdex to ignore attribute
+            valdex++
+          }
       } else if (attr.reserved(key) === false) {
         const [ix, tPos] = seekToElementStart(fields, i)  
         const tag = fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')
@@ -444,7 +462,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         item = snips[--ix]
       }
       item = item[0]
-      const [ tag, , , meta] = item
+      const [ tag, props, childMap, meta] = item
       if (typeof tag === 'function') {
         // setting the field to a space instead of ellipsis
         // and rewinding i allows for a second pass where it's
@@ -462,10 +480,27 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       if (field[field.length - 2] === ' ') field[field.length - 2] = ''
 
       field[field.length - 1] = '`, `'
-      const str = fields[openIx][openPos]  
+      const str = fields[openIx][openPos]
+
       fields[openIx][openPos] = `\${this.spread(${offset + valdex++}, this.snips[${ix}][0], values, \``
       if (str[0] === '$') fields[openIx][openPos] += str
       fields[closeIx][closePos] = '`)}' + fields[closeIx][closePos]
+
+
+      if (childMap.length === 0) {
+        if (meta.spread[ix] && meta.spread[ix].before.indexOf('children') > -1) {
+          childMap[0] = props.children
+          replace(fields[closeIx], closePos + 1, seek(fields[closeIx], 0, /</) - 1)
+        }
+        // this handles where the props object being spread has a `children`
+        // attribute and there element itself has no children:
+        if (fields[closeIx][closePos + 1] === '<' || fields[closeIx][closePos + 1] === '') {
+          // when this.spread is called, if childMap is empty (so, no children)
+          // childMap[0] is set to the value of the children attribute, now we can
+          // so we can inject that value from the childMap
+          fields[closeIx][closePos + 1] = `\${this.inject(this.snips[${ix}][0][2][0])}${fields[closeIx][closePos + 1]}`
+        }
+      }
     } else if (valdex < values.length) {
       const output = `\${this.inject(values[${offset + valdex++}])}`
       const prefix = (priorChar !== '>') ?

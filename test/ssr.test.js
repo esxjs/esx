@@ -1637,25 +1637,25 @@ test('spread props and defaultProps', async ({is}) => {
 // no root el scenario (insert fragments?)
 // special attr - also special attr in spread props
 
-test.only('self closing void elements do not render with closing tag', async ({ is }) => {
+test('self closing void elements do not render with closing tag', async ({ is }) => {
   const esx = init()
-  // is(esx.renderToString `<area/>`, renderToString(esx`<area/>`))
-  // is(esx.renderToString `<base/>`, renderToString(esx`<base/>`))
-  // is(esx.renderToString `<br/>`, renderToString(esx`<br/>`))
-  // is(esx.renderToString `<col/>`, renderToString(esx`<col/>`))
-  // is(esx.renderToString `<embed/>`, renderToString(esx`<embed/>`))
-  // is(esx.renderToString `<hr/>`, renderToString(esx`<hr/>`))
-  // is(esx.renderToString `<img/>`, renderToString(esx`<img/>`))
-  // is(esx.renderToString `<input/>`, renderToString(esx`<input/>`))
-  // is(esx.renderToString `<link/>`, renderToString(esx`<link/>`))
-  // is(esx.renderToString `<meta/>`, renderToString(esx`<meta/>`))
-  // is(esx.renderToString `<param/>`, renderToString(esx`<param/>`))
-  // is(esx.renderToString `<source/>`, renderToString(esx`<source/>`))
-  // is(esx.renderToString `<track/>`, renderToString(esx`<track/>`))
-  // is(esx.renderToString `<wbr/>`, renderToString(esx`<wbr/>`))
-  // is(esx.renderToString `<img a="1"/>`, renderToString(esx`<img a="1"/>`))
-  // is(esx.renderToString `<img a=${'1'}/>`, renderToString(esx`<img a=${'1'}/>`))
-  // is(esx.renderToString `<img ...${{a: 1}}/>`, renderToString(esx`<img ...${{a: 1}}/>`))
+  is(esx.renderToString `<area/>`, renderToString(esx`<area/>`))
+  is(esx.renderToString `<base/>`, renderToString(esx`<base/>`))
+  is(esx.renderToString `<br/>`, renderToString(esx`<br/>`))
+  is(esx.renderToString `<col/>`, renderToString(esx`<col/>`))
+  is(esx.renderToString `<embed/>`, renderToString(esx`<embed/>`))
+  is(esx.renderToString `<hr/>`, renderToString(esx`<hr/>`))
+  is(esx.renderToString `<img/>`, renderToString(esx`<img/>`))
+  is(esx.renderToString `<input/>`, renderToString(esx`<input/>`))
+  is(esx.renderToString `<link/>`, renderToString(esx`<link/>`))
+  is(esx.renderToString `<meta/>`, renderToString(esx`<meta/>`))
+  is(esx.renderToString `<param/>`, renderToString(esx`<param/>`))
+  is(esx.renderToString `<source/>`, renderToString(esx`<source/>`))
+  is(esx.renderToString `<track/>`, renderToString(esx`<track/>`))
+  is(esx.renderToString `<wbr/>`, renderToString(esx`<wbr/>`))
+  is(esx.renderToString `<img a="1"/>`, renderToString(esx`<img a="1"/>`))
+  is(esx.renderToString `<img a=${'1'}/>`, renderToString(esx`<img a=${'1'}/>`))
+  is(esx.renderToString `<img ...${{a: 1}}/>`, renderToString(esx`<img ...${{a: 1}}/>`))
   is(
     esx.renderToString `<img ...${{a: 1}} ...${{a: 3}}/>`,
     renderToString(esx `<img ...${{a: 1}} ...${{a: 3}}/>`)
@@ -1717,10 +1717,20 @@ test('className', async ({ is }) => {
   is(esx.renderToString `<img className=${'x'}>`, renderToString(esx `<img className=${'x'}>`))
 })
 
+test('className in spread props', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<img ...${{className: 'x'}}>`, renderToString(esx `<img ...${{className: 'x'}}/>`))
+})
+
 test('htmlFor', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<label htmlFor='x'></label>`, renderToString(esx `<label htmlFor='x'></label>`))
   is(esx.renderToString `<label htmlFor=${'x'}></label>`, renderToString(esx `<label htmlFor=${'x'}></label>`))
+})
+
+test('htmlFor in spread props', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<label ...${{htmlFor:'x'}}></label>`, renderToString(esx `<label ...${{htmlFor:'x'}}></label>`))
 })
 
 test('httpEquiv', async ({ is }) => {
@@ -1729,10 +1739,20 @@ test('httpEquiv', async ({ is }) => {
   is(esx.renderToString `<meta httpEquiv=${'content-type'}>`, renderToString(esx `<meta httpEquiv=${'content-type'}>`))
 })
 
+test('httpEquiv in spread props', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<meta ...${{httpEquiv:'content-type'}}>`, renderToString(esx `<meta ...${{httpEquiv:'content-type'}}>`))
+})
+
 test('acceptCharset', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<form acceptCharset='ISO-8859-1'></form>`, renderToString(esx `<form acceptCharset='ISO-8859-1'></form>`))
   is(esx.renderToString `<form acceptCharset=${'ISO-8859-1'}></form>`, renderToString(esx `<form acceptCharset=${'ISO-8859-1'}></form>`))
+})
+
+test('acceptCharset in spread props', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form ...${{acceptCharset:'ISO-8859-1'}}></form>`, renderToString(esx `<form ...${{acceptCharset:'ISO-8859-1'}}></form>`))
 })
 
 test('innerHTML', async ({ is }) => {
@@ -1741,44 +1761,43 @@ test('innerHTML', async ({ is }) => {
   is(esx.renderToString `<form innerHTML=${'<p></p>'}></form>`, renderToString(esx `<form innerHTML=${'<p></p>'}></form>`))
 })
 
-
-test('className in spreaded object', async ({ is }) => {
+test('innerHTML in spread props', async ({ is }) => {
   const esx = init()
-  is(esx.renderToString `<img ...${{a: 'x'}}>`, renderToString(esx `<img ...${{a: 'x'}}/>`))
-})
-
-test('htmlFor in spreaded object', async ({ is }) => {
-  const esx = init()
-  is(esx.renderToString `<label htmlFor='x'></label>`, renderToString(esx `<label htmlFor='x'></label>`))
-  is(esx.renderToString `<label htmlFor=${'x'}></label>`, renderToString(esx `<label htmlFor=${'x'}></label>`))
-})
-
-test('httpEquiv in spreaded object', async ({ is }) => {
-  const esx = init()
-  is(esx.renderToString `<meta httpEquiv='content-type'>`, renderToString(esx `<meta httpEquiv='content-type'>`))
-  is(esx.renderToString `<meta httpEquiv=${'content-type'}>`, renderToString(esx `<meta httpEquiv=${'content-type'}>`))
-})
-
-test('acceptCharset in spreaded object', async ({ is }) => {
-  const esx = init()
-  is(esx.renderToString `<form acceptCharset='ISO-8859-1'></form>`, renderToString(esx `<form acceptCharset='ISO-8859-1'></form>`))
-  is(esx.renderToString `<form acceptCharset=${'ISO-8859-1'}></form>`, renderToString(esx `<form acceptCharset=${'ISO-8859-1'}></form>`))
-})
-
-test('innerHTML in spreaded object', async ({ is }) => {
-  const esx = init()
-  is(esx.renderToString `<form innerHTML='<p></p>'></form>`, renderToString(esx `<form innerHTML='<p></p>'></form>`))
-  is(esx.renderToString `<form innerHTML=${'<p></p>'}></form>`, renderToString(esx `<form innerHTML=${'<p></p>'}></form>`))
+  is(esx.renderToString `<form ...${{innerHTML: '<p></p>'}}></form>`, renderToString(esx `<form ...${{innerHTML: '<p></p>'}}></form>`))
 })
 
 test('children attribute on element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<form children></form>`, renderToString(esx `<form children></form>`))
-  esx.renderToString `<form children='test'></form>`, renderToString(esx `<form children='test'></form>`)
-  esx.renderToString `<form children='<p></p>'></form>`, renderToString(esx `<form children='<p></p>'></form>`)
+  is(esx.renderToString `<form children='test'></form>`, renderToString(esx `<form children='test'></form>`))
+  is(esx.renderToString `<form children='<p></p>'></form>`, renderToString(esx `<form children='<p></p>'></form>`))
   is(esx.renderToString `<form children=${'test'}></form>`, renderToString(esx `<form children=${'test'}></form>`))
   is(esx.renderToString `<form children=${'<p></p>'}></form>`, renderToString(esx `<form children=${'<p></p>'}></form>`))
   is(esx.renderToString `<form children=${esx `<p></p>`}></form>`, renderToString(esx `<form children=${esx `<p></p>`}></form>`))
+})
+
+test('children attribute on element that has children is ignored', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form children='test'>child</form>`, renderToString(esx `<form children='test'>child</form>`))
+  is(esx.renderToString `<form children=${'test'}>child</form>`, renderToString(esx `<form children=${'test'}>child</form>`))
+})
+
+test.only('children in spread props on element', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form ...${{children: 'test'}}></form>`, renderToString(esx `<form ...${{children: 'test'}}></form>`))
+  is(esx.renderToString `<form ...${{children: '<p></p>'}}></form>`, renderToString(esx `<form ...${{children: '<p></p>'}}></form>`))
+  is(esx.renderToString `<form ...${{children: esx `<p></p>`}}></form>`, renderToString(esx `<form ...${{children: esx `<p></p>`}}></form>`))
+  is(esx.renderToString `<form ...${{children: 'test'}} ...${{children: 'test2'}}></form>`, renderToString(esx `<form ...${{children: 'test'}} ...${{children: 'test2'}}></form>`))
+  is(esx.renderToString `<form children='test' ...${{children: 'test2'}}></form>`, renderToString(esx `<form children='test' ...${{children: 'test2'}}></form>`))
+  is(esx.renderToString `<form ...${{children: 'test2'}} children='test'></form>`, renderToString(esx `<form ...${{children: 'test2'}} children='test'></form>`))
+})
+
+test('children in spread props on element that has children is ignored', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<form ...${{children: 'test'}}>child</form>`, renderToString(esx `<form ...${{children: 'test'}}>child</form>`))
+  is(esx.renderToString `<form ...${{children: '<p></p>'}}>child</form>`, renderToString(esx `<form ...${{children: '<p></p>'}}>child</form>`))
+  is(esx.renderToString `<form ...${{children: esx `<p></p>`}}>child</form>`, renderToString(esx `<form ...${{children: esx `<p></p>`}}>child</form>`))
+  is(esx.renderToString `<form ...${{children: 'test'}} ...${{children: 'test2'}}>child</form>`, renderToString(esx `<form ...${{children: 'test'}} ...${{children: 'test2'}}>child</form>`))
 })
 
 test('defaultChecked', async ({ is }) => {
@@ -1788,6 +1807,12 @@ test('defaultChecked', async ({ is }) => {
   is(esx.renderToString `<input defaultChecked=${false}>`, renderToString(esx `<input defaultChecked=${false}>`))
   // deviation: react re-orders attributes (checked comes after foo), esx preserves attribute order
   is(esx.renderToString `<input defaultChecked foo="1">`, '<input checked="" foo="1" data-reactroot=""/>')
+})
+
+test('defaultChecked in spread props', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<input ...${{defaultChecked: true}}>`, renderToString(esx `<input ...${{defaultChecked: true}}>`))
+  is(esx.renderToString `<input ...${{defaultChecked: false}}>`, renderToString(esx `<input ...${{defaultChecked: false}}>`))
 })
 
 test('defaultValue', async ({ is }) => {
@@ -1803,10 +1828,26 @@ test('defaultValue', async ({ is }) => {
   is(esx.renderToString `<div defaultValue=${'1'}/>`, renderToString(esx`<div defaultValue=${'1'}/>`))
 })
 
+test('defaultValue in spread props', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<input ...${{defaultValue: '1'}}/>`, renderToString(esx`<input ...${{defaultValue: '1'}}/>`))
+  // is(esx.renderToString `<textarea defaultValue="1"/>`, renderToString(esx`<textarea defaultValue="1"/>`))
+  // is(
+  //   esx.renderToString `<select defaultValue="1"><option value="1"></option><option value="2"></option></select>`, 
+  //   renderToString(esx`<select defaultValue="1"><option value="1"></option><option value="2"></option></select>`)
+  // )
+  is(esx.renderToString `<div ...${{defaultValue:'1'}}/>`, renderToString(esx`<div ...${{defaultValue: '1'}}/>`))
+})
+
 test('suppressContentEditableWarning', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<div suppressContentEditableWarning=""></div>`, renderToString(esx `<div suppressContentEditableWarning=""></div>`))
   is(esx.renderToString `<div suppressContentEditableWarning=${true}></div>`, renderToString(esx `<div suppressContentEditableWarning=${true}></div>`))
+})
+
+test('suppressContentEditableWarning in spread props', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div ...${{suppressContentEditableWarning: true}}></div>`, renderToString(esx `<div ...${{suppressContentEditableWarning: true}}></div>`))
 })
 
 test('suppressHydrationWarning', async ({ is }) => {
@@ -1815,11 +1856,23 @@ test('suppressHydrationWarning', async ({ is }) => {
   is(esx.renderToString `<div suppressHydrationWarning=${true}></div>`, renderToString(esx `<div suppressHydrationWarning=${true}></div>`))
 })
 
+test('suppressHydrationWarning in spread props', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div ...${{suppressHydrationWarning: true}}></div>`, renderToString(esx `<div ...${{suppressHydrationWarning: true}}></div>`))
+})
+
 test('style', async ({ is }) => {
   const esx = init()
   const style = {color: 'red',display: '-ms-grid', '-o-transition': 'all .25s', userSelect: 'none'}
   is(esx.renderToString `<div style=${style}></div>`, renderToString(esx `<div style=${style}></div>`))
   is(esx.renderToString `<div style=${null}></div>`, renderToString(esx `<div style=${null}></div>`))
+})
+
+test('style in spread prop', async ({ is }) => {
+  const esx = init()
+  const style = {color: 'red',display: '-ms-grid', '-o-transition': 'all .25s', userSelect: 'none'}
+  is(esx.renderToString `<div ...${{style}}></div>`, renderToString(esx `<div ...${{style}}></div>`))
+  is(esx.renderToString `<div ...${{style: null}}></div>`, renderToString(esx `<div ...${{style: null}}></div>`))
 })
 
 test('style throws error when not an object', async ({ throws }) => {
