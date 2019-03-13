@@ -408,6 +408,10 @@ test('void elements must not have children', async ({throws}) => {
   throws(() => esx `<img><div>hi</div></img>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
   esx.register({Cmp() { return esx `<p>hi</p>`}})
   throws(() => esx `<img><Cmp/></img>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+  throws(() => esx `<img children='child'/>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+  throws(() => esx `<img children='child'>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+  throws(() => esx `<img children=${'child'}/>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
+  throws(() => esx `<img children=${'child'}>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
 })
 
 test('void elements must not use dangerouslySetInnerHTML', async ({throws}) => {

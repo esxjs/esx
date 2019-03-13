@@ -487,13 +487,13 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       if (str[0] === '$') fields[openIx][openPos] += str
       fields[closeIx][closePos] = '`)}' + fields[closeIx][closePos]
 
-      if (childMap.length === 0) {
+      if (VOID_ELEMENTS.has(tag) === false && childMap.length === 0) {
         if (meta.spread[ix] && meta.spread[ix].before.indexOf('children') > -1) {
           childMap[0] = props.children
           replace(fields[closeIx], closePos + 1, seek(fields[closeIx], 0, /</) - 1)
         }
-        // this handles where the props object being spread has a `children`
-        // attribute and there element itself has no children:
+        // this handles where the props object being spread MAY HAVE a `children`
+        // property and the element itself has no children:
         if (fields[closeIx][closePos + 1][0] === '<' || fields[closeIx][closePos + 1] === '') {
           // when this.spread is called, if childMap is empty (so, no children)
           // childMap[0] is set to the value of the children attribute, now we can
