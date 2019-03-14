@@ -1813,6 +1813,14 @@ test('children in spread props on element that has children is ignored', async (
   is(esx.renderToString `<form ...${{children: 'test'}} ...${{children: 'test2'}}>child</form>`, renderToString(esx `<form ...${{children: 'test'}} ...${{children: 'test2'}}>child</form>`))
 })
 
+test.only('spread props with children, then re-rendered with spread props without children on element', async ({ is }) => {
+  const esx = init()
+  const rdr = (props) => esx.renderToString `<form ...${props}></form>`
+  is(rdr({children: 'test'}), renderToString(esx `<form ...${{children: 'test'}}></form>`))
+  is(rdr({}), renderToString(esx `<form></form>`))
+  is(rdr({children: 'test'}), renderToString(esx `<form ...${{children: 'test'}}></form>`))
+})
+
 test('defaultChecked', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<input defaultChecked>`, renderToString(esx `<input defaultChecked>`))
@@ -3253,6 +3261,16 @@ test('deviation: esx.renderToString spread duplicate props are rendered', async 
     esx.renderToString `<img b='a' b=${'x'} b='y'/>`,
     '<img b="a" b="x" b="y" data-reactroot=""/>'
   )
+})
+
+test('deviation: children in spread props on void element is ignored', async ({ doesNotThrow }) => {
+  const esx = init()
+  // rather than crashing the server when a dynamically inserted object may, at any point, 
+  // contain a `children` property that it's spread onto a void element, 
+  // we ignore and allow it to render without the children. If the props are spread client-side
+  // it will be throw there by react, and be much easier to debug. 
+  // reasons for deviation: Server stays up, easier to debug, less spreading overhead.
+  doesNotThrow(() => esx.renderToString `<input ...${{children: 'test'}}>`)
 })
 
 function childValidator (is) {

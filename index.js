@@ -497,8 +497,10 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         if (fields[closeIx][closePos + 1][0] === '<' || fields[closeIx][closePos + 1] === '') {
           // when this.spread is called, if childMap is empty (so, no children)
           // childMap[0] is set to the value of the children attribute, now we can
-          // so we can inject that value from the childMap
-          fields[closeIx][closePos + 1] = `\${this.inject(this.snips[${ix}][0][2][0])}${fields[closeIx][closePos + 1]}`
+          // so we can inject that value from the childMap 
+          // we shift the childMap so that the value is cleared, so that future renderings
+          // don't have old state
+          fields[closeIx][closePos + 1] = `\${this.inject(this.snips[${ix}][0][2].shift())}${fields[closeIx][closePos + 1]}`
         }
       }
     } else if (valdex < values.length) {
