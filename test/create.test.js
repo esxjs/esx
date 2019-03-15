@@ -419,8 +419,17 @@ test('void elements must not use dangerouslySetInnerHTML', async ({throws}) => {
   throws(() => esx `<img dangerouslySetInnerHTML=${{__html: '<p>no</p>'}}/>`, SyntaxError('ESX: Void elements must not have children or use dangerouslySetInnerHTML.'))
 })
 
+test('elements can only have either children or dangerouslySetInnerHTML', async ({throws}) => {
+  const esx = init()
+  throws(() => esx `<div children='no' dangerouslySetInnerHTML=${{__html: '<p>no</p>'}}></div>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
+  throws(() => esx `<div dangerouslySetInnerHTML=${{__html: '<p>no</p>'}} children='no'></div>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
+  throws(() => esx `<div dangerouslySetInnerHTML=${{__html: '<p>no</p>'}}>${'no'}</div>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
+  throws(() => esx `<div dangerouslySetInnerHTML=${{__html: '<p>no</p>'}}>no</div>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
+})
+
 test('unexpected token', async ({throws}) => {
   const esx = init()
   const props = {}
   throws(() => esx `<div .${props}></div>`, SyntaxError('ESX: Unexpected token.'))
 })
+

@@ -51,11 +51,23 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
     const key = keys[k]
     if (attr.reserved(key)) continue
     if (spread[ix].after.indexOf(key) > -1) continue
-    if (key === 'children') {
-      const overrideChildren = spread[ix].before.indexOf('children') > -1 ||
-        priorSpreadKeys && priorSpreadKeys.has('children') ||
+    const keyIsDSIH = key === 'dangerouslySetInnerHTML'
+    if (keyIsDSIH || key === 'children') {
+      const forbiddenKey = keyIsDSIH ? 'children' : 'dangerouslySetInnerHTML'
+      const collision = spread[ix].before.indexOf(forbiddenKey) > -1 || 
+        spread[ix].after.indexOf(forbiddenKey) > -1 ||
+        priorSpreadKeys.has(forbiddenKey) ||
+        forbiddenKey in object ||
+        keyIsDSIH && childMap.length > 0
+      if (collision) {
+        throw SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.')
+      }
+      const overrideChildren = spread[ix].before.indexOf(key) > -1 ||
+        priorSpreadKeys && priorSpreadKeys.has(key) ||
         childMap.length === 0
-      if (overrideChildren) childMap[0] = object[key]
+      if (overrideChildren) childMap[0] = key === 'children' ? 
+        inject(object[key]) : 
+        object[key].__html
       continue
     }
     const val = typeof object[key] === 'number' ? object[key] + '' : object[key]
@@ -369,14 +381,14 @@ function reverseSeek (array, pos, rx) {
 }
 
 
-function seekToElementStart (fields, ix) {
+function seekToEndOfTagName (fields, ix) {
   do {
     var boundary = reverseSeek(fields[ix], fields[ix].length - 1, /</)
     if (boundary === -1) boundary = fields[ix].length - 1
   } while (boundary === fields[ix].length - 1 && --ix >= 0)
   
   while (ix < fields.length) {
-    var pos = seek(fields[ix], boundary, /(^[\s/>]$)|^\$/) - 1
+    var pos = seek(fields[ix], boundary, /(^[\s/>]$)|^\$|^$/) - 1
     if (pos === -1) pos === boundary
     if (pos !== boundary) break
     boundary = 0
@@ -386,7 +398,7 @@ function seekToElementStart (fields, ix) {
   return [ix, pos]
 }
 
-function seekToElementEnd (fields, ix) {
+function seekToEndOfOpeningTag (fields, ix) {
   const rx = /\/?>/
   do {
     var pos = seek(fields[ix], 0, rx)
@@ -426,11 +438,11 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         field[s] = `\${this.style(values[${offset + valdex++}])}`
       } else if (key === 'dangerouslySetInnerHTML') {
         replace(field, pos, e)
-        const [ix, p] = seekToElementEnd(fields, i + 1)
-        fields[ix][p] = fields[ix][p] + `\${values[${offset + valdex++}].__html}`
+        const [ix, p] = seekToEndOfOpeningTag(fields, i + 1)
+        fields[ix][p + 1] = `\${values[${offset + valdex++}].__html}${fields[ix][p + 1]}`
       } else if (key === 'children') {
           replace(field, pos, e)
-          const [ix, p] = seekToElementEnd(fields, i + 1)
+          const [ix, p] = seekToEndOfOpeningTag(fields, i + 1)
           if (fields[ix][p + 1][0] === '<') {
             fields[ix][p] = fields[ix][p] + `\${this.inject(values[${offset + valdex++}])}`
           } else {
@@ -439,7 +451,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
             valdex++
           }
       } else if (attr.reserved(key) === false) {
-        const [ix, tPos] = seekToElementStart(fields, i)  
+        const [ix, tPos] = seekToEndOfTagName(fields, i)  
         const tag = fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')
         const mappedKey = attr.mapping(key, tag)
         if (mappedKey.length > 0) {
@@ -475,18 +487,17 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         i--
         continue
       }
-      const [openIx, openPos] = seekToElementStart(fields, i)
-      const [closeIx, closePos] = seekToElementEnd(fields, i + 1)
+      const [openIx, openPos] = seekToEndOfTagName(fields, i)
+      const [closeIx, closePos] = seekToEndOfOpeningTag(fields, i + 1)
 
       if (field[field.length - 2] === ' ') field[field.length - 2] = ''
 
       field[field.length - 1] = '`, `'
       const str = fields[openIx][openPos]
-
       fields[openIx][openPos] = `\${this.spread(${offset + valdex++}, this.snips[${ix}][0], values, \``
       if (str[0] === '$') fields[openIx][openPos] += str
+      
       fields[closeIx][closePos] = '`)}' + fields[closeIx][closePos]
-
       if (VOID_ELEMENTS.has(tag) === false && childMap.length === 0) {
         if (meta.spread[ix] && meta.spread[ix].before.indexOf('children') > -1) {
           childMap[0] = props.children
@@ -500,7 +511,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
           // so we can inject that value from the childMap 
           // we shift the childMap so that the value is cleared, so that future renderings
           // don't have old state
-          fields[closeIx][closePos + 1] = `\${this.inject(this.snips[${ix}][0][2].shift())}${fields[closeIx][closePos + 1]}`
+          fields[closeIx][closePos + 1] = `\${this.snips[${ix}][0][2].length === 1 ? this.snips[${ix}][0][2].shift() : ''}${fields[closeIx][closePos + 1]}`
         }
       }
     } else if (valdex < values.length) {
