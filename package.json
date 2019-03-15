@@ -17,9 +17,9 @@
     "airtap": "^2.0.1",
     "aquatap": "^1.0.0",
     "fastbench": "^1.0.1",
-    "react": "^16.6.3",
-    "react-dom": "^16.6.3",
-    "react-test-renderer": "^16.8.2",
+    "react": "^16.8.4",
+    "react-dom": "^16.8.4",
+    "react-test-renderer": "^16.8.4",
     "standard": "^12.0.1"
   },
   "dependencies": {

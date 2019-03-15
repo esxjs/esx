@@ -1624,7 +1624,6 @@ test('spread props and defaultProps', async ({is}) => {
 })
 
 
-// ALL THAT ATTR STUFF... FOR SPREAD±!!!! DO THAT.
 // also defaultValue for <select>
 
 // fail fast when Cmp not registered
@@ -1632,10 +1631,6 @@ test('spread props and defaultProps', async ({is}) => {
 // cloneElement (+ benchmark)
 // react lazy/suspense -- fallback + lazy load (how?)
 // legacy context api
-// hocs
-// hooks
-// no root el scenario (insert fragments?)
-// special attr - also special attr in spread props
 
 test('self closing void elements do not render with closing tag', async ({ is }) => {
   const esx = init()
