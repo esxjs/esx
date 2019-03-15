@@ -25,6 +25,23 @@ var currentValues = null
 var currentTree = null
 var ssrReactRootAdded = false
 
+
+function selected (val) {
+  if (Array.isArray(selected.defaultValue)) {
+    return selected.defaultValue.includes(val) ? ' selected=""' : ''
+  }
+  return selected.defaultValue != null ? (val === selected.defaultValue ? ' selected=""' : '') : ''
+}
+selected.defaultValue = null
+selected.register = function (val) {
+  selected.defaultValue = Array.isArray(val) ? val : escapeHtml(val)
+  return ''
+}
+selected.deregister = function () {
+  selected.defaultValue = null
+  return ''
+}
+
 const elementToMarkup = (el) => {
   const result = renderToStaticMarkup(el)
   return result
@@ -349,11 +366,10 @@ function recompile (state, values) {
 
   const body = generate(fields, values, snips, attrPos, tree)
   const fn = Function('values', 'return `' + body.join('') + '`').bind({
-    inject, style, spread, snips, renderComponent, addRoot
+    inject, style, spread, snips, renderComponent, addRoot, selected
   })
   state.fn = fn
   state.snips = snips
-  fn.body = body.join('')
   return state
 }
 
@@ -380,20 +396,20 @@ function reverseSeek (array, pos, rx) {
   return -1
 }
 
-
 function seekToEndOfTagName (fields, ix) {
   do {
     var boundary = reverseSeek(fields[ix], fields[ix].length - 1, /</)
     if (boundary === -1) boundary = fields[ix].length - 1
   } while (boundary === fields[ix].length - 1 && --ix >= 0)
   
-  while (ix < fields.length) {
+  while (ix < fields.length - 1) {
     var pos = seek(fields[ix], boundary, /(^[\s/>]$)|^\$|^$/) - 1
     if (pos === -1) pos === boundary
     if (pos !== boundary) break
     boundary = 0
     ix++
   }
+  
   pos++
   return [ix, pos]
 }
@@ -421,11 +437,16 @@ function style (obj) {
   return str.length > 0 ? ' ' + str : str
 }
 
+function getTag (fields, i) {
+  const [ix, tPos] = seekToEndOfTagName(fields, i)
+  return fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')
+}
+
+
 function generate (fields, values, snips, attrPos, tree, offset = 0) {
   var valdex = 0
   var priorCmpBounds = {}
   for (var i = 0; i < fields.length; i++) {
-    
     const field = fields[i]
     const priorChar = field[field.length - 1]
     if (priorChar === '') continue
@@ -440,7 +461,10 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         replace(field, pos, e)
         const [ix, p] = seekToEndOfOpeningTag(fields, i + 1)
         fields[ix][p + 1] = `\${values[${offset + valdex++}].__html}${fields[ix][p + 1]}`
-      } else if (key === 'children') {
+      } else if (key === 'defaultValue' && getTag(fields, i) === 'select') {
+        replace(field, pos, e)
+        field[pos] = `\${this.selected.register(values[${offset + valdex++}])}`
+      } else if (key === 'children' || attr.mapping(key, getTag(fields, i)) === 'children') {
           replace(field, pos, e)
           const [ix, p] = seekToEndOfOpeningTag(fields, i + 1)
           if (fields[ix][p + 1][0] === '<') {
@@ -451,8 +475,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
             valdex++
           }
       } else if (attr.reserved(key) === false) {
-        const [ix, tPos] = seekToEndOfTagName(fields, i)  
-        const tag = fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')
+        const tag = getTag(fields, i)
         const mappedKey = attr.mapping(key, tag)
         if (mappedKey.length > 0) {
           field[pos] = `\${this.inject(values[${offset + valdex++}], '${mappedKey}', '${key}')}`
@@ -463,6 +486,11 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         }
         replace(field, pos + 1, e)
         if (pos > 0) replace(field, 0, seek(field, 0, /^[^\s]$/) - 1) // trim left
+
+        if (key === 'value' && tag === 'option') {
+          const p = seekToEndOfTagName(fields, i)[1]
+          field[p] = `\${this.selected(values[${offset + valdex - 1}])}${field[p]}`
+        }
       } else {
         replace(field, pos, e)
         valdex++
@@ -515,14 +543,35 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         }
       }
     } else if (valdex < values.length) {
+      let isOptionChildOfParentSelectWithDefaultValue = false
+      const tag = getTag(fields, i)
+      if (tag === 'option') {
+        let c = i
+        let select = null
+        const predicate = ([tag]) => tag === 'select'
+        while (c >= 0) {
+          if (select = snips[c].reverse().find(predicate)) break
+          c--
+        }
+        isOptionChildOfParentSelectWithDefaultValue = 'defaultValue' in select[1]
+      }
       const output = `\${this.inject(values[${offset + valdex++}])}`
-      const prefix = (priorChar !== '>') ?
+      const prefix = (priorChar !== '>') && !isOptionChildOfParentSelectWithDefaultValue ?
         '<!-- -->' :
         ''
       const suffix = (fields[i + 1] && fields[i + 1].join('').trimLeft()[0] !== '<') 
+        && !isOptionChildOfParentSelectWithDefaultValue
         ? '<!-- -->' :
         ''
+
       field[field.length - 1] = `${field[field.length - 1]}${prefix}${output}${suffix}`
+
+      if (isOptionChildOfParentSelectWithDefaultValue) {
+        const text = fields[i + 1].slice(0, fields[i + 1].findIndex((c) => c === '<')).join('')
+        const pos = reverseSeek(fields[i], fields[i].length - 1, /</) + tag.length + 1
+        field[pos] = `\${this.selected(values[${offset + valdex - 1}] + '${text}')}${field[pos]}`
+      }
+      
     }
     if (i in snips) {
       snips[i].forEach((snip, ix) => {       
@@ -600,9 +649,8 @@ function compileChildRenderer (item, tree, top) {
   fields[to].length = (selfClosing ? openTagEnd[1] : closeTagEnd[1]) + 1
   const body = generate(fields.slice(from, to + 1), values, snips, attrPos, tree, from)
   const fn = Function('values', 'return (`' + body.join('') + '`)').bind({
-    inject, style, spread, snips, renderComponent, addRoot
+    inject, style, spread, snips, renderComponent, addRoot, selected
   })
-
   return fn
 }
 

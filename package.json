@@ -15,7 +15,7 @@
   "license": "MIT",
   "devDependencies": {
     "airtap": "^2.0.1",
-    "aquatap": "^1.0.0",
+    "aquatap": "^1.0.1",
     "fastbench": "^1.0.1",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",

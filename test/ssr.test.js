@@ -1625,12 +1625,13 @@ test('spread props and defaultProps', async ({is}) => {
 
 
 // also defaultValue for <select>
-
-// fail fast when Cmp not registered
-// benchmark for props spread
 // cloneElement (+ benchmark)
-// react lazy/suspense -- fallback + lazy load (how?)
 // legacy context api
+
+   
+// fail fast when Cmp not registered
+// react lazy/suspense -- fallback + lazy load (how?)
+
 
 test('self closing void elements do not render with closing tag', async ({ is }) => {
   const esx = init()
@@ -1831,29 +1832,111 @@ test('defaultChecked in spread props', async ({ is }) => {
   is(esx.renderToString `<input ...${{defaultChecked: false}}>`, renderToString(esx `<input ...${{defaultChecked: false}}>`))
 })
 
-test('defaultValue', async ({ is }) => {
+test('defaultValue on input element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<input defaultValue="1"/>`, renderToString(esx`<input defaultValue="1"/>`))
+  is(esx.renderToString `<input defaultValue="1"></input>`, renderToString(esx`<input defaultValue="1"></input>`))
   is(esx.renderToString `<input defaultValue=${'1'}/>`, renderToString(esx`<input defaultValue=${'1'}/>`))
-  // is(esx.renderToString `<textarea defaultValue="1"/>`, renderToString(esx`<textarea defaultValue="1"/>`))
-  // is(
-  //   esx.renderToString `<select defaultValue="1"><option value="1"></option><option value="2"></option></select>`, 
-  //   renderToString(esx`<select defaultValue="1"><option value="1"></option><option value="2"></option></select>`)
-  // )
+ is(esx.renderToString `<input defaultValue=${'1'}></input>`, renderToString(esx`<input defaultValue=${'1'}></input>`))
+})
+
+test('defaultValue on textarea element', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<textarea defaultValue="1"/>`, renderToString(esx`<textarea defaultValue="1"/>`))
+  is(esx.renderToString `<textarea defaultValue="1"></textarea>`, renderToString(esx`<textarea defaultValue="1"></textarea>`))
+  is(esx.renderToString `<textarea defaultValue=${'1'}></textarea>`, renderToString(esx`<textarea defaultValue=${'1'}></textarea>`))
+  is(esx.renderToString `<textarea defaultValue=${'1'}/>`, renderToString(esx`<textarea defaultValue=${'1'}/>`))
+})
+
+test('defaultValue on select element', async ( { is } ) => {
+  const esx = init()
+  is(
+    esx.renderToString `<select defaultValue="1"><option value="1"></option><option value="2"></option></select>`, 
+    renderToString(esx`<select defaultValue="1"><option value="1"></option><option value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue="b"><option>a</option><option>b</option></select>`, 
+    renderToString(esx`<select defaultValue="b"><option>a</option><option>b</option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue="1"><optgroup><option value="1"></option><option value="2"></option></optgroup></select>`, 
+    renderToString(esx`<select defaultValue="1"><optgroup><option value="1"></option><option value="2"></option></optgroup></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue=${'b'}><option>a</option><option>b</option></select>`, 
+    renderToString(esx`<select defaultValue=${'b'}><option>a</option><option>b</option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue=${'b'}><option>a</option><option value="b">foo</option></select>`, 
+    renderToString(esx`<select defaultValue=${'b'}><option>a</option><option value="b">foo</option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue="b"><option value="a"></option><option value=${'b'}></option></select>`, 
+    renderToString(esx`<select defaultValue="b"><option value="a"></option><option value=${'b'}></option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue="b"><option value="a"></option><option>${'b'}</option></select>`, 
+    renderToString(esx`<select defaultValue="b"><option value="a"></option><option>${'b'}</option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue="b c"><option value="a"></option><option>${'b'} c</option></select>`, 
+    renderToString(esx`<select defaultValue="b c"><option value="a"></option><option>${'b'} c</option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue=${'b'}><option value="a"></option><option>${'b'}</option></select>`, 
+    renderToString(esx`<select defaultValue=${'b'}><option value="a"></option><option>${'b'}</option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue=${'b'}><option value="b"></option><option>${'b'}</option></select>`, 
+    renderToString(esx`<select defaultValue=${'b'}><option value="b"></option><option>${'b'}</option></select>`)
+  )
+})
+
+test('defaultValue on multi select element', async ( { is } ) => {
+  const esx = init()
+  is(
+    esx.renderToString `<select multiple defaultValue=${['a', 'b']}><option value="a"></option><option>${'b'}</option></select>`, 
+    renderToString(esx`<select multiple defaultValue=${['a', 'b']}><option value="a"></option><option>${'b'}</option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue=${['a', 'b']}><option value="a"></option><option>${'b'}</option></select>`, 
+    renderToString(esx`<select defaultValue=${['a', 'b']}><option value="a"></option><option>${'b'}</option></select>`)
+  )
+})
+
+test('defaultValue on non-supporting element', async ({ is }) => {
+  const esx = init()
   is(esx.renderToString `<div defaultValue="1"/>`, renderToString(esx`<div defaultValue="1"/>`))
   is(esx.renderToString `<div defaultValue=${'1'}/>`, renderToString(esx`<div defaultValue=${'1'}/>`))
 })
 
-test('defaultValue in spread props', async ({ is }) => {
+test('defaultValue in spread props on input element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<input ...${{defaultValue: '1'}}/>`, renderToString(esx`<input ...${{defaultValue: '1'}}/>`))
-  // is(esx.renderToString `<textarea defaultValue="1"/>`, renderToString(esx`<textarea defaultValue="1"/>`))
-  // is(
-  //   esx.renderToString `<select defaultValue="1"><option value="1"></option><option value="2"></option></select>`, 
-  //   renderToString(esx`<select defaultValue="1"><option value="1"></option><option value="2"></option></select>`)
-  // )
+  is(esx.renderToString `<input ...${{defaultValue: '1'}}></input>`, renderToString(esx`<input ...${{defaultValue: '1'}}></input>`))
+  is(esx.renderToString `<input ...${{defaultValue: '1'}}>`, renderToString(esx`<input ...${{defaultValue: '1'}}>`))
+})
+
+// test.only('defaultValue in spread props on textarea element', async ({ is }) => {
+//   const esx = init()
+//   is(esx.renderToString `<textarea ...${{defaultValue: '1'}}/>`, renderToString(esx`<textarea ...${{defaultValue: '1'}}/>`))
+//   is(esx.renderToString `<textarea ...${{defaultValue: '1'}}></textarea>`, renderToString(esx`<textarea ...${{defaultValue: '1'}}></textarea>`))
+// })
+
+test.only('defaultValue in spread props on select element', async ({ is }) => {
+  const esx = init()
+  is(
+    esx.renderToString `<select ...${{defaultValue: 'b'}}><option value="a"></option><option>${'b'}</option></select>`, 
+    renderToString(esx`<select ...${{defaultValue: 'b'}}><option value="a"></option><option>${'b'}</option></select>`)
+  )
+})
+
+test('defaultValue in spread props on non-supporting element', async ({ is }) => {
+  const esx = init()
   is(esx.renderToString `<div ...${{defaultValue:'1'}}/>`, renderToString(esx`<div ...${{defaultValue: '1'}}/>`))
 })
+
+
 
 test('suppressContentEditableWarning', async ({ is }) => {
   const esx = init()
