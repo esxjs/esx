@@ -2931,340 +2931,340 @@ test('expects corresponding closing tag, as with JSX compilation', async ({ thro
   throws(() => esx.renderToString `<Component/>`, SyntaxError('Expected corresponding ESX closing tag for <div>'))
 })
 
-test.only('whitespace variations', async ({ is }) => {
+test('whitespace variations', async ({ is }) => {
   const esx = init()
-  // is(esx.renderToString `<img  src="http://example.com"/>`, renderToString(esx `<img  src="http://example.com"/>`))
-  // is(esx.renderToString `<img src="http://example.com" />`, renderToString(esx `<img src="http://example.com" />`))
-  // is(esx.renderToString `<p><img src="http://example.com" /></p>`, renderToString(esx `<p><img src="http://example.com" /></p>`))
-  // is(esx.renderToString `<p ><a > <img src="http://example.com"/></a></p>`, renderToString(esx `<p ><a > <img src="http://example.com"/></a></p>`))
-  // is(esx.renderToString `<p    >     <a     >    <img src="http://example.com"/></a></p>`, renderToString(esx `<p    >     <a     >    <img src="http://example.com"/></a></p>`))
-  // is(esx.renderToString `<p ><a > <img src="http://example.com"/></ a></p >`, renderToString(esx `<p ><a > <img src="http://example.com"/></ a></p >`))
-  // is(esx.renderToString `<p ><a > <img src="http://example.com"/></     a></    p     >`, renderToString(esx `<p ><a > <img src="http://example.com"/></     a></    p     >`))
-  // is(esx.renderToString `<img src="http://example.com"  />`, renderToString(esx `<img src="http://example.com"  />`))
-  // is(esx.renderToString `<    p    ></p>`, renderToString(esx `<    p    ></p>`))
-  // is(esx.renderToString `<p>      xyz        </p>`, renderToString(esx `<p>      xyz        </p>`))
-  // is(esx.renderToString `<p>      <span>   \nxyz    </span>        </p>`, renderToString(esx `<p>      <span>   \nxyz    </span>        </p>`))
-  // is(
-  //   esx.renderToString `
-  //     <p>
-  //       <span>   xyz    </span>  
-  //     </p>
-  //   `, 
-  //   renderToString(esx  `
-  //     <p>
-  //       <span>   xyz    </span>  
-  //     </p>
-  //   `)
-  // )
-  // is(esx.renderToString `<img  src=${'http://example.com'}/>`, renderToString(esx `<img  src=${'http://example.com'}/>`))
-  // is(esx.renderToString `<img src=${'http://example.com'} />`, renderToString(esx `<img src=${'http://example.com'} />`))
-  // is(esx.renderToString `<p><img src=${'http://example.com'} /></p>`, renderToString(esx `<p><img src=${'http://example.com'} /></p>`))
-  // is(esx.renderToString `<p ><a > <img src=${'http://example.com'}/></a></p>`, renderToString(esx `<p ><a > <img src=${'http://example.com'}/></a></p>`))
-  // is(esx.renderToString `<p    >     <a     >    <img src=${'http://example.com'}/></a></p>`, renderToString(esx `<p    >     <a     >    <img src=${'http://example.com'}/></a></p>`))
-  // is(esx.renderToString `<p ><a > <img src=${'http://example.com'}/></ a></p >`, renderToString(esx `<p ><a > <img src=${'http://example.com'}/></ a></p >`))
-  // is(esx.renderToString `<p ><a > <img src=${'http://example.com'}/></     a></    p     >`, renderToString(esx `<p ><a > <img src=${'http://example.com'}/></     a></    p     >`))
-  // is(esx.renderToString `<img src=${'http://example.com'}  />`, renderToString(esx `<img src=${'http://example.com'}  />`))
-  // is(esx.renderToString `<img   key="1" src=${'http://example.com'}/>`, renderToString(esx `<img   key="1" src=${'http://example.com'}/>`))
+  is(esx.renderToString `<img  src="http://example.com"/>`, renderToString(esx `<img  src="http://example.com"/>`))
+  is(esx.renderToString `<img src="http://example.com" />`, renderToString(esx `<img src="http://example.com" />`))
+  is(esx.renderToString `<p><img src="http://example.com" /></p>`, renderToString(esx `<p><img src="http://example.com" /></p>`))
+  is(esx.renderToString `<p ><a > <img src="http://example.com"/></a></p>`, renderToString(esx `<p ><a > <img src="http://example.com"/></a></p>`))
+  is(esx.renderToString `<p    >     <a     >    <img src="http://example.com"/></a></p>`, renderToString(esx `<p    >     <a     >    <img src="http://example.com"/></a></p>`))
+  is(esx.renderToString `<p ><a > <img src="http://example.com"/></ a></p >`, renderToString(esx `<p ><a > <img src="http://example.com"/></ a></p >`))
+  is(esx.renderToString `<p ><a > <img src="http://example.com"/></     a></    p     >`, renderToString(esx `<p ><a > <img src="http://example.com"/></     a></    p     >`))
+  is(esx.renderToString `<img src="http://example.com"  />`, renderToString(esx `<img src="http://example.com"  />`))
+  is(esx.renderToString `<    p    ></p>`, renderToString(esx `<    p    ></p>`))
+  is(esx.renderToString `<p>      xyz        </p>`, renderToString(esx `<p>      xyz        </p>`))
+  is(esx.renderToString `<p>      <span>   \nxyz    </span>        </p>`, renderToString(esx `<p>      <span>   \nxyz    </span>        </p>`))
+  is(
+    esx.renderToString `
+      <p>
+        <span>   xyz    </span>  
+      </p>
+    `, 
+    renderToString(esx  `
+      <p>
+        <span>   xyz    </span>  
+      </p>
+    `)
+  )
+  is(esx.renderToString `<img  src=${'http://example.com'}/>`, renderToString(esx `<img  src=${'http://example.com'}/>`))
+  is(esx.renderToString `<img src=${'http://example.com'} />`, renderToString(esx `<img src=${'http://example.com'} />`))
+  is(esx.renderToString `<p><img src=${'http://example.com'} /></p>`, renderToString(esx `<p><img src=${'http://example.com'} /></p>`))
+  is(esx.renderToString `<p ><a > <img src=${'http://example.com'}/></a></p>`, renderToString(esx `<p ><a > <img src=${'http://example.com'}/></a></p>`))
+  is(esx.renderToString `<p    >     <a     >    <img src=${'http://example.com'}/></a></p>`, renderToString(esx `<p    >     <a     >    <img src=${'http://example.com'}/></a></p>`))
+  is(esx.renderToString `<p ><a > <img src=${'http://example.com'}/></ a></p >`, renderToString(esx `<p ><a > <img src=${'http://example.com'}/></ a></p >`))
+  is(esx.renderToString `<p ><a > <img src=${'http://example.com'}/></     a></    p     >`, renderToString(esx `<p ><a > <img src=${'http://example.com'}/></     a></    p     >`))
+  is(esx.renderToString `<img src=${'http://example.com'}  />`, renderToString(esx `<img src=${'http://example.com'}  />`))
+  is(esx.renderToString `<img   key="1" src=${'http://example.com'}/>`, renderToString(esx `<img   key="1" src=${'http://example.com'}/>`))
   is(esx.renderToString `<img   ref=${'1'} src=${'http://example.com'}/>`, renderToString(esx `<img   ref=${'1'} src=${'http://example.com'}/>`))
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p><Toolbar /></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p><Toolbar ></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p><Toolbar></ Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p><Toolbar></Toolbar ></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p>< Toolbar></Toolbar ></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p><Toolbar> </Toolbar ></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p>< Toolbar > < /Toolbar ></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p><Toolbar></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App />`, renderToString(esx `<App />`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p><Toolbar></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `< App/>`, renderToString(esx `< App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a >hi</a>`,
-  //     App: () => esx`<p><Toolbar></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a >`,
-  //     App: () => esx`<p><Toolbar></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a >hi</ a>`,
-  //     App: () => esx`<p><Toolbar></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<div><a></ a><p><Toolbar/></p></div>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<div><a ></a><p><Toolbar/></p></div>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<div><a></a ><p><Toolbar/></p></div>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>
-  //       hi
-  //     </a>`,
-  //     App: () => esx`<p><Toolbar></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`
-  //       <p>
-  //         <Toolbar>
-  //         </Toolbar>
-  //       </p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`<p>
-  //         <Toolbar>
-  //         </Toolbar>
-  //       </p>
-  //     `
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: () => esx `<a>hi</a>`,
-  //     App: () => esx`
-  //       <p>
-  //         <Toolbar/>
-  //       </p>
-  //     `
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}/></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'} ></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}></ Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}></Toolbar ></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p>< Toolbar x=${'hi'}></Toolbar ></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}> </Toolbar ></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p>< Toolbar x=${'hi'} > < /Toolbar ></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a >${x}</a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a >`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a >${x}</ a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<div><a></ a><p><Toolbar x=${'hi'}/></p></div>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<div><a ></a><p><Toolbar x=${'hi'}/></p></div>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<div><a></a ><p><Toolbar x=${'hi'}/></p></div>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>
-  //       ${x}
-  //     </a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`
-  //       <p>
-  //         <Toolbar x=${'hi'}>
-  //         </Toolbar>
-  //       </p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p>
-  //         <Toolbar x=${'hi'}>
-  //         </Toolbar>
-  //       </p>
-  //     `
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`
-  //       <p>
-  //         <Toolbar x=${'hi'}/>
-  //       </p>
-  //     `
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p><Toolbar y=1   x=${'hi'}></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // {
-  //   const esx = init({ 
-  //     Toolbar: ({x}) => esx `<a>${x}</a>`,
-  //     App: () => esx`<p><Toolbar x=${'hi'}  y=1  ></Toolbar></p>`
-  //   })
-  //   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
-  // }
-  // is(esx.renderToString `<img />`, renderToString(esx`<img />`))
-  // is(esx.renderToString `<img >`, renderToString(esx`<img >`))
-  // is(esx.renderToString `<img ></img>`, renderToString(esx`<img ></img>`))
-  // is(esx.renderToString `<div ></div>`, renderToString(esx`<div ></div>`))
-  // is(esx.renderToString `<div />`, renderToString(esx`<div />`))
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p><Toolbar /></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p><Toolbar ></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p><Toolbar></ Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p><Toolbar></Toolbar ></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p>< Toolbar></Toolbar ></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p><Toolbar> </Toolbar ></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p>< Toolbar > < /Toolbar ></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p><Toolbar></Toolbar></p>`
+    })
+    is(esx.renderToString `<App />`, renderToString(esx `<App />`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p><Toolbar></Toolbar></p>`
+    })
+    is(esx.renderToString `< App/>`, renderToString(esx `< App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a >hi</a>`,
+      App: () => esx`<p><Toolbar></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a >`,
+      App: () => esx`<p><Toolbar></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a >hi</ a>`,
+      App: () => esx`<p><Toolbar></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<div><a></ a><p><Toolbar/></p></div>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<div><a ></a><p><Toolbar/></p></div>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<div><a></a ><p><Toolbar/></p></div>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>
+        hi
+      </a>`,
+      App: () => esx`<p><Toolbar></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`
+        <p>
+          <Toolbar>
+          </Toolbar>
+        </p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`<p>
+          <Toolbar>
+          </Toolbar>
+        </p>
+      `
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: () => esx `<a>hi</a>`,
+      App: () => esx`
+        <p>
+          <Toolbar/>
+        </p>
+      `
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p><Toolbar x=${'hi'}/></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p><Toolbar x=${'hi'} ></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p><Toolbar x=${'hi'}></ Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p><Toolbar x=${'hi'}></Toolbar ></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p>< Toolbar x=${'hi'}></Toolbar ></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p><Toolbar x=${'hi'}> </Toolbar ></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p>< Toolbar x=${'hi'} > < /Toolbar ></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a >${x}</a>`,
+      App: () => esx`<p><Toolbar x=${'hi'}></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a >`,
+      App: () => esx`<p><Toolbar x=${'hi'}></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a >${x}</ a>`,
+      App: () => esx`<p><Toolbar x=${'hi'}></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<div><a></ a><p><Toolbar x=${'hi'}/></p></div>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<div><a ></a><p><Toolbar x=${'hi'}/></p></div>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<div><a></a ><p><Toolbar x=${'hi'}/></p></div>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>
+        ${x}
+      </a>`,
+      App: () => esx`<p><Toolbar x=${'hi'}></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`
+        <p>
+          <Toolbar x=${'hi'}>
+          </Toolbar>
+        </p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p>
+          <Toolbar x=${'hi'}>
+          </Toolbar>
+        </p>
+      `
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`
+        <p>
+          <Toolbar x=${'hi'}/>
+        </p>
+      `
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p><Toolbar y=1   x=${'hi'}></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  {
+    const esx = init({ 
+      Toolbar: ({x}) => esx `<a>${x}</a>`,
+      App: () => esx`<p><Toolbar x=${'hi'}  y=1  ></Toolbar></p>`
+    })
+    is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  }
+  is(esx.renderToString `<img />`, renderToString(esx`<img />`))
+  is(esx.renderToString `<img >`, renderToString(esx`<img >`))
+  is(esx.renderToString `<img ></img>`, renderToString(esx`<img ></img>`))
+  is(esx.renderToString `<div ></div>`, renderToString(esx`<div ></div>`))
+  is(esx.renderToString `<div />`, renderToString(esx`<div />`))
 })
 
 test('props.children.props.children of dynamic component with multiple component children peers to multiple static element children containing interpolated values within at varied nesting depths as prop', async ({ is }) => {
