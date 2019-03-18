@@ -1892,6 +1892,54 @@ test('defaultValue on select element', async ( { is } ) => {
   )
 })
 
+test('selected attribute on option element with/without defaultValue on parent select', async ( { is } ) => {
+  const esx = init()
+  is(
+    esx.renderToString `<select defaultValue="1"><option value="1"></option><option selected value="2"></option></select>`, 
+    renderToString(esx`<select defaultValue="1"><option value="1"></option><option selected value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select><option value="1"></option><option selected value="2"></option></select>`, 
+    renderToString(esx`<select><option value="1"></option><option selected value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select ...${{defaultValue: '1'}}><option value="1"></option><option selected value="2"></option></select>`, 
+    renderToString(esx`<select ...${{defaultValue: '1'}}><option value="1"></option><option selected value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue="1"><option value="1"></option><option selected=${false} value="2"></option></select>`, 
+    renderToString(esx`<select defaultValue="1"><option value="1"></option><option selected=${false} value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue="1"><option value="1"></option><option selected=${true} value="2"></option></select>`, 
+    renderToString(esx`<select defaultValue="1"><option value="1"></option><option selected=${true} value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select><option value="1"></option><option foo=${'x'} selected=${true} value="2"></option></select>`, 
+    renderToString(esx`<select><option value="1"></option><option foo=${'x'} selected=${true} value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue="1"><option value="1"></option><option selected=${false} value="2"></option></select>`, 
+    renderToString(esx`<select defaultValue="1"><option value="1"></option><option selected=${false} value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select><option value="1"></option><option selected=${true} value="2"></option></select>`, 
+    renderToString(esx`<select><option value="1"></option><option selected=${true} value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select><option value="1"></option><option selected=${false} value="2"></option></select>`, 
+    renderToString(esx`<select><option value="1"></option><option selected=${false} value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue=${'1'}><option value="1"></option><option selected=${true} value="2"></option></select>`, 
+    renderToString(esx`<select defaultValue=${'1'}><option value="1"></option><option selected=${true} value="2"></option></select>`)
+  )
+  is(
+    esx.renderToString `<select defaultValue=${'2'}><option value="1"></option><option selected=${false} value="2"></option></select>`, 
+    renderToString(esx`<select defaultValue=${'2'}><option value="1"></option><option selected=${false} value="2"></option></select>`)
+  )
+})
+
 test('defaultValue on multi select element', async ( { is } ) => {
   const esx = init()
   is(
@@ -1917,13 +1965,13 @@ test('defaultValue in spread props on input element', async ({ is }) => {
   is(esx.renderToString `<input ...${{defaultValue: '1'}}>`, renderToString(esx`<input ...${{defaultValue: '1'}}>`))
 })
 
-// test.only('defaultValue in spread props on textarea element', async ({ is }) => {
-//   const esx = init()
-//   is(esx.renderToString `<textarea ...${{defaultValue: '1'}}/>`, renderToString(esx`<textarea ...${{defaultValue: '1'}}/>`))
-//   is(esx.renderToString `<textarea ...${{defaultValue: '1'}}></textarea>`, renderToString(esx`<textarea ...${{defaultValue: '1'}}></textarea>`))
-// })
+test('defaultValue in spread props on textarea element', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<textarea ...${{defaultValue: '1'}}/>`, renderToString(esx`<textarea ...${{defaultValue: '1'}}/>`))
+  is(esx.renderToString `<textarea ...${{defaultValue: '1'}}></textarea>`, renderToString(esx`<textarea ...${{defaultValue: '1'}}></textarea>`))
+})
 
-test.only('defaultValue in spread props on select element', async ({ is }) => {
+test('defaultValue in spread props on select element', async ({ is }) => {
   const esx = init()
   is(
     esx.renderToString `<select ...${{defaultValue: 'b'}}><option value="a"></option><option>${'b'}</option></select>`, 

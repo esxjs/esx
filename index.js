@@ -26,13 +26,17 @@ var currentTree = null
 var ssrReactRootAdded = false
 
 
-function selected (val) {
+function selected (val, wasSelected) {
   if (Array.isArray(selected.defaultValue)) {
     return selected.defaultValue.includes(val) ? ' selected=""' : ''
   }
-  return selected.defaultValue != null ? (val === selected.defaultValue ? ' selected=""' : '') : ''
+  return selected.defaultValue != null ? 
+    (val === selected.defaultValue ? ' selected=""' : '') 
+    : (wasSelected ? ' selected=""' : '')
 }
+
 selected.defaultValue = null
+
 selected.register = function (val) {
   selected.defaultValue = Array.isArray(val) ? val : escapeHtml(val)
   return ''
@@ -68,8 +72,12 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
     const key = keys[k]
     if (attr.reserved(key)) continue
     if (spread[ix].after.indexOf(key) > -1) continue
+    if (tag === 'select' && key === 'defaultValue') {
+      selected.register(object[key])
+      continue
+    }
     const keyIsDSIH = key === 'dangerouslySetInnerHTML'
-    if (keyIsDSIH || key === 'children') {
+    if (keyIsDSIH || key === 'children' || (tag === 'textarea' && key === 'defaultValue')) {
       const forbiddenKey = keyIsDSIH ? 'children' : 'dangerouslySetInnerHTML'
       const collision = spread[ix].before.indexOf(forbiddenKey) > -1 || 
         spread[ix].after.indexOf(forbiddenKey) > -1 ||
@@ -82,9 +90,11 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
       const overrideChildren = spread[ix].before.indexOf(key) > -1 ||
         priorSpreadKeys && priorSpreadKeys.has(key) ||
         childMap.length === 0
-      if (overrideChildren) childMap[0] = key === 'children' ? 
-        inject(object[key]) : 
-        object[key].__html
+    
+      if (overrideChildren) childMap[0] = (key === 'children' || 
+        (tag === 'textarea' && key === 'defaultValue')) ? 
+          inject(object[key]) : 
+          object[key].__html
       continue
     }
     const val = typeof object[key] === 'number' ? object[key] + '' : object[key]
@@ -464,6 +474,25 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       } else if (key === 'defaultValue' && getTag(fields, i) === 'select') {
         replace(field, pos, e)
         field[pos] = `\${this.selected.register(values[${offset + valdex++}])}`
+      } else if (key === 'selected' && getTag(fields, i) === 'option') {
+        replace(field, pos, e)
+        const [ ix, p ] = seekToEndOfTagName(fields, i)
+        const wasSelectedPos = seek(fields[ix], p, /§/)
+        const sanity = fields[ix][wasSelectedPos + 2] === ')' && fields[ix][wasSelectedPos + 3] === '}'
+          && fields[ix][wasSelectedPos - 1] === ' ' && fields[ix][wasSelectedPos - 2] === ','
+        if (sanity) {
+          const selectIndex = fields[ix][wasSelectedPos + 1].codePointAt(0)
+          fields[ix][wasSelectedPos + 1] = ''
+          const selectWithDefaultValue = 'defaultValue' in tree[selectIndex][1]
+          if (selectWithDefaultValue) {
+            fields[ix][wasSelectedPos] = `values[${offset + valdex++}]`
+          } else {
+            fields[ix][wasSelectedPos] = 'false'
+            field[field.length -1] = `\${this.inject(values[${offset + valdex++}], '${key}', '${key}')}`
+          }
+        } else {
+          valdex++
+        }
       } else if (key === 'children' || attr.mapping(key, getTag(fields, i)) === 'children') {
           replace(field, pos, e)
           const [ix, p] = seekToEndOfOpeningTag(fields, i + 1)
@@ -496,7 +525,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         valdex++
       }
     } else if (priorChar === '…') {
-      var ix = i + 1
+      var ix = i
       var item = snips[ix]
       while (ix >= 0) {
         if (item) break
@@ -543,7 +572,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         }
       }
     } else if (valdex < values.length) {
-      let isOptionChildOfParentSelectWithDefaultValue = false
+      let optionMayBeSelected = false
       const tag = getTag(fields, i)
       if (tag === 'option') {
         let c = i
@@ -553,20 +582,20 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
           if (select = snips[c].reverse().find(predicate)) break
           c--
         }
-        isOptionChildOfParentSelectWithDefaultValue = 'defaultValue' in select[1]
+        optionMayBeSelected = 'defaultValue' in select[1] || select[3].spreadIndices.length > 0
       }
       const output = `\${this.inject(values[${offset + valdex++}])}`
-      const prefix = (priorChar !== '>') && !isOptionChildOfParentSelectWithDefaultValue ?
+      const prefix = (priorChar !== '>') && !optionMayBeSelected ?
         '<!-- -->' :
         ''
       const suffix = (fields[i + 1] && fields[i + 1].join('').trimLeft()[0] !== '<') 
-        && !isOptionChildOfParentSelectWithDefaultValue
+        && !optionMayBeSelected
         ? '<!-- -->' :
         ''
 
       field[field.length - 1] = `${field[field.length - 1]}${prefix}${output}${suffix}`
 
-      if (isOptionChildOfParentSelectWithDefaultValue) {
+      if (optionMayBeSelected) {
         const text = fields[i + 1].slice(0, fields[i + 1].findIndex((c) => c === '<')).join('')
         const pos = reverseSeek(fields[i], fields[i].length - 1, /</) + tag.length + 1
         field[pos] = `\${this.selected(values[${offset + valdex - 1}] + '${text}')}${field[pos]}`
