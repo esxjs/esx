@@ -2,10 +2,10 @@
 const test = require('aquatap')
 process.env.NODE_ENV = 'production' // stop react warnings
 const { renderToString } = require('react-dom/server')
-const React = require('react')
 const PropTypes = require('prop-types')
-const { createElement } = React
 const init = require('..')
+const React = require('react')
+const { createElement } = React
 
 test('basic', async ({ is }) => {
   const esx = init()
@@ -1623,9 +1623,6 @@ test('spread props and defaultProps', async ({is}) => {
   is(esx.renderToString `<Component/>`, renderToString(esx `<Component/>`))
 })
 
-
-// also defaultValue for <select>
-// cloneElement (+ benchmark)
 // legacy context api
 
    
@@ -3409,6 +3406,29 @@ test('props.children.props.children of dynamic component with multiple component
   childTest.validate()
 })
 
+test.only('clone element', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })  
+  class Switch extends React.Component {
+    render () {
+      return esx`<Consumer>${() => {
+        return this.props.children
+      }}</Consumer>`
+    }
+  }
+  esx.register({ Switch })
+  // const Paths = () => esx``
+  // esx.register({ Paths })
+  class App extends React.Component {
+    render () {
+      return esx`<main><Switch><div path='/'>hi</div></Switch></main>`
+    }
+  }
+  esx.register({ App })
+  console.log(esx.renderToString `<App/>`)
+})
+
 test('deviation: spread duplicate props are rendered', async ({is}) => {
   const esx = init()
   is(
@@ -3489,3 +3509,4 @@ function childValidator (is) {
     }
   }
 }
+

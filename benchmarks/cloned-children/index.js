@@ -22,7 +22,7 @@ const run = bench([
   },
   function reactRenderToString (cb) {
     for (var i = 0; i < max; i++) {
-      console.log(renderToString(createElement(CreateElementApp)))
+      renderToString(createElement(CreateElementApp))
     }
     setImmediate(cb)
   },

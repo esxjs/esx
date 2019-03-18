@@ -4,7 +4,6 @@ const esx = require('../..')()
 const React = require('react')
 const Cmp2 = ({children}) => {
   const cloned = React.Children.map(children, (el) => React.cloneElement(el, {new: 'prop'}, 'hi'))
-  console.log(cloned)
   return esx `<p>${cloned}</p>`
 }
 esx.register({Cmp2})

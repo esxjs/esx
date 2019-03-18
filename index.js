@@ -1,6 +1,7 @@
 'use strict'
 const debug = require('debug')('esx')
-const { createElement } = tryToLoad('react')
+const React = tryToLoad('react')
+const { createElement, cloneElement } = React
 const { renderToStaticMarkup } = tryToLoad('react-dom/server')
 const escapeHtml = require('./lib/escape')
 const parse = require('./lib/parse')
@@ -18,11 +19,15 @@ const {
   isEsx, marker, skip, provider, esxValues, parent
 } = require('./lib/symbols')
 
+React.cloneElement = function (element, props, children) {
+  const el = cloneElement(element, props, children)
+  // console.log(el._owner)
+  return el
+}
+
 // singleton state for ssr
 var ssr = false 
-var current = null
 var currentValues = null
-var currentTree = null
 var ssrReactRootAdded = false
 
 
@@ -239,32 +244,30 @@ function esx (components = {}) {
       cache.get(key) : 
       cache.set(key, parse(components, strings, values)).get(key)
     const { tree, fn } = recompile(state, values)
-    currentTree = tree
-    current = currentTree[0]
-    const props = current[1]
-    current[3].values = values
+    const item = tree[0]
+    const props = item[1]
+    item[3].values = values
     tree[esxValues] = values
 
     const el = {
       $$typeof: REACT_ELEMENT_TYPE,
-      type: current[0],
+      type: item[0],
       render: fn,
       values: values,
       props: props,
-      current: current,
       [isEsx]: true
     }
-    if (!(parent in el.props)) el.props[parent] = el
+    if (!(parent in el.props)) el.props[parent] = item
     return el
   }
 
   function renderToString (strings, ...values) {
     ssr = true
-    current = currentTree = currentValues = null
+    currentValues = null
     ssrReactRootAdded = false
     const element = render(strings, ...values)
     const output = element.render(element.values)
-    current = currentTree = currentValues = null
+    currentValues = null
     ssrReactRootAdded = false
     ssr = false
     return output
@@ -279,13 +282,13 @@ function esx (components = {}) {
 
 function renderComponent(item, values) { 
   const [tag, props, childMap, meta] = item
-
+  props[parent] = item
 
   if (tag.$$typeof === REACT_PROVIDER_TYPE) {
     for (var p in meta.dynAttrs) props[p] = currentValues[meta.dynAttrs[p]]
-    return resolveChildren(childMap, meta.dynChildren, meta.tree, current)
+    return resolveChildren(childMap, meta.dynChildren, meta.tree, item)
   }
-  current = item
+
   const { dynAttrs, dynChildren } = meta
 
   for (var p in dynAttrs) {
@@ -317,6 +320,7 @@ function renderComponent(item, values) {
       tagContext[provider][1].value :
       tagContext._currentValue2
     const props = Object.assign({children: currentValues[dynChildren[0]]}, item[1])
+    // console.log('props', props)
     return currentValues[dynChildren[0]].call(props, context)
   }
   if (tag.$$typeof === REACT_MEMO_TYPE) {
@@ -337,10 +341,10 @@ function renderComponent(item, values) {
 
 function childPropsGetter () {
   if (!ssr) return null
-  if (this[parent]) current = this[parent].current
-  const [ , , childMap, meta ] = current
+  const item = this[parent]
+  const [ , , childMap, meta ] =item
   const { dynChildren } = meta 
-  return resolveChildren(childMap, dynChildren, meta.tree, current)
+  return resolveChildren(childMap, dynChildren, meta.tree,item)
 }
 
 function recompile (state, values) {
@@ -686,7 +690,6 @@ function compileChildRenderer (item, tree, top) {
 
 function resolveChildren (childMap, dynChildren, tree, top) {
   const children = []
-
   for (var i = 0; i < childMap.length; i++) {
 
     if (typeof childMap[i] === 'number') {
@@ -694,7 +697,8 @@ function resolveChildren (childMap, dynChildren, tree, top) {
         const [ tag, props, elChildMap, elMeta ] = tree[childMap[i]]
         if (typeof tag === 'function') {
           const element = renderComponent(tree[childMap[i]], tree[esxValues])
-          element.props[parent] = children[i] = {
+          element.props[parent] = tree[childMap[i]]
+          children[i] = {
             $$typeof: REACT_ELEMENT_TYPE,
             type: tag,
             render: element.render,
@@ -715,7 +719,8 @@ function resolveChildren (childMap, dynChildren, tree, top) {
           tree[childMap[i]][3].render = tree[childMap[i]][3].render || 
             compileChildRenderer(tree[childMap[i]], tree, top)
           
-          props[parent] = children[i] = {
+          props[parent] = tree[childMap[i]]
+          children[i] = {
             $$typeof: REACT_ELEMENT_TYPE,
             type: tag,
             render: tree[childMap[i]][3].render,
