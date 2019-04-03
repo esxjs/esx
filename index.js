@@ -1,8 +1,10 @@
 'use strict'
 const debug = require('debug')('esx')
-const React = tryToLoad('react')
-const { createElement, cloneElement } = React
-const { renderToStaticMarkup } = tryToLoad('react-dom/server')
+const { createElement } = tryToLoad('react')
+const { 
+  renderToStaticMarkup,
+  renderToString: reactRenderToString 
+} = tryToLoad('react-dom/server')
 const escapeHtml = require('./lib/escape')
 const parse = require('./lib/parse')
 const validate = require('./lib/validate')
@@ -16,20 +18,14 @@ const {
   VOID_ELEMENTS
 } = require('./lib/constants')
 const {
-  isEsx, marker, skip, provider, esxValues, parent
+  ns, marker, skip, provider, esxValues, parent, owner
 } = require('./lib/symbols')
-
-React.cloneElement = function (element, props, children) {
-  const el = cloneElement(element, props, children)
-  // console.log(el._owner)
-  return el
-}
 
 // singleton state for ssr
 var ssr = false 
-var currentValues = null
 var ssrReactRootAdded = false
-
+var currentValues = null
+var lastChildProp = null
 
 function selected (val, wasSelected) {
   if (Array.isArray(selected.defaultValue)) {
@@ -52,10 +48,11 @@ selected.deregister = function () {
 }
 
 const elementToMarkup = (el) => {
-  const result = renderToStaticMarkup(el)
-  return result
+  if (ssrReactRootAdded === false) {
+    return reactRenderToString(el)
+  }
+  return renderToStaticMarkup(el)
 }
-
 const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAfter = '') => {
   const object = values[ix]
   const keys = Object.keys(object)
@@ -96,17 +93,22 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
         priorSpreadKeys && priorSpreadKeys.has(key) ||
         childMap.length === 0
     
-      if (overrideChildren) childMap[0] = (key === 'children' || 
-        (tag === 'textarea' && key === 'defaultValue')) ? 
-          inject(object[key]) : 
-          object[key].__html
+      if (overrideChildren) {
+        const suspendRootAdding = ssrReactRootAdded === false
+        if (suspendRootAdding) ssrReactRootAdded = true
+        childMap[0] = (key === 'children' || 
+          (tag === 'textarea' && key === 'defaultValue')) ? 
+            inject(object[key]) : 
+            object[key].__html
+        if (suspendRootAdding) ssrReactRootAdded = false
+      }
       continue
     }
     const val = typeof object[key] === 'number' ? object[key] + '' : object[key]
     const mappedKey = attr.mapping(key, tag)
     if (mappedKey.length === 0) continue
     if (mappedKey === 'style') result += style(val)
-    else result += inject(val, mappedKey, key)
+    else result += attribute(val, mappedKey, key)
     if (spread[ix].before.indexOf(key) > -1) {
       dirtyBefore = true
       continue
@@ -124,9 +126,9 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
       const mappedKey = attr.mapping(key, tag)
       if (mappedKey.length === 0) continue
       if (props[key] === marker) {
-        strBefore += inject(values[meta.dynAttrs[key]], mappedKey, key)
+        strBefore += attribute(values[meta.dynAttrs[key]], mappedKey, key)
       } else {
-       strBefore += inject(props[key], mappedKey, key)
+       strBefore += attribute(props[key], mappedKey, key)
       }
     }
   }
@@ -135,50 +137,145 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
   return (out.length === 0 || out[0] === ' ') ? out : ' ' + out
 }
 
-const inject = (val, attrKey = '', propKey = '') => {
-  if (val == null) return ''
+const attribute = (val, attrKey = '', propKey = '', replace = null) => {
+  if (replace !== null && propKey in replace) return replace[propKey]
+  if (val == null)  return ''
   const type = typeof val
   if (type === 'function' || type === 'symbol') return ''
   if (type === 'boolean' && attrKey.length > 0) {
     const serialized = attr.bool(propKey) ? attr.serializeBool(propKey, val) : ''
     val = serialized.length > 0 ? ` ${attrKey}=${serialized}` : ''
-  } else if (type === 'string') {
+  } else {
     if (attr.bool(propKey, true)) val = ''
-    val = attrKey.length > 0 ? ` ${attrKey}="${escapeHtml(val)}"` : escapeHtml(val)
-  } else if (type === 'object') {
-    if (val.$$typeof === REACT_ELEMENT_TYPE) {
-      val = 'render' in val ? val.render(val.values) : elementToMarkup(val)
-    } else if (Array.isArray(val)) {
-      const childrenValue = val.reduce((acc, v) => acc.concat(v), [])
-      val = ''
-      const keys = Object.keys(childrenValue)
-      for (var z = 0; z < keys.length; z++) {
-        const k = keys[z]
-        const item = childrenValue[k]
-        if (item == null) continue
-        const type = typeof item
-        if (type === 'function' || type === 'symbol') continue
-        if (type === 'string') {
-          val += escapeHtml(item)
-          if (typeof childrenValue[z + 1] === 'string') {
-            val += '<!-- -->'
-          }
-        } else if (type === 'object') {
-          if (item.$$typeof === REACT_ELEMENT_TYPE) {
-            val += 'render' in item ? item.render(item.values) : elementToMarkup(item)
-          } else {
-            val = item + ''
-            debug('Objects are not valid as a React child', val)
-          }
-        } else val += item
-      }
-    } else {
-      debug('Objects are not valid as a React child', val)
-      val = attrKey.length > 0 ? ` ${attrKey}="${val}"` : val
-    }
+    val = ` ${attrKey}="${escapeHtml(val)}"`
   }
   return val
 }
+
+const inject = (val) => {
+  if (val == null) return ''
+  const type = typeof val
+  if (type === 'object') {
+    if (val.$$typeof === REACT_ELEMENT_TYPE) {
+      // if the element does not have an ns value, it may have been cloned in which
+      // case we've slipped a method through the cloning process that pulls the esx 
+      // state in from the old element
+      const state = val[ns] || (val._owner && val._owner[owner] && val._owner())
+      if (!state) {
+        return elementToMarkup(val)
+      }
+      return state.tmpl(state.values, state.extra, state.replace)
+    } 
+  }
+  if (type === 'function' || type === 'symbol') return ''
+  if (type === 'string') return escapeHtml(val)
+  if (Array.isArray(val)) {
+    const childrenValue = val.reduce((acc, v) => acc.concat(v), [])
+    val = ''
+    const keys = Object.keys(childrenValue)
+    for (var z = 0; z < keys.length; z++) {
+      const k = keys[z]
+      const item = childrenValue[k]
+      if (item == null) continue
+      const type = typeof item
+      if (type === 'function' || type === 'symbol') continue
+      if (type === 'string') {
+        val += escapeHtml(item)
+        if (typeof childrenValue[z + 1] === 'string') {
+          val += '<!-- -->'
+        }
+      } else if (type === 'object') {
+        if (item.$$typeof === REACT_ELEMENT_TYPE) {
+          // same witchcraft as above
+          const state = item[ns] || (item._owner && item._owner[owner] && item._owner())
+          val += state ? state.tmpl(state.values, state.extra, state.replace) : elementToMarkup(item)
+        } else {
+          val = item + ''
+          debug('Objects are not valid as an elements child', val)
+        }
+      } else val += item
+    }
+    return val
+  } 
+  return val
+}
+
+function EsxElementUnopt (item) {
+  this.$$typeof = REACT_ELEMENT_TYPE
+  const [type, props] = item
+  this.type = type 
+  this.props = props
+  this.key = props.key || null 
+  this.ref = props.ref || null 
+  this.esxUnopt = true
+}
+
+function EsxElement (item, tmpl, values) {
+  this.$$typeof = REACT_ELEMENT_TYPE
+  const [type, props] = item
+  this.type = type 
+  this.props = props
+  this.key = props.key || null 
+  this.ref = props.ref || null 
+  this[ns] = { tmpl, values, item }
+}
+const ownerDesc = {
+  get: function _owner () {
+    var lastProps = this.props
+    var state = this[ns]
+    var type = this.type
+    var children = lastChildProp
+    const propagate = typeof type === 'string' ? function propagate () {
+      var extra = ''
+      var replace = null
+      var same = true
+      if (state === null) {
+        // this is now a clone of a clone, bail:
+        return null
+      }
+      if (this.props.children !== children) {
+        // cloneElement is overriding children, bail:
+        return null
+      }
+      for (var k in this.props) {
+        const mappedKey = attr.mapping(k, type)
+        if (mappedKey === 'children') continue
+        if (lastProps[k] !== this.props[k]) {
+          same = false
+          if (k in lastProps) {
+            if (replace === null) replace = {}
+            
+            if (mappedKey) {
+              replace[mappedKey] = attribute(this.props[k], mappedKey, k)
+            }
+          } else {
+            extra += attribute(this.props[k], mappedKey, k)
+          }
+        }
+      }
+      const result = same ? state : {
+        extra,
+        replace,
+        tmpl: state.tmpl,
+        values: state.values
+      }
+      // if we don't clear state from scope, memory will grow infinitely
+      // that means the propagate function can only be called once, the second
+      // time it will return null (which will force a deopt to standard react rendering)
+      lastProps = state = type = children = null
+      return result
+    } : function propogate () {
+      const el = renderComponent([this.type, this.props, {}, {}])
+      // if we don't clear state from scope, memory will grow infinitely
+      // that means the propagate function can only be called once
+      lastProps = state = type = children = null
+      return el ? el[ns] : null
+    }
+    propagate[owner] = true
+    return propagate
+  }
+}
+Object.defineProperty(EsxElement.prototype, '_owner', ownerDesc)
 
 function esx (components = {}) {
   validate(components)
@@ -201,7 +298,7 @@ function esx (components = {}) {
         if (typeof childMap[c] === 'number') {
           children[c] = map[childMap[c]]
         } else {
-          children[c] = childMap[c]
+          children[c] = childMap[c] || null
         }
       }
       if (spread) {
@@ -243,30 +340,26 @@ function esx (components = {}) {
     const state = cache.has(key) ? 
       cache.get(key) : 
       cache.set(key, parse(components, strings, values)).get(key)
-    const { tree, fn } = recompile(state, values)
+    const { tree, tmpl } = loadTmpl(state, values)
     const item = tree[0]
-    const props = item[1]
+    if (item === undefined) return null
     item[3].values = values
     tree[esxValues] = values
 
-    const el = {
-      $$typeof: REACT_ELEMENT_TYPE,
-      type: item[0],
-      render: fn,
-      values: values,
-      props: props,
-      [isEsx]: true
-    }
+    const el = new EsxElement(item, tmpl, values)
+
     if (!(parent in el.props)) el.props[parent] = item
     return el
   }
 
-  function renderToString (strings, ...values) {
+  function renderToString (strings, ...args) {
     ssr = true
     currentValues = null
     ssrReactRootAdded = false
-    const element = render(strings, ...values)
-    const output = element.render(element.values)
+    const result = render(strings, ...args)
+    if (result === null) return ''
+    const { tmpl, values, extra, replace } = result[ns]
+    const output = tmpl(values, extra, replace)
     currentValues = null
     ssrReactRootAdded = false
     ssr = false
@@ -276,13 +369,14 @@ function esx (components = {}) {
     validate(additionalComponents)
     Object.assign(components, additionalComponents)
   }
-  render.renderToString = renderToString
+  render.renderToString = render.ssr = renderToString
+  render.createElement = createElement
   return render
 }
 
-function renderComponent(item, values) { 
+function renderComponent (item, values) {
   const [tag, props, childMap, meta] = item
-  props[parent] = item
+  try { props[parent] = item } catch (e) {} // try/catch is to dev scenarios where object is frozen
 
   if (tag.$$typeof === REACT_PROVIDER_TYPE) {
     for (var p in meta.dynAttrs) props[p] = currentValues[meta.dynAttrs[p]]
@@ -290,21 +384,22 @@ function renderComponent(item, values) {
   }
 
   const { dynAttrs, dynChildren } = meta
-
-  for (var p in dynAttrs) {
-    if (p[0] === '…') {
-      const ix = dynAttrs[p]
-      for (var sp in values[ix]) {
-        if (meta.spread[ix].after.indexOf(sp) > -1) continue
-        if (values[ix].hasOwnProperty(sp)) {
-          props[sp] = values[ix][sp]
+  if (values) {
+    for (var p in dynAttrs) {
+      if (p[0] === '…') {
+        const ix = dynAttrs[p]
+        for (var sp in values[ix]) {
+          if (meta.spread[ix].after.indexOf(sp) > -1) continue
+          if (values[ix].hasOwnProperty(sp)) {
+            props[sp] = values[ix][sp]
+          }
         }
+      } else {
+        props[p] = values[dynAttrs[p]]
       }
-    } else {
-      props[p] = values[dynAttrs[p]]
-    }
-    if (p === 'ref' || p === 'key') {
-      values[dynAttrs[p]] = skip
+      if (p === 'ref' || p === 'key') {
+        values[dynAttrs[p]] = skip
+      }
     }
   }
 
@@ -320,7 +415,6 @@ function renderComponent(item, values) {
       tagContext[provider][1].value :
       tagContext._currentValue2
     const props = Object.assign({children: currentValues[dynChildren[0]]}, item[1])
-    // console.log('props', props)
     return currentValues[dynChildren[0]].call(props, context)
   }
   if (tag.$$typeof === REACT_MEMO_TYPE) {
@@ -335,26 +429,25 @@ function renderComponent(item, values) {
     if ('UNSAFE_componentWillMount' in element) element.UNSAFE_componentWillMount()
     return element.render()
   }
-
   return tag(props, context)
 }
 
 function childPropsGetter () {
   if (!ssr) return null
   const item = this[parent]
-  const [ , , childMap, meta ] =item
-  const { dynChildren } = meta 
-  return resolveChildren(childMap, dynChildren, meta.tree,item)
+  const [ , , childMap, meta ] = item
+  const { dynChildren } = meta
+  return (lastChildProp = resolveChildren(childMap, dynChildren, meta.tree, item))
 }
 
-function recompile (state, values) {
-  if (state.fn) return state
+function loadTmpl (state, values) {
+  if (state.tmpl) return state
   const {tree, fields, attrPos } = state
   const snips = {}
   for (var cmi = 0; cmi < tree.length; cmi++) {
     const [ tag, props, , meta ] = tree[cmi]
     if (!('children' in props)) {
-      Object.defineProperty(props, 'children', { get: childPropsGetter, configurable: true })
+      Object.defineProperty(props, 'children', { get: childPropsGetter, enumerable: true, configurable: true })
     }
     const ix = meta.openTagStart[0]
     if (meta.isComponent === false) {
@@ -379,10 +472,11 @@ function recompile (state, values) {
   }
 
   const body = generate(fields, values, snips, attrPos, tree)
-  const fn = Function('values', 'return `' + body.join('') + '`').bind({
-    inject, style, spread, snips, renderComponent, addRoot, selected
+  const tmpl = compileTmpl(body, {
+    inject, attribute, style, spread, snips, renderComponent, addRoot, selected
   })
-  state.fn = fn
+  
+  state.tmpl = tmpl
   state.snips = snips
   return state
 }
@@ -456,10 +550,10 @@ function getTag (fields, i) {
   return fields[ix].slice(reverseSeek(fields[ix], fields[ix].length - 1, /</) + 1, tPos).join('')
 }
 
-
 function generate (fields, values, snips, attrPos, tree, offset = 0) {
   var valdex = 0
   var priorCmpBounds = {}
+  const rootElement = tree.find(([tag]) => typeof tag === 'string')
   for (var i = 0; i < fields.length; i++) {
     const field = fields[i]
     const priorChar = field[field.length - 1]
@@ -482,20 +576,24 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         replace(field, pos, e)
         const [ ix, p ] = seekToEndOfTagName(fields, i)
         const wasSelectedPos = seek(fields[ix], p, /§/)
-        const sanity = fields[ix][wasSelectedPos + 2] === ')' && fields[ix][wasSelectedPos + 3] === '}'
-          && fields[ix][wasSelectedPos - 1] === ' ' && fields[ix][wasSelectedPos - 2] === ','
-        if (sanity) {
-          const selectIndex = fields[ix][wasSelectedPos + 1].codePointAt(0)
-          fields[ix][wasSelectedPos + 1] = ''
-          const selectWithDefaultValue = 'defaultValue' in tree[selectIndex][1]
-          if (selectWithDefaultValue) {
-            fields[ix][wasSelectedPos] = `values[${offset + valdex++}]`
-          } else {
-            fields[ix][wasSelectedPos] = 'false'
-            field[field.length -1] = `\${this.inject(values[${offset + valdex++}], '${key}', '${key}')}`
-          }
+        if (wasSelectedPos === -1) {
+          field[field.length -1] = `\${this.attribute(values[${offset + valdex++}], '${key}', '${key}', replace)}`
         } else {
-          valdex++
+          const sanity = fields[ix][wasSelectedPos + 2] === ')' && fields[ix][wasSelectedPos + 3] === '}'
+            && fields[ix][wasSelectedPos - 1] === ' ' && fields[ix][wasSelectedPos - 2] === ','
+          if (sanity) {
+            const selectIndex = fields[ix][wasSelectedPos + 1].codePointAt(0)
+            fields[ix][wasSelectedPos + 1] = ''
+            const selectWithDefaultValue = 'defaultValue' in tree[selectIndex][1]
+            if (selectWithDefaultValue) {
+              fields[ix][wasSelectedPos] = `values[${offset + valdex++}]`
+            } else {
+              fields[ix][wasSelectedPos] = 'false'
+              field[field.length -1] = `\${this.attribute(values[${offset + valdex++}], '${key}', '${key}', replace)}`
+            }
+          } else {
+            valdex++
+          }
         }
       } else if (key === 'children' || attr.mapping(key, getTag(fields, i)) === 'children') {
           replace(field, pos, e)
@@ -511,7 +609,12 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         const tag = getTag(fields, i)
         const mappedKey = attr.mapping(key, tag)
         if (mappedKey.length > 0) {
-          field[pos] = `\${this.inject(values[${offset + valdex++}], '${mappedKey}', '${key}')}`
+          if (snips[i] && snips[i][0] === rootElement) {
+            field[pos] = `\${this.attribute(values[${offset + valdex++}], '${mappedKey}', '${key}', replace)}`
+          } else {
+            field[pos] = `\${this.attribute(values[${offset + valdex++}], '${mappedKey}', '${key}')}`
+          }
+          
         } else {
           // if the mapped key is empty, clear the attribute from the output and ignore the value
           replace(field, pos, e)
@@ -627,27 +730,57 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         if (from < to) {
           valdex = to
           var c = from
-          while (c++ < to) {
+          while (c++ < to && fields[c]) {
             replace(fields[c], 0, c === to ? end : fields[c].length - 1)
           }
         }
       })
     }
   }
-
+  
   const body = fields.map((f) => f.join(''))
-  for (var fi = 0; fi < body.length; fi++) {
-    const field = body[fi]
-    if (typeof field !== 'string') continue
-    const match = field.match(/\/>|>/)
-    if (match === null) continue
-    if (match.input[match.index - 1] === '-') continue
-    const pre = field.slice(0, match.index).trimRight()
-    const post = field.slice(match.index).trimLeft()
-    body[fi] = pre + '${this.addRoot()}' + post
-    break
+  if (rootElement) {
+    const { keys } = rootElement[3]
+    const attrs = keys.map((k) => {
+      k = attr.mapping(k, rootElement[0])
+      if (k === 'dangerouslySetInnerHTML') return ''
+      return k.length === 0 || attr.reserved(k) ? '' : ` (${k})=".*"`
+    }).filter(Boolean)
+    const rx = RegExp(attrs.join('|'), 'g')
+    
+    for (var fi = 0; fi < body.length; fi++) {
+      const field = body[fi]
+      if (typeof field !== 'string') continue
+      const match = field.match(/\/>|>/)
+      if (match === null) continue
+      if (match.input[match.index - 1] === '-') continue
+      if (attrs.length > 0) body.slice(0, fi + 1).forEach((f, i) => {
+        if (i === fi) {
+          const pre = f.slice(0, match.index).trimRight()
+          const post = f.slice(match.index).trimLeft()
+          const clonableRootElement = makeClonable(pre, rx)
+          const offset = clonableRootElement.length - pre.length
+          match.index += offset
+          body[i] = clonableRootElement + post
+          return
+        }
+        const clonableRootElement = makeClonable(f, rx)
+        body[i] = clonableRootElement
+      })
+      const pre = body[fi].slice(0, match.index).trimRight()
+      const post = body[fi].slice(match.index).trimLeft()
+      body[fi] = `${pre}\${extra}\${this.addRoot()}${post}`
+      break
+    }
   }
   return body
+}
+
+function makeClonable (str, rx) {
+  return str.replace(rx, (m, ...args) => {
+    const k = args.slice(0, -1).find((k) => !!k)
+    return `\${replace !== null && '${k}' in replace ? replace['${k}'] : \`${m}\`}`
+  })
 }
 
 function addRoot () { 
@@ -656,8 +789,11 @@ function addRoot () {
   return result
 }
 
-function compileChildRenderer (item, tree, top) {
-  
+function compileTmpl (body, state) {
+  return Function('values', `extra=''`, 'replace=null', 'return `' + body.join('') + '`').bind(state)
+}
+
+function compileChildTmpl (item, tree, top) {
   const meta = item[3]
   const { openTagStart, openTagEnd, selfClosing, closeTagEnd, attrPos } = meta
   const to = selfClosing ? openTagEnd[0] : closeTagEnd[0] 
@@ -681,12 +817,11 @@ function compileChildRenderer (item, tree, top) {
   replace(fields[from], 0, openTagStart[1] - 1)
   fields[to].length = (selfClosing ? openTagEnd[1] : closeTagEnd[1]) + 1
   const body = generate(fields.slice(from, to + 1), values, snips, attrPos, tree, from)
-  const fn = Function('values', 'return (`' + body.join('') + '`)').bind({
-    inject, style, spread, snips, renderComponent, addRoot, selected
+  const tmpl = compileTmpl(body, {
+    inject, attribute, style, spread, snips, renderComponent, addRoot, selected
   })
-  return fn
+  return tmpl
 }
-
 
 function resolveChildren (childMap, dynChildren, tree, top) {
   const children = []
@@ -697,16 +832,17 @@ function resolveChildren (childMap, dynChildren, tree, top) {
         const [ tag, props, elChildMap, elMeta ] = tree[childMap[i]]
         if (typeof tag === 'function') {
           const element = renderComponent(tree[childMap[i]], tree[esxValues])
-          element.props[parent] = tree[childMap[i]]
-          children[i] = {
-            $$typeof: REACT_ELEMENT_TYPE,
-            type: tag,
-            render: element.render,
-            values: element.values,
-            props: element.props,
-            current: tree[childMap[i]],
-            [isEsx]: true,
-            ref: null
+          if (typeof element !== 'object') {
+            Object.defineProperty(props, 'children', {value: element})
+            children[i] = new EsxElementUnopt(tree[childMap[i]])
+          } else {
+            const state = element[ns] || (element._owner && element._owner[owner] && element._owner())
+            if (state) {
+              children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values)
+            }   else {
+              // Object.defineProperty(props, 'children', {value: element})
+              children[i] = new EsxElementUnopt(tree[childMap[i]])
+            }
           }
         } else {              
           if (elMeta.dynAttrs) {
@@ -716,20 +852,12 @@ function resolveChildren (childMap, dynChildren, tree, top) {
               }
             }
           }
-          tree[childMap[i]][3].render = tree[childMap[i]][3].render || 
-            compileChildRenderer(tree[childMap[i]], tree, top)
-          
+          tree[childMap[i]][3][ns] = tree[childMap[i]][3][ns] || {
+            tmpl: compileChildTmpl(tree[childMap[i]], tree, top),
+            values: tree[esxValues]
+          }          
           props[parent] = tree[childMap[i]]
-          children[i] = {
-            $$typeof: REACT_ELEMENT_TYPE,
-            type: tag,
-            render: tree[childMap[i]][3].render,
-            values: tree[esxValues],
-            props: props,
-            current: tree[childMap[i]],
-            [isEsx]: true,
-            ref: null
-          }
+          children[i] = new EsxElement(tree[childMap[i]], tree[childMap[i]][3][ns].tmpl, tree[esxValues])
         }
       }
     } else {
@@ -742,7 +870,6 @@ function resolveChildren (childMap, dynChildren, tree, top) {
       }
     }
   }
-
   if (children.length === 0) return null 
   if (children.length === 1) return children[0]
   return children

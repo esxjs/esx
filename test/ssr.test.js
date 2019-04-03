@@ -1,6 +1,6 @@
 'use strict'
 const test = require('aquatap')
-process.env.NODE_ENV = 'production' // stop react warnings
+process.env.NODE_ENV = 'development' // stop react warnings
 const { renderToString } = require('react-dom/server')
 const PropTypes = require('prop-types')
 const init = require('..')
@@ -1622,13 +1622,6 @@ test('spread props and defaultProps', async ({is}) => {
   esx.register({Component})
   is(esx.renderToString `<Component/>`, renderToString(esx `<Component/>`))
 })
-
-// legacy context api
-
-   
-// fail fast when Cmp not registered
-// react lazy/suspense -- fallback + lazy load (how?)
-
 
 test('self closing void elements do not render with closing tag', async ({ is }) => {
   const esx = init()
@@ -3509,4 +3502,13 @@ function childValidator (is) {
     }
   }
 }
+
+
+
+// cloneElement
+
+// react router
+  // the infite render issue (from react router)
+
+// default value in select etc.
 
