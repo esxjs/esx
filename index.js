@@ -20,7 +20,6 @@ const {
 const {
   ns, marker, skip, provider, esxValues, parent, owner
 } = require('./lib/symbols')
-
 // singleton state for ssr
 var ssr = false 
 var ssrReactRootAdded = false
@@ -152,52 +151,53 @@ const attribute = (val, attrKey = '', propKey = '', replace = null) => {
   return val
 }
 
+const injectObject = (val) => {
+  if (val.$$typeof === REACT_ELEMENT_TYPE) {
+    // if the element does not have an ns value, it may have been cloned in which
+    // case we've slipped a method through the cloning process that pulls the esx 
+    // state in from the old element
+    const state = val[ns] || (val._owner && val._owner[owner] && val._owner())
+    if (!state) {
+      return elementToMarkup(val)
+    }
+    return state.tmpl(state.values, state.extra, state.replace)
+  }
+  debug('Objects are not valid as an elements child', val)
+  return ''
+}
+const injectArray = (val) => {
+  const stack = val.slice()
+  var priorItemWasString = false
+  var result = ''
+  while (stack.length > 0) {
+    const item = stack.shift()
+    if (item == null) continue
+    if (Array.isArray(item)) {
+      stack.unshift(...item)
+      continue
+    }
+    const type = typeof item
+    if (type === 'function' || type === 'symbol') continue
+    if (type === 'object') {
+      result += injectObject(item)
+      priorItemWasString = false
+    }
+    if (type === 'string') {
+      if (priorItemWasString) result += '<!-- -->'
+      result += escapeHtml(item)
+      priorItemWasString = true
+    }
+  }
+  return result
+}
 const inject = (val) => {
   if (val == null) return ''
   const type = typeof val
-  if (type === 'object') {
-    if (val.$$typeof === REACT_ELEMENT_TYPE) {
-      // if the element does not have an ns value, it may have been cloned in which
-      // case we've slipped a method through the cloning process that pulls the esx 
-      // state in from the old element
-      const state = val[ns] || (val._owner && val._owner[owner] && val._owner())
-      if (!state) {
-        return elementToMarkup(val)
-      }
-      return state.tmpl(state.values, state.extra, state.replace)
-    } 
-  }
-  if (type === 'function' || type === 'symbol') return ''
   if (type === 'string') return escapeHtml(val)
-  if (Array.isArray(val)) {
-    const childrenValue = val.reduce((acc, v) => acc.concat(v), [])
-    val = ''
-    const keys = Object.keys(childrenValue)
-    for (var z = 0; z < keys.length; z++) {
-      const k = keys[z]
-      const item = childrenValue[k]
-      if (item == null) continue
-      const type = typeof item
-      if (type === 'function' || type === 'symbol') continue
-      if (type === 'string') {
-        val += escapeHtml(item)
-        if (typeof childrenValue[z + 1] === 'string') {
-          val += '<!-- -->'
-        }
-      } else if (type === 'object') {
-        if (item.$$typeof === REACT_ELEMENT_TYPE) {
-          // same witchcraft as above
-          const state = item[ns] || (item._owner && item._owner[owner] && item._owner())
-          val += state ? state.tmpl(state.values, state.extra, state.replace) : elementToMarkup(item)
-        } else {
-          val = item + ''
-          debug('Objects are not valid as an elements child', val)
-        }
-      } else val += item
-    }
-    return val
-  } 
-  return val
+  if (type === 'function' || type === 'symbol') return ''
+  if (type !== 'object') return val
+  if (Array.isArray(val)) return injectArray(val)
+  return injectObject(val)
 }
 
 function EsxElementUnopt (item) {
@@ -380,6 +380,7 @@ function renderComponent (item, values) {
 
   if (tag.$$typeof === REACT_PROVIDER_TYPE) {
     for (var p in meta.dynAttrs) props[p] = currentValues[meta.dynAttrs[p]]
+    if ('children' in props) return props.children
     return resolveChildren(childMap, meta.dynChildren, meta.tree, item)
   }
 
@@ -414,8 +415,8 @@ function renderComponent (item, values) {
     const context = tagContext[provider] ? 
       tagContext[provider][1].value :
       tagContext._currentValue2
-    const props = Object.assign({children: currentValues[dynChildren[0]]}, item[1])
-    return currentValues[dynChildren[0]].call(props, context)
+    const props = Object.assign({children: values[dynChildren[0]]}, item[1])
+    return props.children.call(props, context)
   }
   if (tag.$$typeof === REACT_MEMO_TYPE) {
     return tag.type(props, context)

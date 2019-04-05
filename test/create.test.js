@@ -7,6 +7,57 @@ const React = require('react')
 const { createElement } = React
 const init = process.env.TEST_CLIENT_CODE ? require('../browser') : require('..')
 
+test('components parameter must be an object or undefined', async ({throws, doesNotThrow}) => {
+  throws(() => init(null), Error('ESX: supplied components must be an object'))
+  throws(() => init(() => {}), Error('ESX: supplied components must be an object'))
+  throws(() => init([]), Error('ESX: supplied components must be an object'))
+  throws(() => init(Symbol()), Error('ESX: supplied components must be an object'))
+  throws(() => init(1), Error('ESX: supplied components must be an object'))
+  throws(() => init('str'), Error('ESX: supplied components must be an object'))
+  doesNotThrow(() => init())
+  doesNotThrow(() => init(undefined))
+  doesNotThrow(() => init({}))
+  doesNotThrow(() => init(new (class{})))
+})
+
+test('components object must contain only uppercase property keys', async ({throws, doesNotThrow}) => {
+  throws(() => init({component: () => {}}), Error('ESX: all components should use PascalCase'))
+  doesNotThrow(() => init({Component: () => {}}))
+})
+
+test('components object values must be function,classes,symbols or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
+  throws(() => init({Component: undefined}), Error(`ESX: Component is not a valid component`))
+  throws(() => init({Component: null}), Error(`ESX: Component is not a valid component`))
+  throws(() => init({Component: 'str'}), Error(`ESX: Component is not a valid component`))
+  throws(() => init({Component: 1}), Error(`ESX: Component is not a valid component`))
+  throws(() => init({Component: {}}), Error(`ESX: Component is not a valid component`))
+  throws(() => init({Component: []}), Error(`ESX: Component is not a valid component`))
+  doesNotThrow(() => init({Component: Symbol()}))
+  doesNotThrow(() => init({Component: () => {}}))
+  doesNotThrow(() => init({Component: class {}}))
+  doesNotThrow(() => init({Component: {$$typeof: Symbol('test')}}))
+})
+
+test('empty string returns null', async ({ same }) => {
+  const esx = init()
+  same(render(esx ``), null)
+})
+
+test('text at the root is ignored, returns null', async ({ same }) => {
+  const esx = init()
+  same(render(esx `ignore me`), null)
+})
+
+test('text outside elements is ignored', async ({ same }) => {
+  const esx = init()
+  same(render(esx `ignore me<p>test</p>`), render(createElement('p', null, 'test')))
+})
+
+test('element', async ({ same }) => {
+  const esx = init()
+  same(render(esx `<hr/>`), render(createElement('hr')))
+})
+
 test('element and text child', async ({ same }) => {
   const esx = init()
   same(render(esx `<div>hi</div>`), render(createElement('div', null, 'hi')))
@@ -425,6 +476,8 @@ test('elements can only have either children or dangerouslySetInnerHTML', async 
   throws(() => esx `<div dangerouslySetInnerHTML=${{__html: '<p>no</p>'}} children='no'></div>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
   throws(() => esx `<div dangerouslySetInnerHTML=${{__html: '<p>no</p>'}}>${'no'}</div>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
   throws(() => esx `<div dangerouslySetInnerHTML=${{__html: '<p>no</p>'}}>no</div>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
+  throws(() => esx `<div dangerouslySetInnerHTML=${{__html: '<p>no</p>'}} children='no'/>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
+  throws(() => esx `<div dangerouslySetInnerHTML=${{__html: '<p>no</p>'}} children=${'no'}/>`, SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.'))
 })
 
 test('unexpected token', async ({throws}) => {
@@ -432,4 +485,3 @@ test('unexpected token', async ({throws}) => {
   const props = {}
   throws(() => esx `<div .${props}></div>`, SyntaxError('ESX: Unexpected token.'))
 })
-

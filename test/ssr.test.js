@@ -1,11 +1,28 @@
 'use strict'
 const test = require('aquatap')
-process.env.NODE_ENV = 'development' // stop react warnings
 const { renderToString } = require('react-dom/server')
 const PropTypes = require('prop-types')
 const init = require('..')
 const React = require('react')
 const { createElement } = React
+const { MODE } = process.env
+if (!MODE) {
+  process.env.MODE = 'development'
+  const error = console.error.bind(console)
+  console.error = (s, ...args) => {
+    if (/Warning:/.test(s)) return
+    return error(s, ...args)
+  }
+  delete require.cache[require.resolve(__filename)]
+  require(__filename)
+  return 
+}
+process.env.NODE_ENV = MODE
+if (MODE === 'development') process.nextTick(() => {
+  process.env.MODE = 'production'
+  delete require.cache[require.resolve(__filename)]
+  require(__filename)
+})
 
 test('basic', async ({ is }) => {
   const esx = init()
@@ -225,6 +242,40 @@ test('deep nested, non-self closing components with dynamic text array + inline 
   esx.register({Cmp2})
   const Cmp1 = (props) => {
     return esx `<div a=${props.a}><Cmp2>huazz ${['test', 'dynamic']} text</Cmp2></div>`
+  }
+
+  esx.register({Cmp1})
+  const value = 'hia'
+  const Component = () => esx `<Cmp1 a=${value}/>`
+  esx.register({Component})
+  is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
+})
+
+test('deep nested, non-self closing components with dynamic deep nested text array + inline text children', async ({ is }) => {
+  const esx = init()
+  const Cmp2 = ({children}) => {
+    return esx `<p>${children}</p>`
+  }
+  esx.register({Cmp2})
+  const Cmp1 = (props) => {
+    return esx `<div a=${props.a}><Cmp2>huazz ${[['test', 'dynamic']]} text</Cmp2></div>`
+  }
+
+  esx.register({Cmp1})
+  const value = 'hia'
+  const Component = () => esx `<Cmp1 a=${value}/>`
+  esx.register({Component})
+  is(esx.renderToString `<Component/>`, renderToString(createElement(Component)))
+})
+
+test('deep nested, non-self closing components with dynamic very deep nested text array + inline text children', async ({ is }) => {
+  const esx = init()
+  const Cmp2 = ({children}) => {
+    return esx `<p>${children}</p>`
+  }
+  esx.register({Cmp2})
+  const Cmp1 = (props) => {
+    return esx `<div a=${props.a}><Cmp2>huazz ${[['test', [[['dynamic']]]]]} text</Cmp2></div>`
   }
 
   esx.register({Cmp1})
@@ -555,6 +606,60 @@ test('class component context using contextType w/ provider override w/ dynamic 
   class App extends React.Component {
     render () {
       return esx`<div><Provider value=${'dark'}><Toolbar/></Provider></div>`
+    }
+  }
+  esx.register({ App })
+
+  is(esx.renderToString `<App/>`, renderToString(createElement(App)))
+})
+
+test('class component context using contextType w/ provider override w/ dynamic value w/ interpolated child', async ({ is }) => {
+  const esx = init()
+  const ThemeContext = React.createContext('light')
+  const { Provider } = ThemeContext
+  const Button = ({theme}) => esx`<button>${theme}</button>`
+  esx.register({ Button })  
+  class ThemedButton extends React.Component {
+    render () {
+      return esx`<Button theme=${this.context}/>`
+    }
+  }
+  ThemedButton.contextType = ThemeContext
+  esx.register({ ThemedButton })
+  const Toolbar = () => {
+    return esx`<div><ThemedButton/></div>`
+  }
+  esx.register({ Toolbar, Provider })
+  class App extends React.Component {
+    render () {
+      return esx`<div><Provider value=${'dark'}>${esx `<Toolbar/>`}</Provider></div>`
+    }
+  }
+  esx.register({ App })
+
+  is(esx.renderToString `<App/>`, renderToString(createElement(App)))
+})
+
+test('class component context using contextType w/ provider override w/ dynamic value w/ interpolated children attribute', async ({ is }) => {
+  const esx = init()
+  const ThemeContext = React.createContext('light')
+  const { Provider } = ThemeContext
+  const Button = ({theme}) => esx`<button>${theme}</button>`
+  esx.register({ Button })  
+  class ThemedButton extends React.Component {
+    render () {
+      return esx`<Button theme=${this.context}/>`
+    }
+  }
+  ThemedButton.contextType = ThemeContext
+  esx.register({ ThemedButton })
+  const Toolbar = () => {
+    return esx`<div><ThemedButton/></div>`
+  }
+  esx.register({ Toolbar, Provider })
+  class App extends React.Component {
+    render () {
+      return esx`<div><Provider value=${'dark'} children=${esx `<Toolbar/>`}/></div>`
     }
   }
   esx.register({ App })
@@ -1103,6 +1208,19 @@ test('ref prop', async ({ is }) => {
 })
 
 test('rendering object attribute values', async ({ is }) => {
+  const esx = init()
+  const Component = () => {
+    const obj = {}
+    return esx`<div><input obj=${obj}/></div>`
+  }
+  esx.register({Component})
+  is(
+    esx.renderToString `<Component/>`, 
+    renderToString(createElement(Component))
+  )
+})
+
+test('rendering object children as empty string', async ({ is }) => {
   const esx = init()
   const Component = () => {
     const obj = {}
@@ -1827,7 +1945,7 @@ test('defaultValue on input element', async ({ is }) => {
   is(esx.renderToString `<input defaultValue="1"/>`, renderToString(esx`<input defaultValue="1"/>`))
   is(esx.renderToString `<input defaultValue="1"></input>`, renderToString(esx`<input defaultValue="1"></input>`))
   is(esx.renderToString `<input defaultValue=${'1'}/>`, renderToString(esx`<input defaultValue=${'1'}/>`))
- is(esx.renderToString `<input defaultValue=${'1'}></input>`, renderToString(esx`<input defaultValue=${'1'}></input>`))
+is(esx.renderToString `<input defaultValue=${'1'}></input>`, renderToString(esx`<input defaultValue=${'1'}></input>`))
 })
 
 test('defaultValue on textarea element', async ({ is }) => {
@@ -2212,6 +2330,16 @@ test('string attributes with dynamic boolean values are not rendered', async ({ 
   is(esx.renderToString `<div ...${{id:false}}/>`, renderToString(esx `<div ...${{id:false}}/>`))
 })
 
+test('overloaded boolean attributes', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString `<div capture=${true}/>`, renderToString(esx `<div capture=${true}/>`))
+  is(esx.renderToString `<div capture/>`, renderToString(esx `<div capture/>`))
+  is(esx.renderToString `<div capture=""/>`, renderToString(esx `<div capture=""/>`))
+  is(esx.renderToString `<div capture=${false}/>`, renderToString(esx `<div capture=${false}/>`))
+  is(esx.renderToString `<div capture="string"/>`, renderToString(esx `<div capture="string"/>`))
+
+})
+
 test('known camel case attributes are converted to special case equivalents (or not) as neccessary', async ({ is }) => {
   const esx = init()
   is(esx.renderToString `<x acceptCharset="1"/>`, renderToString(esx`<x acceptCharset="1"/>`))
@@ -2261,6 +2389,7 @@ test('known camel case attributes are converted to special case equivalents (or 
   is(esx.renderToString `<x referrerPolicy="1"/>`, renderToString(esx`<x referrerPolicy="1"/>`))
   is(esx.renderToString `<x rowSpan="1"/>`, renderToString(esx`<x rowSpan="1"/>`))
   is(esx.renderToString `<x spellCheck="1"/>`, renderToString(esx`<x spellCheck="1"/>`))
+  is(esx.renderToString `<x allowFullScreen="1"/>`, renderToString(esx`<x allowFullScreen="1"/>`))
   is(esx.renderToString `<x srcDoc="1"/>`, renderToString(esx`<x srcDoc="1"/>`))
   is(esx.renderToString `<x srcLang="1"/>`, renderToString(esx`<x srcLang="1"/>`))
   is(esx.renderToString `<x srcSet="1"/>`, renderToString(esx`<x srcSet="1"/>`))
@@ -2335,7 +2464,7 @@ test('known camel case attributes are converted to special case equivalents (or 
   is(esx.renderToString `<x overlinePosition="1"/>`, renderToString(esx`<x overlinePosition="1"/>`))
   is(esx.renderToString `<x overlineThickness="1"/>`, renderToString(esx`<x overlineThickness="1"/>`))
   is(esx.renderToString `<x paintOrder="1"/>`, renderToString(esx`<x paintOrder="1"/>`))
-  is(esx.renderToString `<x panose1="1"/>`, renderToString(esx`<x panose1="1"/>`))
+  is(esx.renderToString `<x panose-1="1"/>`, renderToString(esx`<x panose-1="1"/>`))
   is(esx.renderToString `<x pathLength="1"/>`, renderToString(esx`<x pathLength="1"/>`))
   is(esx.renderToString `<x patternContentUnits="1"/>`, renderToString(esx`<x patternContentUnits="1"/>`))
   is(esx.renderToString `<x patternTransform="1"/>`, renderToString(esx`<x patternTransform="1"/>`))
@@ -3399,27 +3528,420 @@ test('props.children.props.children of dynamic component with multiple component
   childTest.validate()
 })
 
-test.only('clone element', async ({ is }) => {
+test('clone element', async ({ is }) => {
   const esx = init()
   const { Consumer, Provider } = React.createContext()
   esx.register({ Consumer, Provider })  
-  class Switch extends React.Component {
+  const Wrap = ({children}) => React.cloneElement(children)
+  esx.register({ Wrap })
+  const App = () => esx `<main><Wrap><div path='/'>hi</div></Wrap></main>`
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('clone element extend props', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })  
+  const Wrap = ({children}) => React.cloneElement(children, {a: 1, b: true, c: false})
+  esx.register({ Wrap })
+  const App = () => esx `<main><Wrap><div path='/'>hi</div></Wrap></main>`
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('clone element replace children', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })  
+  const Wrap = ({children}) => React.cloneElement(children, null, 'test')
+  esx.register({ Wrap })
+  const App = () => esx `<main><Wrap><div path='/'>hi</div></Wrap></main>`
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('clone element extend props and replace children', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })  
+  const Wrap = ({children}) => React.cloneElement(children, {a: 1}, 'test')
+  esx.register({ Wrap })
+  const App = () => esx `<main><Wrap><div path='/'>hi</div></Wrap></main>`
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('clone element in consumer child renderer', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })  
+  class Wrap extends React.Component {
     render () {
-      return esx`<Consumer>${() => {
-        return this.props.children
-      }}</Consumer>`
+      return esx `
+        <Consumer>
+          ${() =>  React.cloneElement(this.props.children)}
+        </Consumer>
+      `
     }
   }
-  esx.register({ Switch })
-  // const Paths = () => esx``
-  // esx.register({ Paths })
+  esx.register({ Wrap })
   class App extends React.Component {
     render () {
-      return esx`<main><Switch><div path='/'>hi</div></Switch></main>`
+      return esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
     }
   }
   esx.register({ App })
-  console.log(esx.renderToString `<App/>`)
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+
+test('clone provider wrapper in consumer child renderer', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class WrapProvider extends React.Component {
+    render () {
+      return esx `<Provider>${this.props.children}</Provider>`
+    }
+  }
+  class WrapConsumer extends React.Component {
+    render () {
+      return esx `
+        <Consumer>
+          ${() =>  React.cloneElement(this.props.children)}
+        </Consumer>
+      `
+    }
+  }
+  esx.register({ WrapConsumer, WrapProvider })
+  class App extends React.Component {
+    render () {
+      return esx`<main><WrapConsumer><WrapProvider path='/'>hi</WrapProvider></WrapConsumer></main>`
+    }
+  }
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('clone provider wrapper that uses createElement in consumer child renderer', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class WrapProvider extends React.Component {
+    render () {
+      return createElement(Provider, null, this.props.children)
+    }
+  }
+  class WrapConsumer extends React.Component {
+    render () {
+      return esx `
+        <Consumer>
+          ${() =>  React.cloneElement(this.props.children)}
+        </Consumer>
+      `
+    }
+  }
+  esx.register({ WrapConsumer, WrapProvider })
+  class App extends React.Component {
+    render () {
+      return esx`<main><WrapConsumer><WrapProvider path='/'>hi</WrapProvider></WrapConsumer></main>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App/>`, true)
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('outer provider wraps clone provider wrapper that uses createElement in consumer child renderer', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class WrapProvider extends React.Component {
+    render () {
+      return createElement(Provider, null, this.props.children)
+    }
+  }
+  class WrapConsumer extends React.Component {
+    render () {
+      return esx `
+        <Consumer>
+          ${() =>  React.cloneElement(this.props.children)}
+        </Consumer>
+      `
+    }
+  }
+  esx.register({ WrapConsumer, WrapProvider })
+  class App extends React.Component {
+    render () {
+      return esx`<WrapProvider><WrapConsumer><WrapProvider path='/'>hi</WrapProvider></WrapConsumer></WrapProvider>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App/>`, true)
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('clone provider wrapper that uses createElement in consumer child renderer whose wrapper uses createElement', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class WrapProvider extends React.Component {
+    render () {
+      return createElement(Provider, null, this.props.children)
+    }
+  }
+  class WrapConsumer extends React.Component {
+    render () {
+      return createElement(Consumer, null, () => {
+        return React.cloneElement(this.props.children)
+      })
+    }
+  }
+  esx.register({ WrapConsumer, WrapProvider })
+  class App extends React.Component {
+    render () {
+      return esx`<main><WrapConsumer><WrapProvider path='/'>hi</WrapProvider></WrapConsumer></main>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App/>`, true)
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('clone provider wrapper that uses createElement in consumer child renderer whose wrapper uses createElement', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class WrapProvider extends React.Component {
+    render () {
+      return createElement(Provider, null, this.props.children)
+    }
+  }
+  class WrapConsumer extends React.Component {
+    render () {
+      return createElement(Consumer, null, () => {
+        return React.cloneElement(this.props.children)
+      })
+    }
+  }
+  esx.register({ WrapConsumer, WrapProvider })
+  class App extends React.Component {
+    render () {
+      return esx`<main><WrapConsumer><WrapProvider path='/'>hi</WrapProvider></WrapConsumer></main>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App/>`, true)
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('outer provider wraps clone provider wrapper that uses createElement in consumer child renderer whose wrapper uses createElement', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class WrapProvider extends React.Component {
+    render () {
+      return createElement(Provider, null, this.props.children)
+    }
+  }
+  class WrapConsumer extends React.Component {
+    render () {
+      return createElement(Consumer, null, () => {
+        return React.cloneElement(this.props.children)
+      })
+    }
+  }
+  esx.register({ WrapConsumer, WrapProvider })
+  class App extends React.Component {
+    render () {
+      return esx`<WrapProvider><WrapConsumer><WrapProvider path='/'>hi</WrapProvider></WrapConsumer></WrapProvider>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App/>`, true)
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('outer provider wraps clone provider wrapper that uses createElement in consumer child renderer whose wrapper uses createElement', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class WrapProvider extends React.Component {
+    render () {
+      return createElement(Provider, null, this.props.children)
+    }
+  }
+  class WrapConsumer extends React.Component {
+    render () {
+      return createElement(Consumer, null, () => {
+        return React.cloneElement(this.props.children)
+      })
+    }
+  }
+  esx.register({ WrapConsumer, WrapProvider })
+  class App extends React.Component {
+    render () {
+      return esx`<WrapProvider><WrapConsumer><WrapProvider path='/'>hi</WrapProvider></WrapConsumer></WrapProvider>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App/>`, true)
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('outer provider wraps children, consumer child renderer clones its children, which is a wrapper of a consumer with a child render function that returns a provider that instantiates a component passed via an attribute on the outer provider wraper', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class Router extends React.Component {
+    render () {
+      return createElement(Provider, null, this.props.children)
+    }
+  }
+  class Route extends React.Component {
+    render () {
+      return createElement(Consumer, null, () => {
+        const { component } = this.props 
+        return createElement(Provider, {value: this.props}, createElement(component, this.props))
+      })
+    }
+  }
+  class Switch extends React.Component {
+    render () {
+      return createElement(Consumer, null, () => {
+        return React.cloneElement(this.props.children)
+      })
+    }
+  }
+  esx.register({ Switch, Router, Route })
+  const Cmp = () => esx `<p>test</p>`
+  class App extends React.Component {
+    render () {
+      return esx`<Router><Switch><Route path='/' component=${Cmp}/></Switch></Router>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App/>`, true)
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+// test.only('outer provider wraps children, consumer child renderer clones its children, which is a multiple instances of a wrapper of a consumer with a child render function that returns a provider that instantiates a component passed via an attribute on the outer provider wraper using criteria based on the outer providers context and the inner wrapper components properties (this is a react-router simulation)', async ({ is }) => {
+//   const esx = init()
+//   const { Consumer, Provider } = React.createContext()
+//   esx.register({ Consumer, Provider })
+//   class Router extends React.Component {
+//     render () {
+//       return esx `<Provider value=${this.props} children=${this.props.children}/>`
+//       // return createElement(Provider, {value: this.props}, this.props.children)
+//     }
+//   }
+//   class Route extends React.Component {
+//     render () {
+//       return createElement(Consumer, null, () => {
+//         const { component } = this.props 
+//         return createElement(Provider, {value: this.props}, createElement(component, this.props))
+//       })
+//     }
+//   }
+//   class Switch extends React.Component {
+//     render () {
+//       return esx `
+//       <Consumer>
+//         ${(context) => {
+//           const { location } = context
+//           var match = null
+//           React.Children.forEach(this.props.children, (child) => {
+//             if (child.props.path === location) match = child
+//           })
+//           if (match === null) console.log(this)
+//           return React.cloneElement(match)
+//         }}
+//       </Consumer>
+//       `
+//     }
+//   }
+//   esx.register({ Switch, Router, Route })
+//   const Cmp1 = () => esx `<p>test1</p>`
+//   const Cmp2 = () => esx `<p>test2</p>`
+//   class App extends React.Component {
+//     render () {
+//       const { location } = this.props
+//       return esx`<Router location=${location}><Switch><Route path='/a' component=${Cmp1}/><Route path='/b' component=${Cmp2}/></Switch></Router>`
+//     }
+//   }
+//   esx.register({ App })
+//   // is(!!esx.renderToString `<App location='/a'/>`, true)
+//   // is(!!esx.renderToString `<App location='/b'/>`, true)
+//   console.log(renderToString(esx `<App location='/a'/>`))
+//   console.log(esx.renderToString `<App location='/a'/>`)
+//   console.log(renderToString(esx `<App location='/a'/>`))
+
+//   //is(esx.renderToString `<App location='/a'/>`, renderToString(esx `<App location='/a'/>`))
+//   // is(esx.renderToString `<App location='/b'/>`, renderToString(esx `<App location='/b'/>`))  
+// })
+
+test('implemented with createElement, outer provider wraps children, consumer child renderer clones its children, which is a multiple instances of a wrapper of a consumer with a child render function that returns a provider that instantiates a component passed via an attribute on the outer provider wraper using criteria based on the outer providers context and the inner wrapper components properties (this is a react-router simulation)', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class Router extends React.Component {
+    render () {
+      return createElement(Provider, {value: this.props}, this.props.children)
+    }
+  }
+  class Route extends React.Component {
+    render () {
+      return createElement(Consumer, null, () => {
+        const { component } = this.props 
+        return createElement(Provider, {value: this.props}, createElement(component, this.props))
+      })
+    }
+  }
+  class Switch extends React.Component {
+    render () {
+      return createElement(Consumer, null, (context) => {
+        const { location } = context
+        var match = null
+        React.Children.forEach(this.props.children, (child) => {
+          if (child.props.path === location) match = child
+        })
+        return React.cloneElement(match)
+      })
+    }
+  }
+  esx.register({ Switch, Router, Route })
+  const Cmp1 = () => esx `<p>test1</p>`
+  const Cmp2 = () => esx `<p>test2</p>`
+  class App extends React.Component {
+    render () {
+      const { location } = this.props
+      return esx`<Router location=${location}><Switch><Route path='/a' component=${Cmp1}/><Route path='/b' component=${Cmp2}/></Switch></Router>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App location='/a'/>`, true)
+  is(!!esx.renderToString `<App location='/b'/>`, true)
+  is(esx.renderToString `<App location='/a'/>`, renderToString(esx `<App location='/a'/>`))
+  is(esx.renderToString `<App location='/b'/>`, renderToString(esx `<App location='/b'/>`))  
+})
+
+test('deviation: object children are rendered as an empty string instead of throwing', async ({is, throws, doesNotThrow}) => {
+  const esx = init()
+  throws(() => renderToString(esx `<a>${({a:1})}</a>`))
+  throws(() => renderToString(esx `<a>${([{a:1}])}</a>`))
+  doesNotThrow(() => esx.renderToString `<a>${({a:1})}</a>`)
+  doesNotThrow(() => esx.renderToString `<a>${([{a:1}])}</a>`)
+  is(esx.renderToString `<a>${({a:1})}</a>`, '<a data-reactroot=""></a>')
+  is(esx.renderToString `<a>${([{a:1}])}</a>`, '<a data-reactroot=""></a>')
+})
+
+test('deviation: duplicate props are rendered', async ({is}) => {
+  const esx = init()
+  is(
+    esx.renderToString `<img b='a' b=${'x'} b='y'/>`,
+    '<img b="a" b="x" b="y" data-reactroot=""/>'
+  )
 })
 
 test('deviation: spread duplicate props are rendered', async ({is}) => {
@@ -3448,7 +3970,7 @@ test('deviation:deep nested, non-self closing components with object child', asy
   // render objects if passed
   throws(() => renderToString(createElement(Component)))
   doesNotThrow(() => esx.renderToString `<Component/>`)
-  is(esx.renderToString `<Component/>`, '<div a="hia" data-reactroot=""><p>[object Object]</p></div>')
+  is(esx.renderToString `<Component/>`, '<div a="hia" data-reactroot=""><p></p></div>')
 })
 
 test('deviation: propTypes invalidation will *not* throw, even in dev mode', async ({doesNotThrow}) => {
@@ -3504,7 +4026,6 @@ function childValidator (is) {
 }
 
 
-
 // cloneElement
 
 // react router
@@ -3512,3 +4033,6 @@ function childValidator (is) {
 
 // default value in select etc.
 
+// MULTI RENDERING, STATE CONFUSION ETC.
+
+// useContext hook
