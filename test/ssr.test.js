@@ -3881,6 +3881,51 @@ test('outer provider wraps children, consumer child renderer clones its children
 //   // is(esx.renderToString `<App location='/b'/>`, renderToString(esx `<App location='/b'/>`))  
 // })
 
+// test.only('correct state: children passed through a provider are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
+//   const esx = init()
+//   const { Consumer, Provider } = React.createContext()
+//   esx.register({ Consumer, Provider })
+//   class Wrap extends React.Component {
+//     render () {
+//       return esx `<Provider value=${this.props} children=${this.props.children}/>`
+//       return createElement(Provider, {value: this.props}, this.props.children)
+//     }
+//   }
+//   class App extends React.Component {
+//     render () {
+//       return esx`<div><Wrap><div>hi</div></Wrap></div>`
+//     }
+//   }
+//   esx.register({ App, Wrap })
+//   const output = renderToString(esx `<App>`)
+//   console.log('WHATTTT', output)
+//   is(esx.renderToString `<App/>`, output)
+//   // is(renderToString(esx `<App>`, output))
+//   // is(esx.renderToString `<App>`, output)
+// })
+
+
+test.only('syntax error unclosed component', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class Wrap extends React.Component {
+    render () {
+      return esx `<Provider value=${this.props} children=${this.props.children}/>`
+      return createElement(Provider, {value: this.props}, this.props.children)
+    }
+  }
+  class App extends React.Component {
+    render () {
+      return esx`<div><Wrap><div>hi</div></Wrap></div>`
+    }
+  }
+  esx.register({ App, Wrap })
+  console.log(esx.renderToString `<App/>`) //renderToString(esx `<App>`))
+  // is(renderToString(esx `<App>`, output))
+  // is(esx.renderToString `<App>`, output)
+})
+
 test('implemented with createElement, outer provider wraps children, consumer child renderer clones its children, which is a multiple instances of a wrapper of a consumer with a child render function that returns a provider that instantiates a component passed via an attribute on the outer provider wraper using criteria based on the outer providers context and the inner wrapper components properties (this is a react-router simulation)', async ({ is }) => {
   const esx = init()
   const { Consumer, Provider } = React.createContext()

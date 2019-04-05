@@ -476,7 +476,6 @@ function loadTmpl (state, values) {
   const tmpl = compileTmpl(body, {
     inject, attribute, style, spread, snips, renderComponent, addRoot, selected
   })
-  
   state.tmpl = tmpl
   state.snips = snips
   return state
@@ -711,7 +710,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       
     }
     if (i in snips) {
-      snips[i].forEach((snip, ix) => {       
+      snips[i].forEach((snip, ix) => {
         const { openTagStart, openTagEnd, selfClosing, closeTagEnd, isComponent } = snip[3]
         if (!isComponent) return
         const [ from, start ] = openTagStart
@@ -774,6 +773,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       break
     }
   }
+
   return body
 }
 
