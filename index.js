@@ -379,8 +379,14 @@ function renderComponent (item, values) {
   try { props[parent] = item } catch (e) {} // try/catch is to dev scenarios where object is frozen
 
   if (tag.$$typeof === REACT_PROVIDER_TYPE) {
-    for (var p in meta.dynAttrs) props[p] = currentValues[meta.dynAttrs[p]]
-    if ('children' in props) return props.children
+    for (var p in meta.dynAttrs) {
+      if (p === 'children') {
+        meta.dynChildren[0] = meta.dynAttrs[p]
+        childMap[0] = marker
+      } else {
+        props[p] = currentValues[meta.dynAttrs[p]]
+      }
+    }
     return resolveChildren(childMap, meta.dynChildren, meta.tree, item)
   }
 
@@ -830,7 +836,7 @@ function resolveChildren (childMap, dynChildren, tree, top) {
 
     if (typeof childMap[i] === 'number') {
       if (tree[childMap[i]]) {
-        const [ tag, props, elChildMap, elMeta ] = tree[childMap[i]]
+        const [ tag, props, , elMeta ] = tree[childMap[i]]
         if (typeof tag === 'function') {
           const element = renderComponent(tree[childMap[i]], tree[esxValues])
           if (typeof element !== 'object') {
@@ -841,7 +847,6 @@ function resolveChildren (childMap, dynChildren, tree, top) {
             if (state) {
               children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values)
             }   else {
-              // Object.defineProperty(props, 'children', {value: element})
               children[i] = new EsxElementUnopt(tree[childMap[i]])
             }
           }
@@ -856,8 +861,18 @@ function resolveChildren (childMap, dynChildren, tree, top) {
           tree[childMap[i]][3][ns] = tree[childMap[i]][3][ns] || {
             tmpl: compileChildTmpl(tree[childMap[i]], tree, top),
             values: tree[esxValues]
-          }          
-          props[parent] = tree[childMap[i]]
+          }
+
+          try { 
+            props[parent] = tree[childMap[i]] 
+          } catch (e) {
+            // this element has at some point been passed
+            // through React.renderToString (or renderToStaticMarkup),
+            // because props[parent] is there and has become readOnly.
+            // So there's nothing to do here, we need to avoid 
+            // a throw. 
+          }
+            
           children[i] = new EsxElement(tree[childMap[i]], tree[childMap[i]][3][ns].tmpl, tree[esxValues])
         }
       }

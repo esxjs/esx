@@ -561,3 +561,5 @@ test('lack of closing tag for auto closing elements does not throw', async ({doe
   doesNotThrow(() => esx `<colgroup>`, SyntaxError(`Expected corresponding ESX closing tag for <colgroup>`))
   doesNotThrow(() => esx `<App><colgroup></App>`, SyntaxError(`Expected corresponding ESX closing tag for <colgroup>`))
 })
+
+// todo:  open ended tag syntax error (no closing >)

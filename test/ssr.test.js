@@ -3826,93 +3826,63 @@ test('outer provider wraps children, consumer child renderer clones its children
   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
 })
 
-// test.only('outer provider wraps children, consumer child renderer clones its children, which is a multiple instances of a wrapper of a consumer with a child render function that returns a provider that instantiates a component passed via an attribute on the outer provider wraper using criteria based on the outer providers context and the inner wrapper components properties (this is a react-router simulation)', async ({ is }) => {
-//   const esx = init()
-//   const { Consumer, Provider } = React.createContext()
-//   esx.register({ Consumer, Provider })
-//   class Router extends React.Component {
-//     render () {
-//       return esx `<Provider value=${this.props} children=${this.props.children}/>`
-//       // return createElement(Provider, {value: this.props}, this.props.children)
-//     }
-//   }
-//   class Route extends React.Component {
-//     render () {
-//       return createElement(Consumer, null, () => {
-//         const { component } = this.props 
-//         return createElement(Provider, {value: this.props}, createElement(component, this.props))
-//       })
-//     }
-//   }
-//   class Switch extends React.Component {
-//     render () {
-//       return esx `
-//       <Consumer>
-//         ${(context) => {
-//           const { location } = context
-//           var match = null
-//           React.Children.forEach(this.props.children, (child) => {
-//             if (child.props.path === location) match = child
-//           })
-//           if (match === null) console.log(this)
-//           return React.cloneElement(match)
-//         }}
-//       </Consumer>
-//       `
-//     }
-//   }
-//   esx.register({ Switch, Router, Route })
-//   const Cmp1 = () => esx `<p>test1</p>`
-//   const Cmp2 = () => esx `<p>test2</p>`
-//   class App extends React.Component {
-//     render () {
-//       const { location } = this.props
-//       return esx`<Router location=${location}><Switch><Route path='/a' component=${Cmp1}/><Route path='/b' component=${Cmp2}/></Switch></Router>`
-//     }
-//   }
-//   esx.register({ App })
-//   // is(!!esx.renderToString `<App location='/a'/>`, true)
-//   // is(!!esx.renderToString `<App location='/b'/>`, true)
-//   console.log(renderToString(esx `<App location='/a'/>`))
-//   console.log(esx.renderToString `<App location='/a'/>`)
-//   console.log(renderToString(esx `<App location='/a'/>`))
+test('outer provider wraps children, consumer child renderer clones its children, which is a multiple instances of a wrapper of a consumer with a child render function that returns a provider that instantiates a component passed via an attribute on the outer provider wraper using criteria based on the outer providers context and the inner wrapper components properties (this is a react-router simulation)', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class Router extends React.Component {
+    render () {
+      return esx `<Provider value=${this.props} children=${this.props.children}/>`
+    }
+  }
+  class Route extends React.Component {
+    render () {
+      return createElement(Consumer, null, () => {
+        const { component } = this.props 
+        return createElement(Provider, {value: this.props}, createElement(component, this.props))
+      })
+    }
+  }
+  class Switch extends React.Component {
+    render () {
+      return esx `
+      <Consumer>
+        ${(context) => {
+          const { location } = context
+          var match = null
+          React.Children.forEach(this.props.children, (child) => {
+            if (child.props.path === location) match = child
+          })
+          if (match === null) console.log(this)
+          return React.cloneElement(match)
+        }}
+      </Consumer>
+      `
+    }
+  }
+  esx.register({ Switch, Router, Route })
+  const Cmp1 = () => esx `<p>test1</p>`
+  const Cmp2 = () => esx `<p>test2</p>`
+  class App extends React.Component {
+    render () {
+      const { location } = this.props
+      return esx`<Router location=${location}><Switch><Route path='/a' component=${Cmp1}/><Route path='/b' component=${Cmp2}/></Switch></Router>`
+    }
+  }
+  esx.register({ App })
+  is(!!esx.renderToString `<App location='/a'/>`, true)
+  is(!!esx.renderToString `<App location='/a'/>`, true)
+  is(esx.renderToString `<App location='/a'/>`, renderToString(esx `<App location='/a'/>`))
+  is(esx.renderToString `<App location='/b'/>`, renderToString(esx `<App location='/b'/>`))
+})
 
-//   //is(esx.renderToString `<App location='/a'/>`, renderToString(esx `<App location='/a'/>`))
-//   // is(esx.renderToString `<App location='/b'/>`, renderToString(esx `<App location='/b'/>`))  
-// })
-
-// test.only('correct state: children passed through a provider are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
-//   const esx = init()
-//   const { Consumer, Provider } = React.createContext()
-//   esx.register({ Consumer, Provider })
-//   class Wrap extends React.Component {
-//     render () {
-//       return esx `<Provider value=${this.props} children=${this.props.children}/>`
-//       return createElement(Provider, {value: this.props}, this.props.children)
-//     }
-//   }
-//   class App extends React.Component {
-//     render () {
-//       return esx`<div><Wrap><div>hi</div></Wrap></div>`
-//     }
-//   }
-//   esx.register({ App, Wrap })
-//   const output = renderToString(esx `<App>`)
-//   console.log('WHATTTT', output)
-//   is(esx.renderToString `<App/>`, output)
-//   // is(renderToString(esx `<App>`, output))
-//   // is(esx.renderToString `<App>`, output)
-// })
-
-
-test.only('syntax error unclosed component', async ({ is }) => {
+test('correct state: children passed through a children of provider are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
   const esx = init()
   const { Consumer, Provider } = React.createContext()
   esx.register({ Consumer, Provider })
   class Wrap extends React.Component {
     render () {
-      return esx `<Provider value=${this.props} children=${this.props.children}/>`
-      return createElement(Provider, {value: this.props}, this.props.children)
+      return esx `<Provider value=${this.props}>${this.props.children}</Provider>`
     }
   }
   class App extends React.Component {
@@ -3921,9 +3891,73 @@ test.only('syntax error unclosed component', async ({ is }) => {
     }
   }
   esx.register({ App, Wrap })
-  console.log(esx.renderToString `<App/>`) //renderToString(esx `<App>`))
-  // is(renderToString(esx `<App>`, output))
-  // is(esx.renderToString `<App>`, output)
+  const output = renderToString(esx `<App/>`)
+  is(esx.renderToString `<App/>`, output)
+  is(renderToString(esx `<App/>`), output)
+  is(esx.renderToString `<App/>`, output)
+})
+
+test.only('correct state: children passed through providers children attribute are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class Wrap extends React.Component {
+    render () {
+      return esx `<Provider value=${this.props} children=${this.props.children}/>`
+    }
+  }
+  class App extends React.Component {
+    render () {
+      return esx`<div><Wrap><div>hi</div></Wrap></div>`
+    }
+  }
+  esx.register({ App, Wrap })
+  const output = renderToString(esx `<App/>`)
+  is(esx.renderToString `<App/>`, output)
+  is(renderToString(esx `<App/>`), output)
+  is(esx.renderToString `<App/>`, output)
+})
+
+test.only('correct state: multiple children passed through providers children attribute are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class Wrap extends React.Component {
+    render () {
+      return esx `<Provider value=${this.props} children=${this.props.children}/>`
+    }
+  }
+  class App extends React.Component {
+    render () {
+      return esx`<div><Wrap><div>a</div><div>b</div></Wrap></div>`
+    }
+  }
+  esx.register({ App, Wrap })
+  const output = renderToString(esx `<App/>`)
+  is(esx.renderToString `<App/>`, output)
+  is(renderToString(esx `<App/>`), output)
+  is(esx.renderToString `<App/>`, output)
+})
+
+test('correct state: children passed through a children of provider instantiatred with createElement are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  class Wrap extends React.Component {
+    render () {
+      return createElement(Provider, {value: this.props, children: this.props.children})
+    }
+  }
+  class App extends React.Component {
+    render () {
+      return esx`<div><Wrap><div>hi</div></Wrap></div>`
+    }
+  }
+  esx.register({ App, Wrap })
+  const output = renderToString(esx `<App/>`)
+  is(esx.renderToString `<App/>`, output)
+  is(renderToString(esx `<App/>`), output)
+  is(esx.renderToString `<App/>`, output)
 })
 
 test('implemented with createElement, outer provider wraps children, consumer child renderer clones its children, which is a multiple instances of a wrapper of a consumer with a child render function that returns a provider that instantiates a component passed via an attribute on the outer provider wraper using criteria based on the outer providers context and the inner wrapper components properties (this is a react-router simulation)', async ({ is }) => {
@@ -4081,3 +4115,5 @@ function childValidator (is) {
 // MULTI RENDERING, STATE CONFUSION ETC.
 
 // useContext hook
+
+// children attribute + children in element
