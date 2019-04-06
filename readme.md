@@ -6,8 +6,9 @@ High throughput React Server Side Rendering
 
 `esx` is not a framwork. It is a multifaceted substrate.
 
-First and foremost `esx` is a **high speed SSR template engine for React**,
-which may be used with **absolutely no code base changes**. 
+First and foremost `esx` is a **high speed SSR template engine for React**.
+
+It can be used with **absolutely no code base changes**. 
 
 Use it with a [preloader flag](https://nodejs.org/api/cli.html#cli_r_require_module) like so:
 
@@ -155,7 +156,7 @@ it then uses to look up component references within the template.
 
 When called, the Initializer returns a Template Engine instance.
 
-### Template Engine: `esx `` => React Element`
+### Template Engine: ``esx`<markup/>` => React Element``
 
 The result of the Initializer is a Template Engine which 
 should always be assigned to `esx`. This is important
@@ -184,7 +185,7 @@ esx.register({ App })
 console.log(esx `<App/>`) 
 ```
 
-### Server-Side Rendering: `esx.renderToString`` => String`
+### Server-Side Rendering: ``esx.renderToString`<markup/>` => String``
 
 On the server side every Template Engine instance also has a
 `renderToString` method. The `esx.renderToString` method is
