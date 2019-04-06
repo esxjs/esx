@@ -170,7 +170,7 @@ const esx = createEsx({ App }) // same as {App: App}
 console.log(esx `<App/>`) // exactly same result as React.createElement(App)
 ```
 
-#### Component Registration: `esx.register(components = {})`
+### Component Registration: `esx.register(components = {})`
 
 Components can also be registerd post initalizer with the
 `esx.register` method:
