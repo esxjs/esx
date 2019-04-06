@@ -41,15 +41,27 @@ Creating HTML with `esx` syntax is as close as possible to JSX:
 
 - Spread props: `<div ...${props}>`
 - Self-closing tags: `<div />`
+- Attributes: `<img src="https://example.com/img.png"/>` and `<img src=${src}/>`
 - Boolean attributes: `<div draggable />`
-- Components: `<Foo>`
+- Components: `<Foo/>`
   - Components must be registered with `esx`: `esx.register({Foo})`
 
-## Requirements
+## Compatibility
 
 * `react` v16.8+ is required as a peer dependency
 * `react-dom` v16.8+ is required as a peer dependency
 * `esx` is built for Node 10+
+
+## Limitations
+
+`esx` should cover the API surface of all *non-deprecated* React features.
+
+Notably, `esx` will not work with the [Legacy Context API](https://reactjs.org/docs/legacy-context.html),
+but it will work with the [New Context API](https://reactjs.org/docs/context.html).
+
+While the legacy API is being phased out, there still may be modules in a 
+projects depedency tree that rely on the legacy API. If you desperately need
+support for the legacy API, <a href="mailto:david.clements@nearform.com">contact me (david.clements@nearform.com)</a>
 
 ## Usage
 
