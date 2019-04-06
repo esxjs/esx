@@ -10,7 +10,7 @@ const assert = require('assert')
 
 esx.register({EsxApp})
 
-assert.equal(esx.renderToString `<EsxApp/>`, renderToString(createElement(CreateElementApp)))
+// assert.equal(esx.renderToString `<EsxApp/>`, renderToString(createElement(CreateElementApp)))
 
 const max = 1000
 const run = bench([
@@ -20,12 +20,12 @@ const run = bench([
     }
     setImmediate(cb)
   },
-  function reactRenderToString (cb) {
-    for (var i = 0; i < max; i++) {
-      renderToString(createElement(CreateElementApp))
-    }
-    setImmediate(cb)
-  },
+  // function reactRenderToString (cb) {
+  //   for (var i = 0; i < max; i++) {
+  //     renderToString(createElement(CreateElementApp))
+  //   }
+  //   setImmediate(cb)
+  // },
 ], 100)
 
 run(run)
