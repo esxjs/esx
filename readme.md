@@ -3,7 +3,7 @@
 High throughput React Server Side Rendering
 
 <p align="center">
-  <img src="assets/jsx-vs-esx" width="600" alt="esx demo">
+  <img src="assets/jsx-vs-esx.png" width="600" alt="esx demo">
 </p>
 
 `esx` is not a framwork. It is a multifaceted substrate.
