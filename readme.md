@@ -1,3 +1,255 @@
 # esx
 
-don't use this yet, seriously
+High throughput React Server Side Rendering
+
+<p align="center">
+  <img src="assets/jsx-vs-esx" width="600" alt="esx demo">
+</p>
+
+`esx` is not a framwork. It is a multifaceted substrate.
+
+First and foremost `esx` is a **high speed SSR template engine for React**,
+which may be used with **absolutely no code base changes**. 
+
+Use it with a [preloader flag](https://nodejs.org/api/cli.html#cli_r_require_module) like so:
+
+```sh
+node -r esx/optimize my-app.js
+```
+
+Optionally, `esx` is also a universal **JSX-like syntax in plain JavaScript** that allows
+for the elimination of transpilation in development environments.
+
+* For the server side, using `esx` syntax  will yield the same high speed results as the optimizing preloader
+* For client side development, using `esx` syntax can enhance development workflow by removing the need for browser transpilation when developing in modern browsers
+* For client side production `esx` can be compiled away for production, resulting in zero-byte payload overhead.
+
+It uses native [Tagged Templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) and works in all modern browsers.
+
+## Install
+
+```js
+npm i esx
+```
+
+## Syntax
+
+Creating HTML with `esx` syntax is as close as possible to JSX:
+
+- Spread props: `<div ...${props}>`
+- Self-closing tags: `<div />`
+- Boolean attributes: `<div draggable />`
+- Components: `<Foo>`
+  - Components must be registered with `esx`: `esx.register({Foo})`
+
+## Requirements
+
+* `react` v16.8+ is required as a peer dependency
+* `react-dom` v16.8+ is required as a peer dependency
+* `esx` is built for Node 10+
+
+## Usage
+
+### As an optimizer 
+
+Preload `esx/optimize` like so:
+
+```sh
+node -r esx/optimize my-app.js
+```
+
+That's is. This will convert all `JSX` and `createElement` calls to ESX format, 
+unlocking the throughput benefits of SSR template rendering.
+
+### As a JSX replacement
+
+Additionally, `esx` can be written by hand for great ergonomic benefit
+in both server and client development contexts. Here's the example
+from the [`htm`](https://github.com/developit/htm) readme converted
+to `esx` (`htm` is discussed at the bottom of this readme):
+
+```js
+// using require instead of import allows for no server transpilation
+const { Component } = require('react') 
+const esx = require('esx')()
+class App extends Component {
+  addTodo() {
+    const { todos = [] } = this.state;
+    this.setState({ todos: todos.concat(`Item ${todos.length}`) });
+  }
+  render({ page }, { todos = [] }) {
+    return esx`
+      <div class="app">
+        <Header name="ToDo's (${page})" />
+        <ul>
+          ${todos.map(todo => esx`
+            <li>${todo}</li>
+          `)}
+        </ul>
+        <button onClick=${() => this.addTodo()}>Add Todo</button>
+        <Footer>footer content here</Footer>
+      </div>
+    `
+  }
+}
+const Header = ({ name }) => esx`<h1>${name} List</h1>`
+const Footer = props => esx`<footer ...${props} />`
+
+esx.register({ Header, Footer })
+
+module.exports = App
+```
+
+In a client entry point this can be rendered the usual way:
+
+```js
+const App = require('./App')
+const container = document.getElementById('app')
+const { hydrate } = require('react-dom') // using hydrate because we have SSR
+const esx = require('esx')({ App })
+hydrate(esx `<App page="All"/>`, container)
+```
+
+And the server entry point can use `esx.renderToToString` for high speed
+server-side rendering:
+
+```js
+const { createServer } = require('http')
+const App = require('./App')
+createServer((req, res) => {
+  res.end(`
+    <html>
+      <head><title>Todo</title></head>
+      <body>
+        <div id="app">
+        ${esx.renderToString `<App page="All"/>`}
+        </div>
+      </body>
+    </html>
+  `)
+}).listen(3000)
+```
+
+## API
+
+The `esx` module exports an initializer function, which 
+returns a template string tag function.
+
+### Initializer: `createEsx(components = {}) => esx`
+
+The default export is a function that when called initializes an 
+instance of `esx`. 
+
+```js
+import createEsx from 'esx'
+```
+
+```js
+const createEsx = require('esx')
+```
+
+The initialzer takes an object of component mappings which 
+it then uses to look up component references within the template.
+
+When called, the Initializer returns a Template Engine instance.
+
+### Template Engine: `esx `` => React Element`
+
+The result of the Initializer is a Template Engine which 
+should always be assigned to `esx`. This is important
+for editor syntax support. The Template Engine instance
+is a [template tag function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates).
+
+```js
+import createEsx from 'esx'
+import App from 'components/App'
+const esx = createEsx({ App }) // same as {App: App}
+// `esx` is the Template Engine
+console.log(esx `<App/>`) // exactly same result as React.createElement(App)
+```
+
+#### Component Registration: `esx.register(components = {})`
+
+Components can also be registerd post initalizer with the
+`esx.register` method:
+
+```js
+import createEsx from 'esx'
+import App from 'components/App'
+const esx = createEsx()
+esx.register({ App })
+// exactly same result as React.createElement(App)
+console.log(esx `<App/>`) 
+```
+
+### Server-Side Rendering: `esx.renderToString`` => String`
+
+On the server side every Template Engine instance also has a
+`renderToString` method. The `esx.renderToString` method is
+also a template literal tag function.
+
+This **must** be used in place of the `react-dom/server` packages 
+`renderToString` method in order to obtain the speed benefits.
+
+```js
+import createEsx from 'esx'
+import App from 'components/App'
+const esx = createEsx()
+esx.register({ App })
+// same, but faster, result as ReactDom.renderToString(App)
+console.log(esx.renderToString `<App/>`)
+```
+
+**Alias**: `esx.ssr`
+
+## Contributions
+
+`esx` is an **OPEN Open Source Project**. This means that:
+
+> Individuals making significant and valuable contributions are given commit-access to the project to contribute as they see fit. This project is more like an open wiki than a standard guarded open source project.
+
+See the [CONTRIBUTING.md](https://github.com/pinojs/pino/blob/master/CONTRIBUTING.md) file for more details.
+
+## The Team
+
+### David Mark Clements
+
+<https://github.com/davidmarkclements>
+
+<https://www.npmjs.com/~davidmarkclements>
+
+<https://twitter.com/davidmarkclem>
+
+## Prior Art
+
+### ESX
+`esx` was preceded by... `esx`. The `esx` namespace was registered four years ago 
+by a prior author [Mattéo Delabre ](https://github.com/matteodelabre), with a similar 
+idea. He kindly donated the namespace to this particular manifestation of the idea. 
+For this reason, `esx` versioning begins at v2.x.x.  Versions 0.x.x and 1.x.x are depreacted.
+
+### Hyperx
+
+`esx` is directly inspired by `hyperx`(https://npm.im/hyperx), which
+was the first known library to this authors knowledge to make the point
+that template strings are perfect for generating both virtual doms 
+and server side rendering. What `hyperx` lacks, however, is a way 
+to represent React components within it's template syntax. It is *only* 
+for generating HTML nodes.
+
+### HTM
+
+It's not uncommon for similar ideas to be had and implemented concurrently
+without either party knowing of the other.
+While [`htm`](https://github.com/developit/htm) was first released early 2019, 
+work on `esx` had already been on-going some months prior. However the 
+mission of `esx` is slightly broader, with a primary objective being to speed up 
+server side rendering, so it took longer to release.
+
+## License
+
+[MIT](./LICENSE)
+
+## Sponsors
+
+* [nearForm](https://nearform.com)

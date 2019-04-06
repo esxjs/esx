@@ -1,7 +1,7 @@
 {
   "name": "esx",
-  "version": "1.0.0",
-  "description": "",
+  "version": "2.0.0",
+  "description": "High throughput React Server Side Rendering",
   "main": "index.js",
   "browser": "./browser.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "test:client": "TEST_CLIENT_CODE=1 tap test/create.test.js",
     "cov": "tap --100 --coverage-report=html test/*.test.js"
   },
-  "keywords": [],
+  "keywords": ["react", "jsx", "es6", "templates", "performance", "speed", "fast", "esnext", "ssr", "server-side rendering", "rendering"],
   "author": "David Mark Clements <david.mark.clements@gmail.com>",
   "license": "MIT",
   "devDependencies": {
@@ -23,10 +23,7 @@
     "standard": "^12.0.1"
   },
   "dependencies": {
-    "array-flat-polyfill": "^1.0.0",
-    "array.prototype.flat": "^1.2.1",
     "debug": "^4.1.0",
-    "escape-html": "^1.0.3",
-    "react-router": "^5.0.0"
+    "escape-html": "^1.0.3"
   }
 }

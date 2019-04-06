@@ -60,7 +60,7 @@ function esx (components = {}) {
     }
     return root
   }
-
+  render.createElement = createElement
   render.register = (additionalComponents) => {
     validate(additionalComponents)
     Object.assign(components, additionalComponents)
