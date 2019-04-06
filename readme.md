@@ -2,9 +2,7 @@
 
 High throughput React Server Side Rendering
 
-<p align="center">
-  <img src="assets/jsx-vs-esx.png" width="600" alt="esx demo">
-</p>
+<img src="https://avatars1.githubusercontent.com/u/45238803?s=400&u=83a23d46289a2f151a58f18001458f1494174853&v=4" width="150" alt="esx demo">
 
 `esx` is not a framwork. It is a multifaceted substrate.
 
@@ -25,6 +23,10 @@ for the elimination of transpilation in development environments.
 * For client side production `esx` can be compiled away for production, resulting in zero-byte payload overhead.
 
 It uses native [Tagged Templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) and works in all modern browsers.
+
+<p align="center">
+  <img src="assets/jsx-vs-esx.png" width="800" alt="esx demo">
+</p>
 
 ## Install
 
