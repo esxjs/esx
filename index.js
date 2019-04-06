@@ -279,6 +279,7 @@ Object.defineProperty(EsxElement.prototype, '_owner', ownerDesc)
 
 function esx (components = {}) {
   validate(components)
+  components = Object.assign({}, components)
   const cache = new WeakMap()
   const raw = (strings, ...values) => {
     const key = strings

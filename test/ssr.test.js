@@ -87,6 +87,45 @@ test('class component and state', async ({ is }) => {
   is(esx.renderToString `<Component/>`, renderToString(esx `<Component/>`))
 })
 
+test('component nested in object', async ({ is }) => {
+  const esx = init()
+  const Component = (props) => {
+    return esx `<div a=${props.a}>${props.text}</div>`
+  }
+  const o = {Component}
+  esx.register({o})
+  is(
+    esx.renderToString `<o.Component a='test' text='test'/>`, 
+    renderToString(createElement(Component, {a: 'test', text: 'test'}))
+  )
+})
+
+test('components with path syntax names', async ({ is }) => {
+  const esx = init()
+  const Cmp2 = ({text}) => {
+    return esx `<p>${text}</p>`
+  }
+  const Cmp1 = (props) => {
+    return esx `<div a=${props.a}><o.Cmp2 text=${props.text}/></div>`
+  }
+  const value = 'hia'
+  const Component = () => esx `<o.Cmp1 a=${value} text='hi'/>`
+  const o = {Cmp1, Cmp2}
+  esx.register({ 
+    o: o,
+    'o.Component': Component,
+    'o["Component"]': Component,
+    'o[`Component`]': Component,
+    'o[\'Component\']': Component,
+    'o[Component]': Component
+  })
+  is(esx.renderToString `<o.Component/>`, renderToString(createElement(Component)))
+  is(esx.renderToString `<o["Component"]/>`, renderToString(createElement(Component)))
+  is(esx.renderToString `<o['Component']/>`, renderToString(createElement(Component)))
+  is(esx.renderToString `<o[\`Component\`]/>`, renderToString(createElement(Component)))
+  is(esx.renderToString `<o[Component]/>`, renderToString(createElement(Component)))
+})
+
 test('sibling elements', async ({ is }) => {
   const Component = () => esx `<div><span>test</span><p>test2</p></div>`
   const esx = init({ Component })
@@ -3897,7 +3936,7 @@ test('correct state: children passed through a children of provider are consiste
   is(esx.renderToString `<App/>`, output)
 })
 
-test.only('correct state: children passed through providers children attribute are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
+test('correct state: children passed through providers children attribute are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
   const esx = init()
   const { Consumer, Provider } = React.createContext()
   esx.register({ Consumer, Provider })
@@ -3918,7 +3957,7 @@ test.only('correct state: children passed through providers children attribute a
   is(esx.renderToString `<App/>`, output)
 })
 
-test.only('correct state: multiple children passed through providers children attribute are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
+test('correct state: multiple children passed through providers children attribute are consistent when renderToString and esx.renderToString are called multiple times', async ({ is }) => {
   const esx = init()
   const { Consumer, Provider } = React.createContext()
   esx.register({ Consumer, Provider })

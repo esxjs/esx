@@ -6,6 +6,7 @@ const { marker } = require('./lib/symbols')
 
 function esx (components = {}) {
   validate(components)
+  components = Object.assign({}, components)
   const cache = new WeakMap()
   const render = (strings, ...values) => {
     const key = strings

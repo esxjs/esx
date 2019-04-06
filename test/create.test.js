@@ -1,12 +1,28 @@
 'use strict'
 const test = require('aquatap')
-process.env.NODE_ENV = 'production' // stop react warnings
 const renderer = require('react-test-renderer')
 const render = (o) => renderer.create(o).toJSON()
 const React = require('react')
 const { createElement } = React
 const init = process.env.TEST_CLIENT_CODE ? require('../browser') : require('..')
-
+const { MODE } = process.env
+if (!MODE) {
+  process.env.MODE = 'development'
+  const error = console.error.bind(console)
+  console.error = (s, ...args) => {
+    if (/Warning:/.test(s)) return
+    return error(s, ...args)
+  }
+  delete require.cache[require.resolve(__filename)]
+  require(__filename)
+  return 
+}
+process.env.NODE_ENV = MODE
+if (MODE === 'development') process.nextTick(() => {
+  process.env.MODE = 'production'
+  delete require.cache[require.resolve(__filename)]
+  require(__filename)
+})
 test('components parameter must be an object or undefined', async ({throws, doesNotThrow}) => {
   throws(() => init(null), Error('ESX: supplied components must be an object'))
   throws(() => init(() => {}), Error('ESX: supplied components must be an object'))
@@ -21,7 +37,7 @@ test('components parameter must be an object or undefined', async ({throws, does
 })
 
 test('components object must contain only uppercase property keys', async ({throws, doesNotThrow}) => {
-  throws(() => init({component: () => {}}), Error('ESX: all components should use PascalCase'))
+  throws(() => init({component: () => {}}), Error(`ESX: component is not valid. All components should use PascalCase`))
   doesNotThrow(() => init({Component: () => {}}))
 })
 
@@ -483,19 +499,19 @@ test('unexpected token', async ({throws}) => {
 })
 
 test('lack of component closing tag causes syntax error', async ({throws}) => {
-  const esx = init()
+  const esx = init({App: () => {}})
   throws(() => esx `<App>`, SyntaxError(`Expected corresponding ESX closing tag for <App>`))
   throws(() => esx `<div><App></div>`, SyntaxError(`Expected corresponding ESX closing tag for <App>`))
 })
 
 test('lack of closing tag for elements other than auto closing elements causes syntax error', async ({throws}) => {
-  const esx = init()
+  const esx = init({App: () => {}})
   throws(() => esx `<div>`, SyntaxError(`Expected corresponding ESX closing tag for <div>`))
   throws(() => esx `<App><div></App>`, SyntaxError(`Expected corresponding ESX closing tag for <div>`))
 })
 
 test('lack of closing tag for auto closing elements does not throw', async ({doesNotThrow}) => {
-  const esx = init()
+  const esx = init({App: ({children}) => children})
   doesNotThrow(() => esx `<area>`, SyntaxError(`Expected corresponding ESX closing tag for <area>`))
   doesNotThrow(() => esx `<App><area></App>`, SyntaxError(`Expected corresponding ESX closing tag for <area>`))
   doesNotThrow(() => esx `<base>`, SyntaxError(`Expected corresponding ESX closing tag for <base>`))
@@ -560,6 +576,81 @@ test('lack of closing tag for auto closing elements does not throw', async ({doe
   doesNotThrow(() => esx `<App><tfoot></App>`, SyntaxError(`Expected corresponding ESX closing tag for <tfoot>`))
   doesNotThrow(() => esx `<colgroup>`, SyntaxError(`Expected corresponding ESX closing tag for <colgroup>`))
   doesNotThrow(() => esx `<App><colgroup></App>`, SyntaxError(`Expected corresponding ESX closing tag for <colgroup>`))
+})
+
+test('component in object', async ({ same }) => {
+  const esx = init()
+  const Cmp2 = ({text}) => {
+    return esx `<p>${text}</p>`
+  }
+  const Cmp1 = (props) => {
+    return esx `<div a=${props.a}><o.Cmp2 text=${props.text}/></div>`
+  }
+  const value = 'hia'
+  const Component = () => esx `<o.Cmp1 a=${value} text='hi'/>`
+  const o = {Cmp1, Cmp2, Component}
+  esx.register({ o, x: { o } })
+  same(render(esx `<o.Component/>`), render(createElement(o.Component)))
+  same(render(esx `<x.o.Component/>`), render(createElement(o.Component)))
+  same(render(esx `<x['o']Component/>`), render(createElement(o.Component)))
+  same(render(esx `<x["o"]Component/>`), render(createElement(o.Component)))
+  same(render(esx `<x[\`o\`]Component/>`), render(createElement(o.Component)))
+  same(render(esx `<x[\`o\`]['Component']/>`), render(createElement(o.Component)))
+})
+
+test('component in object validate', async ({ doesNotThrow, throws }) => {
+  doesNotThrow(() => init({a: {Cmp: () => {}}}))
+  throws(() => init({a: {cmp: () => {}}}), Error(`ESX: a.cmp is not valid. All components should use PascalCase`))
+  doesNotThrow(() => init({a: {Cmp: () => {}, Cmp2: () => {}}}))
+  throws(() => init({a: {Cmp: () => {}, cmp: () => {}}}), Error(`ESX: a.cmp is not valid. All components should use PascalCase`))
+})
+
+test('component not found', async ({ throws }) => {
+  const esx = init()
+  throws(() => {
+    esx `<Cmp/>`
+  }, ReferenceError(`ESX: Cmp not found in registered components`))
+  throws(() => {
+    esx `<o.Cmp/>`
+  }, ReferenceError(`ESX: o.Cmp not found in registered components`))
+  throws(() => {
+    esx `<o[Cmp]/>`
+  }, ReferenceError(`ESX: o[Cmp] not found in registered components`))
+  throws(() => {
+    esx `<o['Cmp']/>`
+  }, ReferenceError(`ESX: o['Cmp'] not found in registered components`))
+  throws(() => {
+    esx `<o["Cmp"]/>`
+  }, ReferenceError(`ESX: o["Cmp"] not found in registered components`))
+  throws(() => {
+    esx `<o[\`Cmp\`]/>`
+  }, ReferenceError(`ESX: o[\`Cmp\`] not found in registered components`))
+})
+
+test('path component names', async ({ same }) => {
+  const esx = init()
+  const Cmp2 = ({text}) => {
+    return esx `<p>${text}</p>`
+  }
+  const Cmp1 = (props) => {
+    return esx `<div a=${props.a}><o.Cmp2 text=${props.text}/></div>`
+  }
+  const value = 'hia'
+  const Component = () => esx `<o.Cmp1 a=${value} text='hi'/>`
+  const o = {Cmp1, Cmp2}
+  esx.register({ 
+    o: o,
+    'o.Component': Component,
+    'o["Component"]': Component,
+    'o[`Component`]': Component,
+    'o[\'Component\']': Component,
+    'o[Component]': Component
+  })
+  same(render(esx `<o.Component/>`), render(createElement(Component)))
+  same(render(esx `<o["Component"]/>`), render(createElement(Component)))
+  same(render(esx `<o['Component']/>`), render(createElement(Component)))
+  same(render(esx `<o[\`Component\`]/>`), render(createElement(Component)))
+  same(render(esx `<o[Component]/>`), render(createElement(Component)))
 })
 
 // todo:  open ended tag syntax error (no closing >)
