@@ -18,7 +18,7 @@ const {
   VOID_ELEMENTS
 } = require('./lib/constants')
 const {
-  ns, marker, skip, provider, esxValues, parent, owner
+  ns, marker, skip, provider, esxValues, parent, owner, template
 } = require('./lib/symbols')
 // singleton state for ssr
 var ssr = false 
@@ -332,6 +332,17 @@ function esx (components = {}) {
       root = reactChildren === null ? createElement(tag, props) : createElement(tag, props, reactChildren)
       map[i] = root
     }
+    if (root) {
+      try { // production scenario -- faster
+        root[template] = {strings, values}
+      } catch (e) {// development scenario (work around frozen objects)
+        
+        root = {
+          [template]: {strings, values},
+          __proto__: root
+        }
+      }
+    }
     return root
   }
   const render = function (strings, ...values) {
@@ -354,6 +365,12 @@ function esx (components = {}) {
   }
 
   function renderToString (strings, ...args) {
+    if (strings[template]) {
+      args = strings[template].values
+      strings = strings[template].strings
+    } else if ('$$typeof' in strings) {
+      throw Error('esx.renderToString is either a tag function or can accept esx elements. But not plain React elements.')
+    }
     ssr = true
     currentValues = null
     ssrReactRootAdded = false

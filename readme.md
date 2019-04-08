@@ -211,11 +211,42 @@ import createEsx from 'esx'
 import App from 'components/App'
 const esx = createEsx()
 esx.register({ App })
-// same, but faster, result as ReactDom.renderToString(App)
+// same, but faster, result as ReactDomServer.renderToString(<App/>)
 console.log(esx.renderToString `<App/>`)
 ```
 
 **Alias**: `esx.ssr`
+
+#### `esx.renderToString(EsxElement) => String`
+
+The `esx.renderToString` method can also accept an element as its only
+parameter. 
+
+```js
+import createEsx from 'esx'
+import App from 'components/App'
+const esx = createEsx()
+esx.register({ App })
+const app = esx `<App/>`
+// same, but faster, result as ReactDomServer.renderToString(app)
+console.log(esx.renderToString(app))
+```
+
+Elements created with `esx` contain template information and can
+be used for high performance rendering, whereas a plain React element 
+at the root could only ever be rendered with `ReactDomServer.renderToString`.
+
+That is why `esx.renderToString` *will throw* if passed a plain 
+React element: 
+
+```js
+// * DON'T DO THIS!: *
+esx.renderToString(React.createElement('div')) // => throws Error
+// instead do this:
+esx.renderToString `<div/>`
+// or this: 
+esx.renderToString(esx `<div/>`)
+```
 
 ## Contributions
 

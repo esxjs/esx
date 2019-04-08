@@ -4044,6 +4044,17 @@ test('implemented with createElement, outer provider wraps children, consumer ch
   is(esx.renderToString `<App location='/b'/>`, renderToString(esx `<App location='/b'/>`))  
 })
 
+test('renderToString can accept esx elements', async ({is, throws}) => {
+  const esx = init()
+  const app = esx `<div>test</div>`
+  is(esx.renderToString(app), renderToString(app))
+})
+
+test('renderToString will throw when passed plain React elements', async ({is, throws}) => {
+  const esx = init()
+  throws(() => esx.renderToString(createElement('div', null, 'test')), Error('esx.renderToString is either a tag function or can accept esx elements. But not plain React elements.'))
+})
+
 test('deviation: object children are rendered as an empty string instead of throwing', async ({is, throws, doesNotThrow}) => {
   const esx = init()
   throws(() => renderToString(esx `<a>${({a:1})}</a>`))
@@ -4059,14 +4070,6 @@ test('deviation: duplicate props are rendered', async ({is}) => {
   is(
     esx.renderToString `<img b='a' b=${'x'} b='y'/>`,
     '<img b="a" b="x" b="y" data-reactroot=""/>'
-  )
-})
-
-test('deviation: spread duplicate props are rendered', async ({is}) => {
-  const esx = init()
-  is(
-    esx.renderToString `<img b='a' ...${{a: 1, b: 2}} b=${'x'} b='y'/>`,
-    '<img b="a" a="1" b="x" b="y" data-reactroot=""/>'
   )
 })
 

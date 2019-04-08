@@ -14,18 +14,25 @@ esx.register({EsxApp})
 
 const max = 1000
 const run = bench([
-  function esxRenderToString (cb) {
+  function esxRenderToStringAsTag (cb) {
     for (var i = 0; i < max; i++) {
       esx.renderToString `<EsxApp/>`
     }
     setImmediate(cb)
   },
-  // function reactRenderToString (cb) {
-  //   for (var i = 0; i < max; i++) {
-  //     renderToString(createElement(CreateElementApp))
-  //   }
-  //   setImmediate(cb)
-  // },
+  function esxRenderToStringPassedElement (cb) {
+    for (var i = 0; i < max; i++) {
+      const element = esx `<EsxApp/>`
+      esx.renderToString(element)
+    }
+    setImmediate(cb)
+  },
+  function reactRenderToString (cb) {
+    for (var i = 0; i < max; i++) {
+      renderToString(createElement(CreateElementApp))
+    }
+    setImmediate(cb)
+  },
 ], 100)
 
 run(run)
