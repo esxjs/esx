@@ -10,7 +10,19 @@
     "test:client": "TEST_CLIENT_CODE=1 tap test/create.test.js",
     "cov": "tap --100 --coverage-report=html test/*.test.js"
   },
-  "keywords": ["react", "jsx", "es6", "templates", "performance", "speed", "fast", "esnext", "ssr", "server-side rendering", "rendering"],
+  "keywords": [
+    "react",
+    "jsx",
+    "es6",
+    "templates",
+    "performance",
+    "speed",
+    "fast",
+    "esnext",
+    "ssr",
+    "server-side rendering",
+    "rendering"
+  ],
   "author": "David Mark Clements <david.mark.clements@gmail.com>",
   "license": "MIT",
   "devDependencies": {
@@ -25,5 +37,17 @@
   "dependencies": {
     "debug": "^4.1.0",
     "escape-html": "^1.0.3"
-  }
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/esxjs/esx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/esxjs/esx/issues"
+  },
+  "homepage": "https://github.com/esxjs/esx#readme"
 }
