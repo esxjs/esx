@@ -7,6 +7,8 @@ High throughput React Server Side Rendering
 <img src="https://avatars1.githubusercontent.com/u/45238803?s=400&u=83a23d46289a2f151a58f18001458f1494174853&v=4" width="150" alt="esx demo">
 
 
+For a simplified example of `esx` in action, check out [esx-demo](https://github.com/esxjs/esx-demo).
+
 `esx` is designed to be a **high speed SSR template engine for React**.
 
 It can be used with **absolutely no code base changes**. 
