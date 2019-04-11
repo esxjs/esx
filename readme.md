@@ -292,11 +292,11 @@ See the [CONTRIBUTING.md](https://github.com/esxjs/esx/blob/master/CONTRIBUTING.
 `esx` was preceded by... `esx`. The `esx` namespace was registered four years ago 
 by a prior author [Mattéo Delabre ](https://github.com/matteodelabre), with a similar 
 idea. He kindly donated the namespace to this particular manifestation of the idea. 
-For this reason, `esx` versioning begins at v2.x.x.  Versions 0.x.x and 1.x.x are depreacted.
+For this reason, `esx` versioning begins at v2.x.x.  Versions 0.x.x and 1.x.x are deprecated.
 
 ### Hyperx
 
-`esx` is directly inspired by `hyperx`(https://npm.im/hyperx), which
+`esx` is directly inspired by [`hyperx`](https://npm.im/hyperx), which
 was the first known library to this authors knowledge to make the point
 that template strings are perfect for generating both virtual doms 
 and server side rendering. What `hyperx` lacks, however, is a way 
