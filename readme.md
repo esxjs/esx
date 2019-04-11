@@ -41,7 +41,7 @@ This should only be used in production when:
 * It has been thoroughly verrified against your current implementation
 
 `esx` needs use cases and battle testing. All issues are very welcome,
-PR's are extremely welcome and Collaborators are extraordinarily welcome.
+PR's are extremely welcome and Collaborators are exceptionally, extraordinarily, exceedingly welcome.
 
 If you or your team want support in integrating `esx`, or need help
 with server side rendering in general please feel free to 
