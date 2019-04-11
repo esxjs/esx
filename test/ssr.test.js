@@ -4055,6 +4055,113 @@ test('renderToString will throw when passed plain React elements', async ({is, t
   throws(() => esx.renderToString(createElement('div', null, 'test')), Error('esx.renderToString is either a tag function or can accept esx elements. But not plain React elements.'))
 })
 
+test('hooks: useState ', async ({ doesNotThrow, is }) => {
+  const esx = init()
+  const { useState } = React
+  const App = () => {
+    const [ state, update ] = useState('initialState')
+    is(state, 'initialState')
+    is(typeof update, 'function')
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  doesNotThrow(() => esx.renderToString `<App/>`)
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('hooks: useEffect does not throw  (noop)', async ({ doesNotThrow }) => {
+  const esx = init()
+  const { useEffect } = React
+  const App = () => {
+    useEffect(()=>{})
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  doesNotThrow(() => esx.renderToString `<App/>`)
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('hooks: useLayoutEffect does not throw  (noop)', async ({ doesNotThrow }) => {
+  const esx = init()
+  const { useLayoutEffect } = React
+  const App = () => {
+    useLayoutEffect(()=>{})
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  doesNotThrow(() => esx.renderToString `<App/>`)
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('hooks: useContext throws (not implemented)', async ({ doesNotThrow, throws}) => {
+  const esx = init()
+  const { useContext } = React
+  const context = React.createContext()
+  const App = () => {
+    useContext(context)
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  throws(() => esx.renderToString `<App/>`, Error('not implemented'))
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('hooks: useMemo throws (not implemented)', async ({ doesNotThrow, throws }) => {
+  const esx = init()
+  const { useMemo } = React
+  const App = () => {
+    useMemo(() => {})
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  throws(() => esx.renderToString `<App/>`, Error('not implemented'))
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('hooks: useReducer throws (not implemented)', async ({ doesNotThrow, throws }) => {
+  const esx = init()
+  const { useReducer } = React
+  const App = () => {
+    useReducer(() => {}, {})
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  throws(() => esx.renderToString `<App/>`, Error('not implemented'))
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('hooks: useRef throws (not implemented)', async ({ doesNotThrow, throws }) => {
+  const esx = init()
+  const { useRef } = React
+  const App = () => {
+    useRef(null)
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  throws(() => esx.renderToString `<App/>`, Error('not implemented'))
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('hooks: useCallback does not throw', async ({ doesNotThrow }) => {
+  const esx = init()
+  const { useCallback } = React
+  const App = () => {
+    useCallback(() => {})
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  doesNotThrow(() => esx.renderToString `<App/>`, Error('not implemented'))
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
 test('deviation: object children are rendered as an empty string instead of throwing', async ({is, throws, doesNotThrow}) => {
   const esx = init()
   throws(() => renderToString(esx `<a>${({a:1})}</a>`))
@@ -4145,6 +4252,8 @@ function childValidator (is) {
     }
   }
 }
+
+
 
 
 // cloneElement

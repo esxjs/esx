@@ -1,10 +1,11 @@
+# If you need help with Server Side Rendering and performance, <a href="mailto:david.clements@nearform.com">contact me! (david.clements@nearform.com)</a>
+
 # esx
 
 High throughput React Server Side Rendering
 
 <img src="https://avatars1.githubusercontent.com/u/45238803?s=400&u=83a23d46289a2f151a58f18001458f1494174853&v=4" width="150" alt="esx demo">
 
-`esx` is not a framwork. It is a multifaceted substrate.
 
 First and foremost `esx` is a **high speed SSR template engine for React**.
 
@@ -28,6 +29,23 @@ It uses native [Tagged Templates](https://developer.mozilla.org/en-US/docs/Web/J
 <p align="center">
   <img src="assets/jsx-vs-esx.png" width="800" alt="esx demo">
 </p>
+
+## Status
+
+Not only is this project on-going, it's also following a moving
+target (the React implementation). 
+
+This should only be used in production when:
+
+* It has been verified to yield significant enough performance gains
+* It has been thoroughly verrified against your current implementation
+
+`esx` needs use cases and battle testing. All issues are very welcome,
+PR's are extremely welcome and Collaborators are extraordinarily welcome.
+
+If you or your team want support in integrating `esx`, or need help
+with server side rendering in general please feel free to 
+<a href="mailto:david.clements@nearform.com">contact me (david.clements@nearform.com)</a>
 
 ## Install
 
@@ -59,9 +77,11 @@ Creating HTML with `esx` syntax is as close as possible to JSX:
 Notably, `esx` will not work with the [Legacy Context API](https://reactjs.org/docs/legacy-context.html),
 but it will work with the [New Context API](https://reactjs.org/docs/context.html).
 
+Additionally, some hooks will also throw a Not Implemented error, these are a work in progress.
+
 While the legacy API is being phased out, there still may be modules in a 
 projects depedency tree that rely on the legacy API. If you desperately need
-support for the legacy API, <a href="mailto:david.clements@nearform.com">contact me (david.clements@nearform.com)</a>
+support for the legacy API or hooks, <a href="mailto:david.clements@nearform.com">contact me (david.clements@nearform.com)</a>
 
 ## Usage
 

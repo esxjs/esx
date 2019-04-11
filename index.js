@@ -9,6 +9,7 @@ const escapeHtml = require('./lib/escape')
 const parse = require('./lib/parse')
 const validate = require('./lib/validate')
 const attr = require('./lib/attr')
+const hooks = require('./lib/hooks')
 const {
   REACT_PROVIDER_TYPE,
   REACT_CONSUMER_TYPE,
@@ -371,6 +372,7 @@ function esx (components = {}) {
     } else if ('$$typeof' in strings) {
       throw Error('esx.renderToString is either a tag function or can accept esx elements. But not plain React elements.')
     }
+    hooks.install()
     ssr = true
     currentValues = null
     ssrReactRootAdded = false
@@ -381,6 +383,7 @@ function esx (components = {}) {
     currentValues = null
     ssrReactRootAdded = false
     ssr = false
+    hooks.uninstall()
     return output
   }
   render.register = (additionalComponents) => {
