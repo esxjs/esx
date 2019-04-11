@@ -7,15 +7,20 @@ High throughput React Server Side Rendering
 <img src="https://avatars1.githubusercontent.com/u/45238803?s=400&u=83a23d46289a2f151a58f18001458f1494174853&v=4" width="150" alt="esx demo">
 
 
-First and foremost `esx` is a **high speed SSR template engine for React**.
+`esx` is designed to be a **high speed SSR template engine for React**.
 
 It can be used with **absolutely no code base changes**. 
 
 Use it with a [preloader flag](https://nodejs.org/api/cli.html#cli_r_require_module) like so:
 
 ```sh
-node -r esx/optimize my-app.js
+node -r esx/experimental-optimize my-app.js
 ```
+
+*Note this is experimental, once stable this will become esx/optimize*.
+
+Additionally [a babel plugin](https://github.com/esxjs/esx/issues/1) is on its way.
+
 
 Optionally, `esx` is also a universal **JSX-like syntax in plain JavaScript** that allows
 for the elimination of transpilation in development environments.
