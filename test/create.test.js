@@ -23,17 +23,17 @@ if (MODE === 'development') process.nextTick(() => {
   delete require.cache[require.resolve(__filename)]
   require(__filename)
 })
-test('components parameter must be an object or undefined', async ({throws, doesNotThrow}) => {
-  throws(() => init(null), Error('ESX: supplied components must be an object'))
-  throws(() => init(() => {}), Error('ESX: supplied components must be an object'))
-  throws(() => init([]), Error('ESX: supplied components must be an object'))
-  throws(() => init(Symbol()), Error('ESX: supplied components must be an object'))
-  throws(() => init(1), Error('ESX: supplied components must be an object'))
-  throws(() => init('str'), Error('ESX: supplied components must be an object'))
+test('components parameter must be a plain object or undefined', async ({throws, doesNotThrow}) => {
+  throws(() => init(null), Error('ESX: supplied components must be a plain object'))
+  throws(() => init(() => {}), Error('ESX: supplied components must be a plain object'))
+  throws(() => init([]), Error('ESX: supplied components must be a plain object'))
+  throws(() => init(Symbol()), Error('ESX: supplied components must be a plain object'))
+  throws(() => init(1), Error('ESX: supplied components must be a plain object'))
+  throws(() => init('str'), Error('ESX: supplied components must be a plain object'))
+  throws(() => init(new (class{})))
   doesNotThrow(() => init())
   doesNotThrow(() => init(undefined))
   doesNotThrow(() => init({}))
-  doesNotThrow(() => init(new (class{})))
 })
 
 test('components object must contain only uppercase property keys', async ({throws, doesNotThrow}) => {
@@ -52,6 +52,19 @@ test('components object values must be function,classes,symbols or objects with 
   doesNotThrow(() => init({Component: () => {}}))
   doesNotThrow(() => init({Component: class {}}))
   doesNotThrow(() => init({Component: {$$typeof: Symbol('test')}}))
+})
+
+test('regiseter: components object values must be function,classes,symbols or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
+  throws(() => init().register({Component: undefined}), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register({Component: null}), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register({Component: 'str'}), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register({Component: 1}), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register({Component: {}}), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register({Component: []}), Error(`ESX: Component is not a valid component`))
+  doesNotThrow(() => init().register({Component: Symbol()}))
+  doesNotThrow(() => init().register({Component: () => {}}))
+  doesNotThrow(() => init().register({Component: class {}}))
+  doesNotThrow(() => init().register({Component: {$$typeof: Symbol('test')}}))
 })
 
 test('empty string returns null', async ({ same }) => {
