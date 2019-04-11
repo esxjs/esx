@@ -390,6 +390,10 @@ function esx (components = {}) {
     validate(additionalComponents)
     Object.assign(components, additionalComponents)
   }
+  render.swap = (fn) => {
+    fn(components)
+    return render
+  }
   render.renderToString = render.ssr = renderToString
   render.createElement = createElement
   return render
