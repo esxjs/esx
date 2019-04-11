@@ -1,4 +1,4 @@
-# If you need help with Server Side Rendering and performance, <a href="mailto:david.clements@nearform.com">contact me! (david.clements@nearform.com)</a>
+# If you need help with Server Side Rendering and performance, <a href="mailto:david.clements@nearform.com">contact me!</a> (david.clements@nearform.com)
 
 # esx
 
@@ -45,7 +45,7 @@ PR's are extremely welcome and Collaborators are extraordinarily welcome.
 
 If you or your team want support in integrating `esx`, or need help
 with server side rendering in general please feel free to 
-<a href="mailto:david.clements@nearform.com">contact me (david.clements@nearform.com)</a>
+<a href="mailto:david.clements@nearform.com">contact me </a>(david.clements@nearform.com)
 
 ## Install
 
@@ -81,7 +81,7 @@ Additionally, some hooks will also throw a Not Implemented error, these are a wo
 
 While the legacy API is being phased out, there still may be modules in a 
 projects depedency tree that rely on the legacy API. If you desperately need
-support for the legacy API or hooks, <a href="mailto:david.clements@nearform.com">contact me (david.clements@nearform.com)</a>
+support for the legacy API or hooks, <a href="mailto:david.clements@nearform.com">contact me</a>(david.clements@nearform.com).
 
 ## Usage
 
