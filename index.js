@@ -9,7 +9,7 @@ const escapeHtml = require('./lib/escape')
 const parse = require('./lib/parse')
 const validate = require('./lib/validate')
 const attr = require('./lib/attr')
-const hooks = require('./lib/hooks')
+var hooks = require('./lib/hooks/compatible')
 const {
   REACT_PROVIDER_TYPE,
   REACT_CONSUMER_TYPE,
@@ -943,6 +943,18 @@ function tryToLoad (peer) {
       installed in your application
     `)
     process.exit(1)
+  }
+}
+
+esx.ssr = { 
+  option (key, value) {
+    if (key !== 'hooks-mode') {
+      throw Error('invalid option')
+    }
+    if (value !== 'compatible' && value !== 'stateful') {
+      throw Error('invalid option')
+    }
+    hooks = require(`./lib/hooks/${value}`)
   }
 }
 

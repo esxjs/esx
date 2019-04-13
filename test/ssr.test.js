@@ -4055,29 +4055,40 @@ test('renderToString will throw when passed plain React elements', async ({is, t
   throws(() => esx.renderToString(createElement('div', null, 'test')), Error('esx.renderToString is either a tag function or can accept esx elements. But not plain React elements.'))
 })
 
-test.only('hooks: useState ', async ({ doesNotThrow, is }) => {
+test('hooks: useState ', async ({ doesNotThrow, is }) => {
+  const esx = init()
+  const { useState } = React
+  const App = () => {
+    const [ state, update ] = useState('initialState')
+    is(state, 'initialState')
+    is(typeof update, 'function')
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  doesNotThrow(() => esx.renderToString `<App/>`)
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('stateful hooks-mode - hooks: useState ', async ({ doesNotThrow, is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useState } = React
   var updater = null
   const App = () => {
     const [ state, update ] = useState('initialState')
-    console.log(state)
     is(typeof update, 'function')
     updater = update
     return esx `<p>${state}</p>`
   }
   esx.register({ App })
   
-  // keep the same callsite:
-  // const ssr = () => esx.renderToString `<App/>`
-  // is(ssr(), '<p data-reactroot="">initialState</p>')
-  // updater('newState')
-  // is(ssr(), '<p data-reactroot="">newState</p>')
-  const el = esx `<App/>`
-  console.log(renderToString(el))
+  //keep the same callsite:
+  const ssr = () => esx.renderToString `<App/>`
+  is(ssr(), '<p data-reactroot="">initialState</p>')
   updater('newState')
-  console.log(renderToString(el))
-  
+  is(ssr(), '<p data-reactroot="">newState</p>')
+  init.ssr.option('hooks-mode', 'compatible')
 })
 
 test('hooks: useEffect does not throw  (noop)', async ({ doesNotThrow }) => {
@@ -4172,6 +4183,14 @@ test('hooks: useCallback does not throw', async ({ doesNotThrow }) => {
   doesNotThrow(() => renderToString(esx `<App/>`))
 })
 
+test('ssr.option will throw when called during renderToString', async ({throws}) => {
+  throws(() => init.ssr.option('not-supported'), Error('invalid option'))
+})
+
+test('ssr.option will throw when hooks-mode ', async ({ throws }) => {
+  throws(() => init.ssr.option('hooks-mode','not-supported'), Error('invalid option'))
+})
+
 test('deviation: object children are rendered as an empty string instead of throwing', async ({is, throws, doesNotThrow}) => {
   const esx = init()
   throws(() => renderToString(esx `<a>${({a:1})}</a>`))
@@ -4242,6 +4261,7 @@ test('deviation: children in spread props on void element is ignored', async ({ 
   // reasons for deviation: Server stays up, easier to debug, less spreading overhead.
   doesNotThrow(() => esx.renderToString `<input ...${{children: 'test'}}>`)
 })
+
 
 function childValidator (is) {
   const injectedChildren = []

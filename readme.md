@@ -275,6 +275,30 @@ esx.renderToString `<div/>`
 esx.renderToString(esx `<div/>`)
 ```
 
+### SSR Options
+
+On the server side the Initializer has an `ssr` property, which
+has an `options` method. The follow options are supported:
+
+#### `createEsx.ssr.option('hooks-mode', 'compatile'|'stateful')`
+
+By default the `hooks-mode` option is `compatible` with React
+server side rendering. This means that any stateful hooks, 
+e.g. `useState` and `useReducer` do not actually retain state
+between renders. 
+
+The following will set `hooks-mode` to `stateful`:
+
+```js
+createEsx.ssr.option('hooks-mode', 'stateful')
+```
+
+This means that `useState` and other stateful hooks will retain state
+between `renderToString` calls, instead of always returning
+the initial state as with `compatible` mode. This can be useful 
+where a server-side render-to-hydrate strategy is employed.
+
+
 ## Contributions
 
 `esx` is an **OPEN Open Source Project**. This means that:
