@@ -4055,19 +4055,29 @@ test('renderToString will throw when passed plain React elements', async ({is, t
   throws(() => esx.renderToString(createElement('div', null, 'test')), Error('esx.renderToString is either a tag function or can accept esx elements. But not plain React elements.'))
 })
 
-test('hooks: useState ', async ({ doesNotThrow, is }) => {
+test.only('hooks: useState ', async ({ doesNotThrow, is }) => {
   const esx = init()
   const { useState } = React
+  var updater = null
   const App = () => {
     const [ state, update ] = useState('initialState')
-    is(state, 'initialState')
+    console.log(state)
     is(typeof update, 'function')
-    return esx `<main><div>hi</div></main>`
+    updater = update
+    return esx `<p>${state}</p>`
   }
   esx.register({ App })
-
-  doesNotThrow(() => esx.renderToString `<App/>`)
-  doesNotThrow(() => renderToString(esx `<App/>`))
+  
+  // keep the same callsite:
+  // const ssr = () => esx.renderToString `<App/>`
+  // is(ssr(), '<p data-reactroot="">initialState</p>')
+  // updater('newState')
+  // is(ssr(), '<p data-reactroot="">newState</p>')
+  const el = esx `<App/>`
+  console.log(renderToString(el))
+  updater('newState')
+  console.log(renderToString(el))
+  
 })
 
 test('hooks: useEffect does not throw  (noop)', async ({ doesNotThrow }) => {
