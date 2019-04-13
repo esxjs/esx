@@ -307,7 +307,7 @@ For this reason, `esx` versioning begins at v2.x.x.  Versions 0.x.x and 1.x.x ar
 was the first known library to this authors knowledge to make the point
 that template strings are perfect for generating both virtual doms 
 and server side rendering. What `hyperx` lacks, however, is a way 
-to represent React components within it's template syntax. It is *only* 
+to represent React components within its template syntax. It is *only* 
 for generating HTML nodes.
 
 ### HTM
