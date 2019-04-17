@@ -84,11 +84,9 @@ Creating HTML with `esx` syntax is as close as possible to JSX:
 Notably, `esx` will not work with the [Legacy Context API](https://reactjs.org/docs/legacy-context.html),
 but it will work with the [New Context API](https://reactjs.org/docs/context.html).
 
-Additionally, some hooks will also throw a Not Implemented error, these are a work in progress.
-
 While the legacy API is being phased out, there still may be modules in a 
 projects depedency tree that rely on the legacy API. If you desperately need
-support for the legacy API or hooks, <a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>.
+support for the legacy API, <a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>.
 
 ## Usage
 
@@ -274,6 +272,33 @@ esx.renderToString `<div/>`
 // or this: 
 esx.renderToString(esx `<div/>`)
 ```
+
+### SSR Options
+
+On the server side the Initializer has an `ssr` property, which
+has an `options` method. The follow options are supported:
+
+#### `createEsx.ssr.option('hooks-mode', 'compatile'|'stateful')`
+
+By default the `hooks-mode` option is `compatible` with React
+server side rendering. This means that any stateful hooks, 
+e.g. `useState` and `useReducer` do not actually retain state
+between renders. 
+
+The following will set `hooks-mode` to `stateful`:
+
+```js
+createEsx.ssr.option('hooks-mode', 'stateful')
+```
+
+This means that `useState`, `useReducer`, `useMemo` and
+`useCallback` have the same stateful behaviour as their
+client-side counterpart hooks. The state is retained
+between `renderToString` calls, instead of always returning
+the initial state as with `compatible` mode. This can be useful 
+where a server-side render-to-hydrate strategy is employed and
+a great fit with rendering on server initialize.
+
 
 ## Contributions
 

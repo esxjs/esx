@@ -9,7 +9,7 @@ const escapeHtml = require('./lib/escape')
 const parse = require('./lib/parse')
 const validate = require('./lib/validate')
 const attr = require('./lib/attr')
-const hooks = require('./lib/hooks')
+var hooks = require('./lib/hooks/compatible')
 const {
   REACT_PROVIDER_TYPE,
   REACT_CONSUMER_TYPE,
@@ -378,11 +378,15 @@ function esx (components = {}) {
     ssrReactRootAdded = false
     const result = render(strings, ...args)
     if (result === null) return ''
+    const rootIsComponent = typeof result.type !== 'string'
+    const treeRoot = rootIsComponent ? cache.get(strings).tree[0] : null
+    if (treeRoot !== null) hooks.rendering(treeRoot)
     const { tmpl, values, extra, replace } = result[ns]
     const output = tmpl(values, extra, replace)
     currentValues = null
     ssrReactRootAdded = false
     ssr = false
+    if (treeRoot !== null) hooks.after(treeRoot)
     hooks.uninstall()
     return output
   }
@@ -400,6 +404,7 @@ function esx (components = {}) {
 }
 
 function renderComponent (item, values) {
+  hooks.rendering(item)
   const [tag, props, childMap, meta] = item
   try { props[parent] = item } catch (e) {} // try/catch is to dev scenarios where object is frozen
 
@@ -412,7 +417,9 @@ function renderComponent (item, values) {
         props[p] = currentValues[meta.dynAttrs[p]]
       }
     }
-    return resolveChildren(childMap, meta.dynChildren, meta.tree, item)
+    const result = resolveChildren(childMap, meta.dynChildren, meta.tree, item)
+    if (meta.hooksUsed) hooks.after(item)
+    return result
   }
 
   const { dynAttrs, dynChildren } = meta
@@ -447,21 +454,31 @@ function renderComponent (item, values) {
       tagContext[provider][1].value :
       tagContext._currentValue2
     const props = Object.assign({children: values[dynChildren[0]]}, item[1])
-    return props.children.call(props, context)
+    const result = props.children.call(props, context)
+    if (meta.hooksUsed) hooks.after(item)
+    return result
   }
   if (tag.$$typeof === REACT_MEMO_TYPE) {
-    return tag.type(props, context)
+    const result = tag.type(props, context)
+    if (meta.hooksUsed) hooks.after(item)
+    return result
   }
   if (tag.$$typeof === REACT_FORWARD_REF_TYPE) {
-    return tag.render(props, props.ref)
+    const result = tag.render(props, props.ref)
+    if (meta.hooksUsed) hooks.after(item)
+    return result
   }
   if (tag.prototype && tag.prototype.render) {
     const element = new tag(props, context)
     if ('componentWillMount' in element) element.componentWillMount()
     if ('UNSAFE_componentWillMount' in element) element.UNSAFE_componentWillMount()
-    return element.render()
+    const result = element.render()
+    if (meta.hooksUsed) hooks.after(item)
+    return result
   }
-  return tag(props, context)
+  const result = tag(props, context)
+  if (meta.hooksUsed) hooks.after(item)
+  return result
 }
 
 function childPropsGetter () {
@@ -926,6 +943,18 @@ function tryToLoad (peer) {
       installed in your application
     `)
     process.exit(1)
+  }
+}
+
+esx.ssr = { 
+  option (key, value) {
+    if (key !== 'hooks-mode') {
+      throw Error('invalid option')
+    }
+    if (value !== 'compatible' && value !== 'stateful') {
+      throw Error('invalid option')
+    }
+    hooks = require(`./lib/hooks/${value}`)
   }
 }
 
