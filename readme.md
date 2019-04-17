@@ -278,7 +278,7 @@ esx.renderToString(esx `<div/>`)
 On the server side the Initializer has an `ssr` property, which
 has an `options` method. The follow options are supported:
 
-#### `createEsx.ssr.option('hooks-mode', 'compatile'|'stateful')`
+#### `createEsx.ssr.option('hooks-mode', 'compatible'|'stateful')`
 
 By default the `hooks-mode` option is `compatible` with React
 server side rendering. This means that any stateful hooks, 
