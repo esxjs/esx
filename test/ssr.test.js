@@ -4055,13 +4055,74 @@ test('renderToString will throw when passed plain React elements', async ({is, t
   throws(() => esx.renderToString(createElement('div', null, 'test')), Error('esx.renderToString is either a tag function or can accept esx elements. But not plain React elements.'))
 })
 
-test('hooks: useState ', async ({ doesNotThrow, is }) => {
+test('compatible mode hooks: useState ', async ({ doesNotThrow, is }) => {
   const esx = init()
   const { useState } = React
+  var updater = null
   const App = () => {
     const [ state, update ] = useState('initialState')
     is(state, 'initialState')
     is(typeof update, 'function')
+    updater = update
+    return esx `<main><div>${state}</div></main>`
+  }
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  updater('newState') // will do nothing in react ssr
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('compatible mode hooks: useReducer', async ({ is }) => {
+  const esx = init()
+  const { useReducer } = React
+  const initialState = {count: 0}
+  const reducer = (state, action) => {
+    const { count } = state
+    if (action.type === 'up') return {count: ++count }
+    if (action.type === 'down') return {count: --count }
+    return state
+  }
+  var dispatcher = null
+  const App = () => {
+    const [state, dispatch] = useReducer(reducer, initialState)
+    dispatcher = dispatch
+    return esx `<main><div>${state.count}</div></main>`
+  }
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  dispatcher({type: 'up'}) // will do nothing in react ssr
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('compatible mode hooks: useReducer, state initializer', async ({ is }) => {
+  const esx = init()
+  const { useReducer } = React
+  function initState (initialState) {
+    return {count: initialState.count + 1}
+  }
+  const reducer = (state, action) => {
+    const { count } = state
+    if (action.type === 'up') return {count: ++count }
+    if (action.type === 'down') return {count: --count }
+    return state
+  }
+  var dispatcher = null
+  const App = () => {
+    const [state, dispatch] = useReducer(reducer, {count: -1}, initState)
+    dispatcher = dispatch
+    return esx `<main><div>${state.count}</div></main>`
+  }
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  dispatcher({type: 'up'}) // will do nothing in react ssr
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`)) // will contain 0 because of initState func
+})
+
+test('compatible mode hooks: useEffect does not throw  (noop)', async ({ doesNotThrow }) => {
+  const esx = init()
+  const { useEffect } = React
+  const App = () => {
+    useEffect(()=>{})
     return esx `<main><div>hi</div></main>`
   }
   esx.register({ App })
@@ -4070,7 +4131,90 @@ test('hooks: useState ', async ({ doesNotThrow, is }) => {
   doesNotThrow(() => renderToString(esx `<App/>`))
 })
 
-test('stateful hooks-mode - hooks: useState ', async ({ doesNotThrow, is }) => {
+test('compatible mode hooks: useLayoutEffect does not throw  (noop)', async ({ doesNotThrow }) => {
+  const esx = init()
+  const { useLayoutEffect } = React
+  const App = () => {
+    useLayoutEffect(()=>{})
+    return esx `<main><div>hi</div></main>`
+  }
+  esx.register({ App })
+
+  doesNotThrow(() => esx.renderToString `<App/>`)
+  doesNotThrow(() => renderToString(esx `<App/>`))
+})
+
+test('compatible mode hooks: useContext', async ({ is }) => {
+  const esx = init()
+  const { useContext } = require('react')
+  const ThemeContext = React.createContext('light')
+  const Button = ({theme}) => esx`<button>${theme}</button>`
+  esx.register({ Button })  
+  const ThemedButton = () => {
+    const context = useContext(ThemeContext)
+    return esx`<Button theme=${context}/>`
+  }
+  esx.register({ ThemedButton })
+  const Toolbar = () => esx`<div><ThemedButton/></div>`
+  esx.register({ Toolbar })
+  class App extends React.Component {
+    render () {
+      return esx`<div><Provider value='dark'><Toolbar/></Provider></div>`
+    }
+  }
+  const { Provider } = ThemeContext
+  esx.register({ App, Provider })
+  is(esx.renderToString `<App/>`, renderToString(createElement(App)))
+})
+
+test('compatible mode hooks: useMemo', async ({ is }) => {
+  const esx = init()
+
+  // useMemo react SSR implementation *does not memoize* the result
+  // esx compatible mode follows suit
+
+  const { useMemo } = React
+  const calc = (a, b) => Number(a) + Number(b)
+  const App = ({a, b}) => {
+    const val = useMemo(() => calc(a, b), [a, b])
+    return esx `<main><div>${val}</div></main>`
+  }
+  esx.register({ App })
+
+  is(esx.renderToString `<App a=1 b=2/>`, renderToString(esx `<App a=1 b=2/>`))
+})
+
+test('compatible mode hooks: useRef', async ({ is }) => {
+  const esx = init()
+  const { useRef } = React
+
+  // in the browser the ref object is always the same, 
+  // however on the server it is not the same object,
+  // esx is compatible with react ssr, so the object will
+  // be different each time.
+
+  const App = () => {
+    const ref = useRef(null)
+    return esx `<main ref=${ref}><div>hi</div></main>`
+  }
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('compatible mode hooks: useCallback', async ({ is }) => {
+  const esx = init()
+  const { useCallback } = React
+  const cb = () => {}
+  const App = () => {
+    is(useCallback(cb), cb) // react simply returns the cb in ssr
+    return esx `<main><p>hi</p></main>`
+  }
+  esx.register({ App })
+
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+})
+
+test('stateful mode hooks: useState ', async ({ doesNotThrow, is }) => {
   init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useState } = React
@@ -4091,7 +4235,91 @@ test('stateful hooks-mode - hooks: useState ', async ({ doesNotThrow, is }) => {
   init.ssr.option('hooks-mode', 'compatible')
 })
 
-test('hooks: useEffect does not throw  (noop)', async ({ doesNotThrow }) => {
+
+test.only('stateful mode hooks: useState multiple ', async ({ doesNotThrow, is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
+  const esx = init()
+  const { useState } = React
+  var updater = null
+  var updater2 = null
+  const App = () => {
+    const [ state, update ] = useState('initialState')
+    const [ state2, update2 ] = useState('initialState2')
+    is(typeof update, 'function')
+    is(typeof update2, 'function')
+    updater = update
+    updater2 = update2
+    return esx `<p><a>${state}</a><b>${state2}</b></p>`
+  }
+  esx.register({ App })
+  
+  //keep the same callsite:
+  const ssr = () => esx.renderToString `<App/>`
+  is(ssr(), '<p data-reactroot=""><a>initialState</a><b>initialState2</b></p>')
+  updater('newState')
+  is(ssr(), '<p data-reactroot=""><a>newState</a><b>initialState2</b></p>')
+  updater('evenNewerState')
+  updater2('secondNewState')
+  is(ssr(), '<p data-reactroot=""><a>evenNewerState</a><b>secondNewState</b></p>')
+  init.ssr.option('hooks-mode', 'compatible')
+})
+
+test('stateful mode hooks: useReducer', async ({ is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
+  const esx = init()
+  const { useReducer } = React
+  const initialState = {count: 0}
+  const reducer = (state, action) => {
+    const { count } = state
+    if (action.type === 'up') return {count: count + 1 }
+    if (action.type === 'down') return {count: count - 1 }
+    return state
+  }
+  var dispatcher = null
+  const App = () => {
+    const [state, dispatch] = useReducer(reducer, initialState)
+    dispatcher = dispatch
+    return esx `<main><div>${state.count}</div></main>`
+  }
+  esx.register({ App })
+  //keep the same callsite:
+  const ssr = () => esx.renderToString `<App/>`
+  is(ssr(), `<main data-reactroot=""><div>0</div></main>`)
+  dispatcher({type: 'up'})
+  is(ssr(), `<main data-reactroot=""><div>1</div></main>`)
+  init.ssr.option('hooks-mode', 'compatible')
+})
+
+test.only('stateful mode hooks: useReducer, state initializer', async ({ is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
+  const esx = init()
+  const { useReducer } = React
+  function initState (initialState) {
+    return {count: initialState.count + 1}
+  }
+  const reducer = (state, action) => {
+    const { count } = state
+    if (action.type === 'up') return {count: count + 1 }
+    if (action.type === 'down') return {count: count - 1 }
+    return state
+  }
+  var dispatcher = null
+  const App = () => {
+    const [state, dispatch] = useReducer(reducer, {count: -1}, initState)
+    dispatcher = dispatch
+    return esx `<main><div>${state.count}</div></main>`
+  }
+  esx.register({ App })
+  //keep the same callsite:
+  const ssr = () => esx.renderToString `<App/>`
+  is(ssr(), `<main data-reactroot=""><div>0</div></main>`) // 0 becausxe initState
+  dispatcher({type: 'up'})
+  is(ssr(), `<main data-reactroot=""><div>1</div></main>`)
+  init.ssr.option('hooks-mode', 'compatible')
+})
+
+test('stateful mode hooks: useEffect does not throw  (noop)', async ({ doesNotThrow }) => {
+  init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useEffect } = React
   const App = () => {
@@ -4102,9 +4330,11 @@ test('hooks: useEffect does not throw  (noop)', async ({ doesNotThrow }) => {
 
   doesNotThrow(() => esx.renderToString `<App/>`)
   doesNotThrow(() => renderToString(esx `<App/>`))
+  init.ssr.option('hooks-mode', 'compatible')
 })
 
-test('hooks: useLayoutEffect does not throw  (noop)', async ({ doesNotThrow }) => {
+test('stateful mode hooks: useLayoutEffect does not throw  (noop)', async ({ doesNotThrow }) => {
+  init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useLayoutEffect } = React
   const App = () => {
@@ -4115,73 +4345,99 @@ test('hooks: useLayoutEffect does not throw  (noop)', async ({ doesNotThrow }) =
 
   doesNotThrow(() => esx.renderToString `<App/>`)
   doesNotThrow(() => renderToString(esx `<App/>`))
+  init.ssr.option('hooks-mode', 'compatible')
 })
 
-test('hooks: useContext throws (not implemented)', async ({ doesNotThrow, throws}) => {
+test('stateful mode hooks: useContext', async ({ is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
-  const { useContext } = React
-  const context = React.createContext()
-  const App = () => {
-    useContext(context)
-    return esx `<main><div>hi</div></main>`
+  const { useContext } = require('react')
+  const ThemeContext = React.createContext('light')
+  const Button = ({theme}) => esx`<button>${theme}</button>`
+  esx.register({ Button })  
+  const ThemedButton = () => {
+    const context = useContext(ThemeContext)
+    return esx`<Button theme=${context}/>`
   }
-  esx.register({ App })
-
-  throws(() => esx.renderToString `<App/>`, Error('not implemented'))
-  doesNotThrow(() => renderToString(esx `<App/>`))
+  esx.register({ ThemedButton })
+  const Toolbar = () => esx`<div><ThemedButton/></div>`
+  esx.register({ Toolbar })
+  class App extends React.Component {
+    render () {
+      return esx`<div><Provider value='dark'><Toolbar/></Provider></div>`
+    }
+  }
+  const { Provider } = ThemeContext
+  esx.register({ App, Provider })
+  is(esx.renderToString `<App/>`, renderToString(createElement(App)))
+  init.ssr.option('hooks-mode', 'compatible')
 })
 
-test('hooks: useMemo throws (not implemented)', async ({ doesNotThrow, throws }) => {
+test.only('stateful mode hooks: useMemo', async ({ is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useMemo } = React
-  const App = () => {
-    useMemo(() => {})
-    return esx `<main><div>hi</div></main>`
+  var count = 1
+  const calc = (a, b) => {
+    const c = count++
+    return a + b + c
+  }
+  const App = ({a, b}) => {
+    const val = useMemo(() => {
+      return calc(a, b)
+    }, [a, b])
+    return esx `<main><div>${val}</div></main>`
   }
   esx.register({ App })
-
-  throws(() => esx.renderToString `<App/>`, Error('not implemented'))
-  doesNotThrow(() => renderToString(esx `<App/>`))
+  const ssr = ({a, b}) => esx.renderToString `<App a=${a} b=${b} />`
+  is(ssr({a: 1, b: 2}), `<main data-reactroot=""><div>4</div></main>`)
+  // 4 both times because the memoized value is returned
+  is(ssr({a: 1, b: 2}), `<main data-reactroot=""><div>4</div></main>`)
+  // 6 because function is called due to different vals, count increases to 2, and 2+2 is 4
+  is(ssr({a: 2, b: 2}), `<main data-reactroot=""><div>6</div></main>`)
+  init.ssr.option('hooks-mode', 'compatible')
 })
 
-test('hooks: useReducer throws (not implemented)', async ({ doesNotThrow, throws }) => {
-  const esx = init()
-  const { useReducer } = React
-  const App = () => {
-    useReducer(() => {}, {})
-    return esx `<main><div>hi</div></main>`
-  }
-  esx.register({ App })
-
-  throws(() => esx.renderToString `<App/>`, Error('not implemented'))
-  doesNotThrow(() => renderToString(esx `<App/>`))
-})
-
-test('hooks: useRef throws (not implemented)', async ({ doesNotThrow, throws }) => {
-  const esx = init()
-  const { useRef } = React
-  const App = () => {
-    useRef(null)
-    return esx `<main><div>hi</div></main>`
-  }
-  esx.register({ App })
-
-  throws(() => esx.renderToString `<App/>`, Error('not implemented'))
-  doesNotThrow(() => renderToString(esx `<App/>`))
-})
-
-test('hooks: useCallback does not throw', async ({ doesNotThrow }) => {
+test.only('stateful mode hooks: useCallback', async ({ is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useCallback } = React
-  const App = () => {
-    useCallback(() => {})
-    return esx `<main><div>hi</div></main>`
+  var cbs = new Set()
+  const App = ({a}) => {
+    cbs.add(useCallback(() => {}, [a]))
+    return esx `<main><p>hi</p></main>`
   }
   esx.register({ App })
-
-  doesNotThrow(() => esx.renderToString `<App/>`, Error('not implemented'))
-  doesNotThrow(() => renderToString(esx `<App/>`))
+  const ssr = ({a}) => esx.renderToString `<App a=${a}/>`
+  ssr({a: 1})
+  is(cbs.size, 1) // first function added
+  ssr({a: 1})
+  is(cbs.size, 1) // same function added, Set is unique, remains at 1
+  ssr({a: 2})
+  is(cbs.size, 2) // new function created, size should be 2
+  init.ssr.option('hooks-mode', 'compatible')
 })
+
+test('stateful mode hooks: useRef', async ({ is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
+  const esx = init()
+  const { useRef } = React
+
+  // in the browser the ref object is always the same, 
+  // however on the server it is not the same object,
+  // even in stateful mode esx just returns a new object
+  // as there's no benefit to the overhead of additional 
+  // state mangement in this case.
+
+  const App = () => {
+    const ref = useRef(null)
+    return esx `<main ref=${ref}><div>hi</div></main>`
+  }
+  esx.register({ App })
+  is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
+  init.ssr.option('hooks-mode', 'compatible')
+})
+
 
 test('ssr.option will throw when called during renderToString', async ({throws}) => {
   throws(() => init.ssr.option('not-supported'), Error('invalid option'))
@@ -4298,3 +4554,5 @@ function childValidator (is) {
 // useContext hook
 
 // children attribute + children in element
+
+// bug: <Cmp a=1 b=2/> -> b is true when next to /
