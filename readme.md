@@ -43,7 +43,7 @@ target (the React implementation).
 This should only be used in production when:
 
 * It has been verified to yield significant enough performance gains
-* It has been thoroughly verrified against your current implementation
+* It has been thoroughly verified against your current implementation
 
 `esx` needs use cases and battle testing. All issues are very welcome,
 PR's are extremely welcome and Collaborators are exceptionally, extraordinarily, exceedingly welcome.
