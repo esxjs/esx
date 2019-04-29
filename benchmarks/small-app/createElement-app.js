@@ -60,23 +60,23 @@ const Cmp2 = ({ text }) => {
 
 const Cmp1 = (props) => {
   return createElement(
-      'div', 
-      {a: props.a}, 
-      [
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text}),
-        createElement(Cmp2, {text: props.text})
-      ]
+    'div',
+    { a: props.a },
+    [
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text }),
+      createElement(Cmp2, { text: props.text })
+    ]
   )
 }
 
 const value = 'hia'
 
-module.exports = () => createElement(Cmp1, {a: value, text: 'hi'})
+module.exports = () => createElement(Cmp1, { a: value, text: 'hi' })

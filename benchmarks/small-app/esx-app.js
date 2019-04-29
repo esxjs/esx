@@ -1,8 +1,8 @@
 'use strict'
 
 const esx = require('../..')()
-const Cmp2 = ({text}) => {
-  return esx `
+const Cmp2 = ({ text }) => {
+  return esx`
     <div>
       <aside> foo </aside>
       <main>
@@ -19,9 +19,9 @@ const Cmp2 = ({text}) => {
     </div>
   `
 }
-esx.register({Cmp2})
+esx.register({ Cmp2 })
 const Cmp1 = (props) => {
-  return esx `
+  return esx`
     <div a=${props.a}>
       <Cmp2 text=${props.text}/>
       <Cmp2 text=${props.text}/>
@@ -36,7 +36,7 @@ const Cmp1 = (props) => {
     </div>
   `
 }
-esx.register({Cmp1})
+esx.register({ Cmp1 })
 const value = 'hia'
 
-module.exports = () => esx `<Cmp1 a=${value} text='hi'/>`
+module.exports = () => esx`<Cmp1 a=${value} text='hi'/>`

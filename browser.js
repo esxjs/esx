@@ -1,7 +1,7 @@
 'use strict'
 const { createElement } = require('react')
 const parse = require('./lib/parse')
-const validate = require('./lib/validate')
+const { validate, validateOne } = require('./lib/validate')
 const { marker } = require('./lib/symbols')
 
 function esx (components = {}) {
@@ -10,9 +10,9 @@ function esx (components = {}) {
   const cache = new WeakMap()
   const render = (strings, ...values) => {
     const key = strings
-    const state = cache.has(key) ? 
-      cache.get(key) : 
-      cache.set(key, parse(components, strings, values)).get(key)
+    const state = cache.has(key)
+      ? cache.get(key)
+      : cache.set(key, parse(components, strings, values)).get(key)
     const { tree } = state
     var i = tree.length
     var root = null
@@ -30,7 +30,7 @@ function esx (components = {}) {
         }
       }
       if (spread) {
-        for (var sp in spread)  { 
+        for (var sp in spread) {
           const keys = Object.keys(values[sp])
           for (var k in keys) {
             if (spread[sp].after.indexOf(keys[k]) > -1) continue
@@ -40,9 +40,9 @@ function esx (components = {}) {
       }
       if (dynAttrs) {
         for (var p in dynAttrs) {
-          const overridden = spread && spreads.filter((n => {
+          const overridden = spread && spreads.filter(n => {
             return dynAttrs[p] < n
-          })).some((n) => {
+          }).some((n) => {
             return p in values[n] && spread[n].before.indexOf(p) > -1
           })
           if (overridden) continue
@@ -62,10 +62,20 @@ function esx (components = {}) {
     return root
   }
   render.createElement = createElement
-  render.register = (additionalComponents) => {
-    validate(additionalComponents)
+  const merge = (additionalComponents) => {
     Object.assign(components, additionalComponents)
   }
+  const set = (key, component) => { components[key] = component }
+  render.register = (additionalComponents) => {
+    validate(additionalComponents)
+    merge(additionalComponents)
+  }
+  render.register.one = (key, component) => {
+    validateOne(key, component)
+    set(key, component)
+  }
+  render.register.lax = merge
+  render.register.one.lax = set
   return render
 }
 

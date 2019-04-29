@@ -206,9 +206,25 @@ const esx = createEsx({ App }) // same as {App: App}
 console.log(esx `<App/>`) // exactly same result as React.createElement(App)
 ```
 
-### Component Registration: `esx.register(components = {})`
+### Component Registration
 
-Components can also be registerd post initalizer with the
+A component must be one of the following
+
+* function
+* class
+* symbol
+* object with a $$typeof key
+
+#### `createEsx(components = {})`
+
+Components passed to the Initializer are registered
+and validated at initialization time. Each key in the
+`components` object should correspond to the name of 
+a component referenced within an ESX template literal.
+
+#### `esx.register(components = {})`
+
+Components can also be registered after initialization with the
 `esx.register` method:
 
 ```js
@@ -219,6 +235,28 @@ esx.register({ App })
 // exactly same result as React.createElement(App)
 console.log(esx `<App/>`) 
 ```
+
+Each key in the `components` object should correspond to the name of 
+a component as referenced within an ESX template literal.
+
+#### `esx.register.one(name, component)`
+
+A single component can be registered with the `esx.register.one` method.
+The supplied `name` parameter must correspond to the name of a component 
+referenced within an ESX template literal and the `component` parameter
+will be validated.
+
+#### `esx.register.lax(components = {})`
+
+**Advanced use only**. Use with care. This is a performance escape hatch. 
+This method will register components without validating. This may be used 
+for performance reasons such as when needing to register a component within a function. It is recommended to use the non-lax methods unless component validation
+in a specific scenario is measured as a bottleneck.
+
+#### `esx.register.lax.one(name, component)`
+
+**Advanced use only**. Use with care. This is a performance escape hatch. 
+Will register one component without validating.
 
 ### Server-Side Rendering: ``esx.renderToString`<markup/>` => String``
 

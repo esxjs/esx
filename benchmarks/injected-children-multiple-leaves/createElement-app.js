@@ -1,19 +1,19 @@
 'use strict'
 
 const { createElement } = require('react')
-const Cmp4 = ({children}) => {
+const Cmp4 = ({ children }) => {
   return createElement('p', null, children)
 }
-const Cmp3 = ({children}) => {
+const Cmp3 = ({ children }) => {
   return createElement('p', null, children)
 }
-const Cmp2 = ({children}) => {
+const Cmp2 = ({ children }) => {
   return createElement('p', null, children)
 }
 const Cmp1 = (props) => {
   return createElement(
-    'div', 
-    {a: props.a}, 
+    'div',
+    { a: props.a },
     [
       createElement(Cmp2, null, createElement('div', null, props.text)),
       createElement(Cmp3, null, createElement('div', null, props.text)),
@@ -24,4 +24,4 @@ const Cmp1 = (props) => {
 
 const value = 'hia'
 
-module.exports = () => createElement(Cmp1, {a: value, text: 'hi'})
+module.exports = () => createElement(Cmp1, { a: value, text: 'hi' })

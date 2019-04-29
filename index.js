@@ -1,13 +1,13 @@
 'use strict'
 const debug = require('debug')('esx')
 const { createElement } = tryToLoad('react')
-const { 
+const {
   renderToStaticMarkup,
-  renderToString: reactRenderToString 
+  renderToString: reactRenderToString
 } = tryToLoad('react-dom/server')
 const escapeHtml = require('./lib/escape')
 const parse = require('./lib/parse')
-const validate = require('./lib/validate')
+const { validate, validateOne } = require('./lib/validate')
 const attr = require('./lib/attr')
 var hooks = require('./lib/hooks/compatible')
 const {
@@ -22,7 +22,7 @@ const {
   ns, marker, skip, provider, esxValues, parent, owner, template
 } = require('./lib/symbols')
 // singleton state for ssr
-var ssr = false 
+var ssr = false
 var ssrReactRootAdded = false
 var currentValues = null
 var lastChildProp = null
@@ -31,8 +31,8 @@ function selected (val, wasSelected) {
   if (Array.isArray(selected.defaultValue)) {
     return selected.defaultValue.includes(val) ? ' selected=""' : ''
   }
-  return selected.defaultValue != null ? 
-    (val === selected.defaultValue ? ' selected=""' : '') 
+  return selected.defaultValue != null
+    ? (val === selected.defaultValue ? ' selected=""' : '')
     : (wasSelected ? ' selected=""' : '')
 }
 
@@ -81,7 +81,7 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
     const keyIsDSIH = key === 'dangerouslySetInnerHTML'
     if (keyIsDSIH || key === 'children' || (tag === 'textarea' && key === 'defaultValue')) {
       const forbiddenKey = keyIsDSIH ? 'children' : 'dangerouslySetInnerHTML'
-      const collision = spread[ix].before.indexOf(forbiddenKey) > -1 || 
+      const collision = spread[ix].before.indexOf(forbiddenKey) > -1 ||
         spread[ix].after.indexOf(forbiddenKey) > -1 ||
         priorSpreadKeys.has(forbiddenKey) ||
         forbiddenKey in object ||
@@ -92,14 +92,14 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
       const overrideChildren = spread[ix].before.indexOf(key) > -1 ||
         priorSpreadKeys && priorSpreadKeys.has(key) ||
         childMap.length === 0
-    
+
       if (overrideChildren) {
         const suspendRootAdding = ssrReactRootAdded === false
         if (suspendRootAdding) ssrReactRootAdded = true
-        childMap[0] = (key === 'children' || 
-          (tag === 'textarea' && key === 'defaultValue')) ? 
-            inject(object[key]) : 
-            object[key].__html
+        childMap[0] = (key === 'children' ||
+          (tag === 'textarea' && key === 'defaultValue'))
+          ? inject(object[key])
+          : object[key].__html
         if (suspendRootAdding) ssrReactRootAdded = false
       }
       continue
@@ -117,7 +117,7 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
       dirtyBefore = true
     }
   }
-  
+
   if (dirtyBefore) {
     strBefore = ''
     for (var i = 0; i < spread[ix].before.length; i++) {
@@ -128,7 +128,7 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
       if (props[key] === marker) {
         strBefore += attribute(values[meta.dynAttrs[key]], mappedKey, key)
       } else {
-       strBefore += attribute(props[key], mappedKey, key)
+        strBefore += attribute(props[key], mappedKey, key)
       }
     }
   }
@@ -139,7 +139,7 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
 
 const attribute = (val, attrKey = '', propKey = '', replace = null) => {
   if (replace !== null && propKey in replace) return replace[propKey]
-  if (val == null)  return ''
+  if (val == null) return ''
   const type = typeof val
   if (type === 'function' || type === 'symbol') return ''
   if (type === 'boolean' && attrKey.length > 0) {
@@ -155,7 +155,7 @@ const attribute = (val, attrKey = '', propKey = '', replace = null) => {
 const injectObject = (val) => {
   if (val.$$typeof === REACT_ELEMENT_TYPE) {
     // if the element does not have an ns value, it may have been cloned in which
-    // case we've slipped a method through the cloning process that pulls the esx 
+    // case we've slipped a method through the cloning process that pulls the esx
     // state in from the old element
     const state = val[ns] || (val._owner && val._owner[owner] && val._owner())
     if (!state) {
@@ -204,20 +204,20 @@ const inject = (val) => {
 function EsxElementUnopt (item) {
   this.$$typeof = REACT_ELEMENT_TYPE
   const [type, props] = item
-  this.type = type 
+  this.type = type
   this.props = props
-  this.key = props.key || null 
-  this.ref = props.ref || null 
+  this.key = props.key || null
+  this.ref = props.ref || null
   this.esxUnopt = true
 }
 
 function EsxElement (item, tmpl, values) {
   this.$$typeof = REACT_ELEMENT_TYPE
   const [type, props] = item
-  this.type = type 
+  this.type = type
   this.props = props
-  this.key = props.key || null 
-  this.ref = props.ref || null 
+  this.key = props.key || null
+  this.ref = props.ref || null
   this[ns] = { tmpl, values, item }
 }
 const ownerDesc = {
@@ -245,7 +245,7 @@ const ownerDesc = {
           same = false
           if (k in lastProps) {
             if (replace === null) replace = {}
-            
+
             if (mappedKey) {
               replace[mappedKey] = attribute(this.props[k], mappedKey, k)
             }
@@ -284,9 +284,9 @@ function esx (components = {}) {
   const cache = new WeakMap()
   const raw = (strings, ...values) => {
     const key = strings
-    const state = cache.has(key) ? 
-      cache.get(key) : 
-      cache.set(key, parse(components, strings, values)).get(key)
+    const state = cache.has(key)
+      ? cache.get(key)
+      : cache.set(key, parse(components, strings, values)).get(key)
     const { tree } = state
     var i = tree.length
     var root = null
@@ -304,7 +304,7 @@ function esx (components = {}) {
         }
       }
       if (spread) {
-        for (var sp in spread)  { 
+        for (var sp in spread) {
           const keys = Object.keys(values[sp])
           for (var k in keys) {
             if (spread[sp].after.indexOf(keys[k]) > -1) continue
@@ -314,9 +314,9 @@ function esx (components = {}) {
       }
       if (dynAttrs) {
         for (var p in dynAttrs) {
-          const overridden = spread && spreads.filter((n => {
+          const overridden = spread && spreads.filter(n => {
             return dynAttrs[p] < n
-          })).some((n) => {
+          }).some((n) => {
             return p in values[n] && spread[n].before.indexOf(p) > -1
           })
           if (overridden) continue
@@ -335,11 +335,10 @@ function esx (components = {}) {
     }
     if (root) {
       try { // production scenario -- faster
-        root[template] = {strings, values}
-      } catch (e) {// development scenario (work around frozen objects)
-        
+        root[template] = { strings, values }
+      } catch (e) { // development scenario (work around frozen objects)
         root = {
-          [template]: {strings, values},
+          [template]: { strings, values },
           __proto__: root
         }
       }
@@ -350,9 +349,9 @@ function esx (components = {}) {
     if (ssr === false) return raw(strings, ...values)
     currentValues = values
     const key = strings
-    const state = cache.has(key) ? 
-      cache.get(key) : 
-      cache.set(key, parse(components, strings, values)).get(key)
+    const state = cache.has(key)
+      ? cache.get(key)
+      : cache.set(key, parse(components, strings, values)).get(key)
     const { tree, tmpl } = loadTmpl(state, values)
     const item = tree[0]
     if (item === undefined) return null
@@ -390,14 +389,20 @@ function esx (components = {}) {
     hooks.uninstall()
     return output
   }
-  render.register = (additionalComponents) => {
-    validate(additionalComponents)
+  const merge = (additionalComponents) => {
     Object.assign(components, additionalComponents)
   }
-  render.swap = (fn) => {
-    fn(components)
-    return render
+  const set = (key, component) => { components[key] = component }
+  render.register = (additionalComponents) => {
+    validate(additionalComponents)
+    merge(additionalComponents)
   }
+  render.register.one = (key, component) => {
+    validateOne(key, component)
+    set(key, component)
+  }
+  render.register.lax = merge
+  render.register.one.lax = set
   render.renderToString = render.ssr = renderToString
   render.createElement = createElement
   return render
@@ -442,18 +447,18 @@ function renderComponent (item, values) {
     }
   }
 
-  const context = tag.contextType ? 
-    (tag.contextType[provider] ? 
-      tag.contextType[provider][1].value : 
-      tag.contextType._currentValue2
+  const context = tag.contextType
+    ? (tag.contextType[provider]
+      ? tag.contextType[provider][1].value
+      : tag.contextType._currentValue2
     ) : {}
 
   if (tag.$$typeof === REACT_CONSUMER_TYPE) {
     const tagContext = tag._context || tag
-    const context = tagContext[provider] ? 
-      tagContext[provider][1].value :
-      tagContext._currentValue2
-    const props = Object.assign({children: values[dynChildren[0]]}, item[1])
+    const context = tagContext[provider]
+      ? tagContext[provider][1].value
+      : tagContext._currentValue2
+    const props = Object.assign({ children: values[dynChildren[0]] }, item[1])
     const result = props.children.call(props, context)
     if (meta.hooksUsed) hooks.after(item)
     return result
@@ -491,7 +496,7 @@ function childPropsGetter () {
 
 function loadTmpl (state, values) {
   if (state.tmpl) return state
-  const {tree, fields, attrPos } = state
+  const { tree, fields, attrPos } = state
   const snips = {}
   for (var cmi = 0; cmi < tree.length; cmi++) {
     const [ tag, props, , meta ] = tree[cmi]
@@ -557,7 +562,7 @@ function seekToEndOfTagName (fields, ix) {
     var boundary = reverseSeek(fields[ix], fields[ix].length - 1, /</)
     if (boundary === -1) boundary = fields[ix].length - 1
   } while (boundary === fields[ix].length - 1 && --ix >= 0)
-  
+
   while (ix < fields.length - 1) {
     var pos = seek(fields[ix], boundary, /(^[\s/>]$)|^\$|^$/) - 1
     if (pos === -1) pos === boundary
@@ -565,7 +570,7 @@ function seekToEndOfTagName (fields, ix) {
     boundary = 0
     ix++
   }
-  
+
   pos++
   return [ix, pos]
 }
@@ -575,7 +580,7 @@ function seekToEndOfOpeningTag (fields, ix) {
   do {
     var pos = seek(fields[ix], 0, rx)
   } while (rx.test(fields[ix][pos]) === false && ++ix < fields.length)
-  
+
   if (/\//.test(fields[ix][pos - 1])) pos -= 1
 
   return [ix, pos]
@@ -588,7 +593,7 @@ function style (obj) {
   const str = renderToStaticMarkup({
     $$typeof: REACT_ELEMENT_TYPE,
     type: 'x',
-    props: {style: obj}
+    props: { style: obj }
   }).slice(3, -5)
   return str.length > 0 ? ' ' + str : str
 }
@@ -625,10 +630,10 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         const [ ix, p ] = seekToEndOfTagName(fields, i)
         const wasSelectedPos = seek(fields[ix], p, /§/)
         if (wasSelectedPos === -1) {
-          field[field.length -1] = `\${this.attribute(values[${offset + valdex++}], '${key}', '${key}', replace)}`
+          field[field.length - 1] = `\${this.attribute(values[${offset + valdex++}], '${key}', '${key}', replace)}`
         } else {
-          const sanity = fields[ix][wasSelectedPos + 2] === ')' && fields[ix][wasSelectedPos + 3] === '}'
-            && fields[ix][wasSelectedPos - 1] === ' ' && fields[ix][wasSelectedPos - 2] === ','
+          const sanity = fields[ix][wasSelectedPos + 2] === ')' && fields[ix][wasSelectedPos + 3] === '}' &&
+            fields[ix][wasSelectedPos - 1] === ' ' && fields[ix][wasSelectedPos - 2] === ','
           if (sanity) {
             const selectIndex = fields[ix][wasSelectedPos + 1].codePointAt(0)
             fields[ix][wasSelectedPos + 1] = ''
@@ -637,22 +642,22 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
               fields[ix][wasSelectedPos] = `values[${offset + valdex++}]`
             } else {
               fields[ix][wasSelectedPos] = 'false'
-              field[field.length -1] = `\${this.attribute(values[${offset + valdex++}], '${key}', '${key}', replace)}`
+              field[field.length - 1] = `\${this.attribute(values[${offset + valdex++}], '${key}', '${key}', replace)}`
             }
           } else {
             valdex++
           }
         }
       } else if (key === 'children' || attr.mapping(key, getTag(fields, i)) === 'children') {
-          replace(field, pos, e)
-          const [ix, p] = seekToEndOfOpeningTag(fields, i + 1)
-          if (fields[ix][p + 1][0] === '<') {
-            fields[ix][p] = fields[ix][p] + `\${this.inject(values[${offset + valdex++}])}`
-          } else {
-            //children attribute has clashed with element that has children,
-            //increase valdex to ignore attribute
-            valdex++
-          }
+        replace(field, pos, e)
+        const [ix, p] = seekToEndOfOpeningTag(fields, i + 1)
+        if (fields[ix][p + 1][0] === '<') {
+          fields[ix][p] = fields[ix][p] + `\${this.inject(values[${offset + valdex++}])}`
+        } else {
+          // children attribute has clashed with element that has children,
+          // increase valdex to ignore attribute
+          valdex++
+        }
       } else if (attr.reserved(key) === false) {
         const tag = getTag(fields, i)
         const mappedKey = attr.mapping(key, tag)
@@ -662,11 +667,10 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
           } else {
             field[pos] = `\${this.attribute(values[${offset + valdex++}], '${mappedKey}', '${key}')}`
           }
-          
         } else {
           // if the mapped key is empty, clear the attribute from the output and ignore the value
           replace(field, pos, e)
-          valdex++ 
+          valdex++
         }
         replace(field, pos + 1, e)
         if (pos > 0) replace(field, 0, seek(field, 0, /^[^\s]$/) - 1) // trim left
@@ -692,7 +696,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         // setting the field to a space instead of ellipsis
         // and rewinding i allows for a second pass where it's
         // recognized as a component, the space will be wiped
-        // away with the component overwrite (don't set it to 
+        // away with the component overwrite (don't set it to
         // empty string since this indicates "don't process")
         // when it's a prior char
         field[field.length - 1] = ' '
@@ -708,7 +712,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       const str = fields[openIx][openPos]
       fields[openIx][openPos] = `\${this.spread(${offset + valdex++}, this.snips[${ix}][0], values, \``
       if (str[0] === '$') fields[openIx][openPos] += str
-      
+
       fields[closeIx][closePos] = '`)}' + fields[closeIx][closePos]
       if (VOID_ELEMENTS.has(tag) === false && childMap.length === 0) {
         if (meta.spread[ix] && meta.spread[ix].before.indexOf('children') > -1) {
@@ -720,7 +724,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         if (fields[closeIx][closePos + 1][0] === '<' || fields[closeIx][closePos + 1] === '') {
           // when this.spread is called, if childMap is empty (so, no children)
           // childMap[0] is set to the value of the children attribute, now we can
-          // so we can inject that value from the childMap 
+          // so we can inject that value from the childMap
           // we shift the childMap so that the value is cleared, so that future renderings
           // don't have old state
           fields[closeIx][closePos + 1] = `\${this.snips[${ix}][0][2].length === 1 ? this.snips[${ix}][0][2].shift() : ''}${fields[closeIx][closePos + 1]}`
@@ -740,13 +744,13 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         optionMayBeSelected = 'defaultValue' in select[1] || select[3].spreadIndices.length > 0
       }
       const output = `\${this.inject(values[${offset + valdex++}])}`
-      const prefix = (priorChar !== '>') && !optionMayBeSelected ?
-        '<!-- -->' :
-        ''
-      const suffix = (fields[i + 1] && fields[i + 1].join('').trimLeft()[0] !== '<') 
-        && !optionMayBeSelected
-        ? '<!-- -->' :
-        ''
+      const prefix = (priorChar !== '>') && !optionMayBeSelected
+        ? '<!-- -->'
+        : ''
+      const suffix = (fields[i + 1] && fields[i + 1].join('').trimLeft()[0] !== '<') &&
+        !optionMayBeSelected
+        ? '<!-- -->'
+        : ''
 
       field[field.length - 1] = `${field[field.length - 1]}${prefix}${output}${suffix}`
 
@@ -755,7 +759,6 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         const pos = reverseSeek(fields[i], fields[i].length - 1, /</) + tag.length + 1
         field[pos] = `\${this.selected(values[${offset + valdex - 1}] + '${text}')}${field[pos]}`
       }
-      
     }
     if (i in snips) {
       snips[i].forEach((snip, ix) => {
@@ -766,7 +769,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         if (priorCmpBounds.to > from || priorCmpBounds.to === from && priorCmpBounds.end > start) {
           return
         }
-        priorCmpBounds = {to, end}
+        priorCmpBounds = { to, end }
         if (typeof snip[0] === 'symbol') {
           tree[esxValues] = values
           snip[2] = resolveChildren(snip[2], snip[3].dynChildren, tree, tree[0])
@@ -785,7 +788,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       })
     }
   }
-  
+
   const body = fields.map((f) => f.join(''))
   if (rootElement) {
     const { keys } = rootElement[3]
@@ -795,26 +798,28 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       return k.length === 0 || attr.reserved(k) ? '' : ` (${k})=".*"`
     }).filter(Boolean)
     const rx = RegExp(attrs.join('|'), 'g')
-    
+
     for (var fi = 0; fi < body.length; fi++) {
       const field = body[fi]
       if (typeof field !== 'string') continue
       const match = field.match(/\/>|>/)
       if (match === null) continue
       if (match.input[match.index - 1] === '-') continue
-      if (attrs.length > 0) body.slice(0, fi + 1).forEach((f, i) => {
-        if (i === fi) {
-          const pre = f.slice(0, match.index).trimRight()
-          const post = f.slice(match.index).trimLeft()
-          const clonableRootElement = makeClonable(pre, rx)
-          const offset = clonableRootElement.length - pre.length
-          match.index += offset
-          body[i] = clonableRootElement + post
-          return
-        }
-        const clonableRootElement = makeClonable(f, rx)
-        body[i] = clonableRootElement
-      })
+      if (attrs.length > 0) {
+        body.slice(0, fi + 1).forEach((f, i) => {
+          if (i === fi) {
+            const pre = f.slice(0, match.index).trimRight()
+            const post = f.slice(match.index).trimLeft()
+            const clonableRootElement = makeClonable(pre, rx)
+            const offset = clonableRootElement.length - pre.length
+            match.index += offset
+            body[i] = clonableRootElement + post
+            return
+          }
+          const clonableRootElement = makeClonable(f, rx)
+          body[i] = clonableRootElement
+        })
+      }
       const pre = body[fi].slice(0, match.index).trimRight()
       const post = body[fi].slice(match.index).trimLeft()
       body[fi] = `${pre}\${extra}\${this.addRoot()}${post}`
@@ -832,7 +837,7 @@ function makeClonable (str, rx) {
   })
 }
 
-function addRoot () { 
+function addRoot () {
   const result = ssrReactRootAdded ? '' : ' data-reactroot=""'
   ssrReactRootAdded = true
   return result
@@ -845,7 +850,7 @@ function compileTmpl (body, state) {
 function compileChildTmpl (item, tree, top) {
   const meta = item[3]
   const { openTagStart, openTagEnd, selfClosing, closeTagEnd, attrPos } = meta
-  const to = selfClosing ? openTagEnd[0] : closeTagEnd[0] 
+  const to = selfClosing ? openTagEnd[0] : closeTagEnd[0]
   const from = openTagStart[0]
   const fields = meta.fields.map((f) => f.split(''))
   const snips = {}
@@ -856,7 +861,7 @@ function compileChildTmpl (item, tree, top) {
     if (ix > to || ix < from) continue
     const sPos = item.openTagStart[1]
     if (sPos < openTagEnd[1]) continue
-    
+
     const ePos = item.selfClosing ? item.openTagEnd[1] : item.closeTagEnd[1]
     if (ePos > (selfClosing ? openTagEnd[1] : closeTagEnd[1])) continue
     if (snips[ix - from]) snips[ix - from].push(tree[cmi])
@@ -875,24 +880,23 @@ function compileChildTmpl (item, tree, top) {
 function resolveChildren (childMap, dynChildren, tree, top) {
   const children = []
   for (var i = 0; i < childMap.length; i++) {
-
     if (typeof childMap[i] === 'number') {
       if (tree[childMap[i]]) {
         const [ tag, props, , elMeta ] = tree[childMap[i]]
         if (typeof tag === 'function') {
           const element = renderComponent(tree[childMap[i]], tree[esxValues])
           if (typeof element !== 'object') {
-            Object.defineProperty(props, 'children', {value: element})
+            Object.defineProperty(props, 'children', { value: element })
             children[i] = new EsxElementUnopt(tree[childMap[i]])
           } else {
             const state = element[ns] || (element._owner && element._owner[owner] && element._owner())
             if (state) {
               children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values)
-            }   else {
+            } else {
               children[i] = new EsxElementUnopt(tree[childMap[i]])
             }
           }
-        } else {              
+        } else {
           if (elMeta.dynAttrs) {
             for (var p in elMeta.dynAttrs) {
               if (!(p in props)) {
@@ -905,16 +909,16 @@ function resolveChildren (childMap, dynChildren, tree, top) {
             values: tree[esxValues]
           }
 
-          try { 
-            props[parent] = tree[childMap[i]] 
+          try {
+            props[parent] = tree[childMap[i]]
           } catch (e) {
             // this element has at some point been passed
             // through React.renderToString (or renderToStaticMarkup),
             // because props[parent] is there and has become readOnly.
-            // So there's nothing to do here, we need to avoid 
-            // a throw. 
+            // So there's nothing to do here, we need to avoid
+            // a throw.
           }
-            
+
           children[i] = new EsxElement(tree[childMap[i]], tree[childMap[i]][3][ns].tmpl, tree[esxValues])
         }
       }
@@ -928,13 +932,13 @@ function resolveChildren (childMap, dynChildren, tree, top) {
       }
     }
   }
-  if (children.length === 0) return null 
+  if (children.length === 0) return null
   if (children.length === 1) return children[0]
   return children
 }
 
 function tryToLoad (peer) {
-  try { 
+  try {
     return require(peer)
   } catch (e) {
     console.error(`
@@ -946,7 +950,7 @@ function tryToLoad (peer) {
   }
 }
 
-esx.ssr = { 
+esx.ssr = {
   option (key, value) {
     if (key !== 'hooks-mode') {
       throw Error('invalid option')

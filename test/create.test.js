@@ -6,23 +6,25 @@ const React = require('react')
 const { createElement } = React
 const init = process.env.TEST_CLIENT_CODE ? require('../browser') : require('..')
 const { MODE } = process.env
-if (!MODE) {
-  process.env.MODE = 'development'
-  const error = console.error.bind(console)
-  console.error = (s, ...args) => {
-    if (/Warning:/.test(s)) return
-    return error(s, ...args)
+if (typeof window === 'undefined') {
+  if (!MODE) {
+    process.env.MODE = 'development'
+    const error = console.error.bind(console)
+    console.error = (s, ...args) => {
+      if (/Warning:/.test(s)) return
+      return error(s, ...args)
+    }
+    delete require.cache[require.resolve(__filename)]
+    require(__filename)
+    return 
   }
-  delete require.cache[require.resolve(__filename)]
-  require(__filename)
-  return 
+  process.env.NODE_ENV = MODE
+  if (MODE === 'development') process.nextTick(() => {
+    process.env.MODE = 'production'
+    delete require.cache[require.resolve(__filename)]
+    require(__filename)
+  })
 }
-process.env.NODE_ENV = MODE
-if (MODE === 'development') process.nextTick(() => {
-  process.env.MODE = 'production'
-  delete require.cache[require.resolve(__filename)]
-  require(__filename)
-})
 test('components parameter must be a plain object or undefined', async ({throws, doesNotThrow}) => {
   throws(() => init(null), Error('ESX: supplied components must be a plain object'))
   throws(() => init(() => {}), Error('ESX: supplied components must be a plain object'))
@@ -54,7 +56,7 @@ test('components object values must be function,classes,symbols or objects with 
   doesNotThrow(() => init({Component: {$$typeof: Symbol('test')}}))
 })
 
-test('regiseter: components object values must be function,classes,symbols or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
+test('register: components object values must be function,classes,symbols or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
   throws(() => init().register({Component: undefined}), Error(`ESX: Component is not a valid component`))
   throws(() => init().register({Component: null}), Error(`ESX: Component is not a valid component`))
   throws(() => init().register({Component: 'str'}), Error(`ESX: Component is not a valid component`))
@@ -65,6 +67,45 @@ test('regiseter: components object values must be function,classes,symbols or ob
   doesNotThrow(() => init().register({Component: () => {}}))
   doesNotThrow(() => init().register({Component: class {}}))
   doesNotThrow(() => init().register({Component: {$$typeof: Symbol('test')}}))
+})
+
+test('register.lax: skips validation', async ({doesNotThrow}) => {
+  doesNotThrow(() => init().register.lax({Component: undefined}))
+  doesNotThrow(() => init().register.lax({Component: null}))
+  doesNotThrow(() => init().register.lax({Component: 'str'}))
+  doesNotThrow(() => init().register.lax({Component: 1}))
+  doesNotThrow(() => init().register.lax({Component: {}}))
+  doesNotThrow(() => init().register.lax({Component: []}))
+  doesNotThrow(() => init().register.lax({Component: Symbol()}))
+  doesNotThrow(() => init().register.lax({Component: () => {}}))
+  doesNotThrow(() => init().register.lax({Component: class {}}))
+  doesNotThrow(() => init().register.lax({Component: {$$typeof: Symbol('test')}}))
+})
+
+test('register.one: components object values must be function,classes,symbols or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
+  throws(() => init().register.one('Component', undefined), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register.one('Component', null), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register.one('Component', 'str'), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register.one('Component', 1), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register.one('Component', {}), Error(`ESX: Component is not a valid component`))
+  throws(() => init().register.one('Component', []), Error(`ESX: Component is not a valid component`))
+  doesNotThrow(() => init().register.one('Component', Symbol()))
+  doesNotThrow(() => init().register.one('Component', () => {}))
+  doesNotThrow(() => init().register.one('Component', class {}))
+  doesNotThrow(() => init().register.one('Component', {$$typeof: Symbol('test')}))
+})
+
+test('register.one.lax: skips validation', async ({doesNotThrow}) => {
+  doesNotThrow(() => init().register.one.lax('Component', undefined))
+  doesNotThrow(() => init().register.one.lax('Component', null))
+  doesNotThrow(() => init().register.one.lax('Component', 'str'))
+  doesNotThrow(() => init().register.one.lax('Component', 1))
+  doesNotThrow(() => init().register.one.lax('Component', {}))
+  doesNotThrow(() => init().register.one.lax('Component', []))
+  doesNotThrow(() => init().register.one.lax('Component', Symbol()))
+  doesNotThrow(() => init().register.one.lax('Component', () => {}))
+  doesNotThrow(() => init().register.one.lax('Component', class {}))
+  doesNotThrow(() => init().register.one.lax('Component', {$$typeof: Symbol('test')}))
 })
 
 test('empty string returns null', async ({ same }) => {

@@ -8,7 +8,7 @@ const EsxApp = require('./esx-app')
 const CreateElementApp = require('./createElement-app')
 const assert = require('assert')
 
-esx.register({EsxApp})
+esx.register({ EsxApp })
 
 // assert.equal(esx.renderToString `<EsxApp/>`, renderToString(createElement(CreateElementApp)))
 
@@ -16,13 +16,13 @@ const max = 1000
 const run = bench([
   function esxRenderToStringAsTag (cb) {
     for (var i = 0; i < max; i++) {
-      esx.renderToString `<EsxApp/>`
+      esx.renderToString`<EsxApp/>`
     }
     setImmediate(cb)
   },
   function esxRenderToStringPassedElement (cb) {
     for (var i = 0; i < max; i++) {
-      const element = esx `<EsxApp/>`
+      const element = esx`<EsxApp/>`
       esx.renderToString(element)
     }
     setImmediate(cb)
@@ -32,7 +32,7 @@ const run = bench([
       renderToString(createElement(CreateElementApp))
     }
     setImmediate(cb)
-  },
+  }
 ], 100)
 
 run(run)
