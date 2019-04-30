@@ -4236,7 +4236,7 @@ test('stateful mode hooks: useState ', async ({ doesNotThrow, is }) => {
 })
 
 
-test.only('stateful mode hooks: useState multiple ', async ({ doesNotThrow, is }) => {
+test('stateful mode hooks: useState multiple ', async ({ doesNotThrow, is }) => {
   init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useState } = React
@@ -4290,7 +4290,7 @@ test('stateful mode hooks: useReducer', async ({ is }) => {
   init.ssr.option('hooks-mode', 'compatible')
 })
 
-test.only('stateful mode hooks: useReducer, state initializer', async ({ is }) => {
+test('stateful mode hooks: useReducer, state initializer', async ({ is }) => {
   init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useReducer } = React
@@ -4373,7 +4373,7 @@ test('stateful mode hooks: useContext', async ({ is }) => {
   init.ssr.option('hooks-mode', 'compatible')
 })
 
-test.only('stateful mode hooks: useMemo', async ({ is }) => {
+test('stateful mode hooks: useMemo', async ({ is }) => {
   init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useMemo } = React
@@ -4398,7 +4398,7 @@ test.only('stateful mode hooks: useMemo', async ({ is }) => {
   init.ssr.option('hooks-mode', 'compatible')
 })
 
-test.only('stateful mode hooks: useCallback', async ({ is }) => {
+test('stateful mode hooks: useCallback', async ({ is }) => {
   init.ssr.option('hooks-mode', 'stateful')
   const esx = init()
   const { useCallback } = React
@@ -4538,9 +4538,6 @@ function childValidator (is) {
     }
   }
 }
-
-
-
 
 // cloneElement
 

@@ -1,7 +1,9 @@
 'use strict'
 const { createElement } = require('react')
 const parse = require('./lib/parse')
-const { validate, validateOne } = require('./lib/validate')
+const { 
+  validate, validateOne, supported
+ } = require('./lib/validate')
 const { marker } = require('./lib/symbols')
 
 function esx (components = {}) {
@@ -65,7 +67,10 @@ function esx (components = {}) {
   const merge = (additionalComponents) => {
     Object.assign(components, additionalComponents)
   }
-  const set = (key, component) => { components[key] = component }
+  const set = (key, component) => { 
+    supported(key, component)
+    components[key] = component 
+  }
   render.register = (additionalComponents) => {
     validate(additionalComponents)
     merge(additionalComponents)
@@ -74,7 +79,10 @@ function esx (components = {}) {
     validateOne(key, component)
     set(key, component)
   }
-  render.register.lax = merge
+  render.register.lax = (cmps) => {
+    for (var k in cmps) supported(k, cmps[k])
+    merge(cmps)
+  }
   render.register.one.lax = set
   return render
 }

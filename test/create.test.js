@@ -1,6 +1,7 @@
 'use strict'
 const test = require('aquatap')
 const renderer = require('react-test-renderer')
+const PropTypes = require('prop-types')
 const render = (o) => renderer.create(o).toJSON()
 const React = require('react')
 const { createElement } = React
@@ -106,6 +107,32 @@ test('register.one.lax: skips validation', async ({doesNotThrow}) => {
   doesNotThrow(() => init().register.one.lax('Component', () => {}))
   doesNotThrow(() => init().register.one.lax('Component', class {}))
   doesNotThrow(() => init().register.one.lax('Component', {$$typeof: Symbol('test')}))
+})
+
+test('all registrations throws if any component is using legacy context API', async ({ throws }) => {
+  const esx = init()
+  // simulate react-router 4 Link
+  class Link extends React.Component {
+    render () {
+      return esx`<div></div>`
+    }
+  }
+
+  Link.contextTypes = {
+    router: PropTypes.shape({
+      history: PropTypes.shape({
+        push: PropTypes.func.isRequired,
+        replace: PropTypes.func.isRequired,
+        createHref: PropTypes.func.isRequired
+      }).isRequired
+    }).isRequired
+  }
+  const err = Error(`ESX: Link has a contextTypes property. Legacy context API is not supported – https://reactjs.org/docs/legacy-context.html`)
+  throws(() => { init({Link}) }, err)
+  throws(() => { esx.register({Link}) }, err)
+  throws(() => { esx.register.lax({Link}) }, err)
+  throws(() => { esx.register.one('Link', Link) }, err)
+  throws(() => { esx.register.one.lax('Link', Link) }, err)
 })
 
 test('empty string returns null', async ({ same }) => {
