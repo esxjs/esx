@@ -1,6 +1,6 @@
 'use strict'
 const debug = require('debug')('esx')
-const { createElement } = tryToLoad('react')
+const { createElement, Fragment } = tryToLoad('react')
 const {
   renderToStaticMarkup,
   renderToString: reactRenderToString
@@ -21,7 +21,7 @@ const {
   VOID_ELEMENTS
 } = require('./lib/constants')
 const {
-  ns, marker, skip, provider, esxValues, parent, owner, template
+  ns, marker, skip, provider, esxValues, parent, owner, template, cmps, ties
 } = require('./lib/symbols')
 // singleton state for ssr
 var ssr = false
@@ -283,6 +283,7 @@ Object.defineProperty(EsxElement.prototype, '_owner', ownerDesc)
 function esx (components = {}) {
   validate(components)
   components = Object.assign({}, components)
+  components[ties] = {}
   const cache = new WeakMap()
   const raw = (strings, ...values) => {
     const key = strings
@@ -294,7 +295,9 @@ function esx (components = {}) {
     var root = null
     const map = {}
     while (i--) {
-      const [tag, props, childMap, meta] = tree[i]
+      const [ , props, childMap, meta] = tree[i]
+      const { isComponent, name } = meta
+      const tag = isComponent ? components[meta.name] || Fragment: name
       const children = new Array(childMap.length)
       const { dynAttrs, dynChildren, spread } = meta
       const spreads = spread && Object.keys(spread).map(Number)
@@ -391,24 +394,34 @@ function esx (components = {}) {
     hooks.uninstall()
     return output
   }
-  const merge = (additionalComponents) => {
-    Object.assign(components, additionalComponents)
-  }
-  const set = (key, component) => { 
+  const set = (key, component) => {
+    const current = components[key]
+    if (current === component) return
     supported(key, component)
-    components[key] = component 
+    components[key] = component
+    const references = components[ties][key]
+    if (references) for (var i = 0; i < references.length; i++) {
+      const item = references[i]
+      item[0] = components[key] //update the tag to the new component
+      prepare(item)
+    }
   }
   render.register = (additionalComponents) => {
-    validate(additionalComponents)
-    merge(additionalComponents)
+    for (var key in additionalComponents) {
+      const component = additionalComponents[key]
+      validateOne(key, component)
+      set(key, component)
+    }
   }
   render.register.one = (key, component) => {
     validateOne(key, component)
     set(key, component)
   }
-  render.register.lax = (cmps) => {
-    for (var k in cmps) supported(k, cmps[k])
-    merge(cmps)
+  render.register.lax = (additionalComponents) => {
+    for (var key in additionalComponents) {
+      const component = additionalComponents[key]
+      set(key, component)
+    }
   }
   render.register.one.lax = set
   render.renderToString = render.ssr = renderToString
@@ -502,15 +515,26 @@ function childPropsGetter () {
   return (lastChildProp = resolveChildren(childMap, dynChildren, meta.tree, item))
 }
 
+function prepare (item) {
+  const [ tag, , , meta ] = item
+  if (meta.isComponent && typeof tag.defaultProps === 'object') {
+    item[1] = Object.assign({}, tag.defaultProps,  meta.attributes)
+  }
+  const props = item[1]
+  if (!('children' in props)) {
+    Object.defineProperty(props, 'children', { get: childPropsGetter, enumerable: true, configurable: true })
+  }
+  meta.isProvider = tag.$$typeof === REACT_PROVIDER_TYPE
+  if (meta.isProvider) tag._context[provider] = item
+  return item
+}
+
 function loadTmpl (state, values) {
   if (state.tmpl) return state
   const { tree, fields, attrPos } = state
   const snips = {}
   for (var cmi = 0; cmi < tree.length; cmi++) {
-    const [ tag, props, , meta ] = tree[cmi]
-    if (!('children' in props)) {
-      Object.defineProperty(props, 'children', { get: childPropsGetter, enumerable: true, configurable: true })
-    }
+    const [ tag, , , meta ] = prepare(tree[cmi])
     const ix = meta.openTagStart[0]
     if (meta.isComponent === false) {
       const [ ix, pos ] = meta.openTagEnd

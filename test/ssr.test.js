@@ -126,6 +126,16 @@ test('components with path syntax names', async ({ is }) => {
   is(esx.renderToString `<o[Component]/>`, renderToString(createElement(Component)))
 })
 
+// test.only('element alias ("string" component)', async ({ is }) => {
+//   const esx = init()
+//   const Component = 'div'
+//   esx.register({Component})
+//   is(
+//     esx.renderToString `<Component>test</Component>`,
+//     renderToString(createElement(Component, null, 'test'))
+//   )
+// })
+
 test('sibling elements', async ({ is }) => {
   const Component = () => esx `<div><span>test</span><p>test2</p></div>`
   const esx = init({ Component })
@@ -4436,6 +4446,45 @@ test('stateful mode hooks: useRef', async ({ is }) => {
   esx.register({ App })
   is(esx.renderToString `<App/>`, renderToString(esx `<App/>`))
   init.ssr.option('hooks-mode', 'compatible')
+})
+
+
+test('swapping components with register (dynamic registering)', async ({ is }) => {
+  const esx = init()
+  const A = () => esx `<a>1</a>`
+  const B = () => esx `<b>2</b>`
+  esx.register({ Component: A })
+  // keep the same callsite
+  const ssr = () => esx.renderToString `<Component/>`
+  is(
+    ssr(),
+    renderToString(createElement(A))
+  )
+  esx.register({ Component: B })
+  is(
+    ssr(),
+    renderToString(createElement(B))
+  )
+})
+
+test('defaultProps when swapping components with register (dynamic registering)', async ({ is }) => {
+  const esx = init()
+  const A = ({v}) => esx `<a>${v}</a>`
+  const B = ({v}) => esx `<b>${v}</b>`
+  A.defaultProps = {v: 1}
+  B.defaultProps = {v: 2}
+  esx.register({ Component: A })
+  // keep the same callsite
+  const ssr = () => esx.renderToString `<Component/>`
+  is(
+    ssr(),
+    renderToString(createElement(A))
+  )
+  esx.register({ Component: B })
+  is(
+    ssr(),
+    renderToString(createElement(B))
+  )
 })
 
 

@@ -214,6 +214,7 @@ A component must be one of the following
 * class
 * symbol
 * object with a $$typeof key
+* string representing an element (e.g. 'div')
 
 #### `createEsx(components = {})`
 

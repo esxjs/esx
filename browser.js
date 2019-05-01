@@ -1,14 +1,15 @@
 'use strict'
-const { createElement } = require('react')
+const { createElement, Fragment } = require('react')
 const parse = require('./lib/parse')
 const { 
   validate, validateOne, supported
  } = require('./lib/validate')
-const { marker } = require('./lib/symbols')
+const { marker, ties } = require('./lib/symbols')
 
 function esx (components = {}) {
   validate(components)
   components = Object.assign({}, components)
+  components[ties] = {}
   const cache = new WeakMap()
   const render = (strings, ...values) => {
     const key = strings
@@ -20,7 +21,9 @@ function esx (components = {}) {
     var root = null
     const map = {}
     while (i--) {
-      const [tag, props, childMap, meta] = tree[i]
+      const [, props, childMap, meta] = tree[i]
+      const { isComponent, name } = meta
+      const tag = isComponent ? components[meta.name] || Fragment: name
       const children = new Array(childMap.length)
       const { dynAttrs, dynChildren, spread } = meta
       const spreads = spread && Object.keys(spread).map(Number)

@@ -44,10 +44,9 @@ test('components object must contain only uppercase property keys', async ({thro
   doesNotThrow(() => init({Component: () => {}}))
 })
 
-test('components object values must be function,classes,symbols or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
+test('components object values must be function,classes,symbols,strings  or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
   throws(() => init({Component: undefined}), Error(`ESX: Component is not a valid component`))
   throws(() => init({Component: null}), Error(`ESX: Component is not a valid component`))
-  throws(() => init({Component: 'str'}), Error(`ESX: Component is not a valid component`))
   throws(() => init({Component: 1}), Error(`ESX: Component is not a valid component`))
   throws(() => init({Component: {}}), Error(`ESX: Component is not a valid component`))
   throws(() => init({Component: []}), Error(`ESX: Component is not a valid component`))
@@ -55,12 +54,12 @@ test('components object values must be function,classes,symbols or objects with 
   doesNotThrow(() => init({Component: () => {}}))
   doesNotThrow(() => init({Component: class {}}))
   doesNotThrow(() => init({Component: {$$typeof: Symbol('test')}}))
+  doesNotThrow(() => init({Component: 'div'}))
 })
 
-test('register: components object values must be function,classes,symbols or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
+test('register: components object values must be function,classes,symbols,strings or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
   throws(() => init().register({Component: undefined}), Error(`ESX: Component is not a valid component`))
   throws(() => init().register({Component: null}), Error(`ESX: Component is not a valid component`))
-  throws(() => init().register({Component: 'str'}), Error(`ESX: Component is not a valid component`))
   throws(() => init().register({Component: 1}), Error(`ESX: Component is not a valid component`))
   throws(() => init().register({Component: {}}), Error(`ESX: Component is not a valid component`))
   throws(() => init().register({Component: []}), Error(`ESX: Component is not a valid component`))
@@ -68,12 +67,12 @@ test('register: components object values must be function,classes,symbols or obj
   doesNotThrow(() => init().register({Component: () => {}}))
   doesNotThrow(() => init().register({Component: class {}}))
   doesNotThrow(() => init().register({Component: {$$typeof: Symbol('test')}}))
+  doesNotThrow(() => init().register({Component: 'div'}))
 })
 
 test('register.lax: skips validation', async ({doesNotThrow}) => {
   doesNotThrow(() => init().register.lax({Component: undefined}))
   doesNotThrow(() => init().register.lax({Component: null}))
-  doesNotThrow(() => init().register.lax({Component: 'str'}))
   doesNotThrow(() => init().register.lax({Component: 1}))
   doesNotThrow(() => init().register.lax({Component: {}}))
   doesNotThrow(() => init().register.lax({Component: []}))
@@ -81,12 +80,12 @@ test('register.lax: skips validation', async ({doesNotThrow}) => {
   doesNotThrow(() => init().register.lax({Component: () => {}}))
   doesNotThrow(() => init().register.lax({Component: class {}}))
   doesNotThrow(() => init().register.lax({Component: {$$typeof: Symbol('test')}}))
+  doesNotThrow(() => init().register.lax({Component: 'div'}))
 })
 
-test('register.one: components object values must be function,classes,symbols or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
+test('register.one: components object values must be function,classes,symbols,strings or objects with a $$typeof key', async ({throws, doesNotThrow}) => {
   throws(() => init().register.one('Component', undefined), Error(`ESX: Component is not a valid component`))
   throws(() => init().register.one('Component', null), Error(`ESX: Component is not a valid component`))
-  throws(() => init().register.one('Component', 'str'), Error(`ESX: Component is not a valid component`))
   throws(() => init().register.one('Component', 1), Error(`ESX: Component is not a valid component`))
   throws(() => init().register.one('Component', {}), Error(`ESX: Component is not a valid component`))
   throws(() => init().register.one('Component', []), Error(`ESX: Component is not a valid component`))
@@ -94,6 +93,7 @@ test('register.one: components object values must be function,classes,symbols or
   doesNotThrow(() => init().register.one('Component', () => {}))
   doesNotThrow(() => init().register.one('Component', class {}))
   doesNotThrow(() => init().register.one('Component', {$$typeof: Symbol('test')}))
+  doesNotThrow(() => init().register.one('Component', 'div'))
 })
 
 test('register.one.lax: skips validation', async ({doesNotThrow}) => {
