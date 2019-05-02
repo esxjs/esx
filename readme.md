@@ -1,6 +1,8 @@
 # If you need help with Server Side Rendering and performance, <a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me!</a>
 
-# esx
+# esx 
+
+[![Build Status](https://travis-ci.org/esxjs/esx.png)](https://travis-ci.org/esxjs/esx)
 
 High throughput React Server Side Rendering
 
