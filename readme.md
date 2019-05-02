@@ -1,4 +1,4 @@
-# If you need help with Server Side Rendering and performance, <a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me!</a>
+# If you need help with Server Side Rendering and performance, <a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>.
 
 # esx 
 
@@ -52,7 +52,7 @@ PR's are extremely welcome and Collaborators are exceptionally, extraordinarily,
 
 If you or your team want support in integrating `esx`, or need help
 with server side rendering in general please feel free to 
-<a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>
+<a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>.
 
 ## Install
 
@@ -86,7 +86,7 @@ but it will work with the [New Context API](https://reactjs.org/docs/context.htm
 
 While the legacy API is being phased out, there still may be modules in a 
 projects depedency tree that rely on the legacy API. If you desperately need
-support for the legacy API, <a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>.
+support for the legacy API, <a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>..
 
 ## Usage
 
