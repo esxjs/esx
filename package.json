@@ -32,6 +32,7 @@
   "devDependencies": {
     "airtap": "^2.0.1",
     "aquatap": "^1.0.1",
+    "codecov": "^3.3.0",
     "fastbench": "^1.0.1",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
