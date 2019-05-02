@@ -71,6 +71,8 @@ git clone https://github.com/esxjs/esx
 cd esx
 npm i
 npm test
+npm run test:client # test client-side implementation in node
+npm tun test:browser # test client-side implementation in browser
 ```
 
 ## Syntax
