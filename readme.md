@@ -62,6 +62,17 @@ with server side rendering in general please feel free to
 npm i esx
 ```
 
+## Tests
+
+There are more 4350 passing tests.
+
+```sh
+git clone https://github.com/esxjs/esx
+cd esx
+npm i
+npm test
+```
+
 ## Syntax
 
 Creating HTML with `esx` syntax is as close as possible to JSX:
@@ -78,6 +89,7 @@ Creating HTML with `esx` syntax is as close as possible to JSX:
 * `react` v16.8+ is required as a peer dependency
 * `react-dom` v16.8+ is required as a peer dependency
 * `esx` is built for Node 10+
+* Supported Operating Systems: Windows, Linux, macOs
 
 ## Limitations
 
