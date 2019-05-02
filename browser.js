@@ -1,9 +1,9 @@
 'use strict'
 const { createElement, Fragment } = require('react')
 const parse = require('./lib/parse')
-const { 
+const {
   validate, validateOne, supported
- } = require('./lib/validate')
+} = require('./lib/validate')
 const { marker, ties } = require('./lib/symbols')
 
 function esx (components = {}) {
@@ -23,7 +23,7 @@ function esx (components = {}) {
     while (i--) {
       const [, props, childMap, meta] = tree[i]
       const { isComponent, name } = meta
-      const tag = isComponent ? components[meta.name] || Fragment: name
+      const tag = isComponent ? components[meta.name] || Fragment : name
       const children = new Array(childMap.length)
       const { dynAttrs, dynChildren, spread } = meta
       const spreads = spread && Object.keys(spread).map(Number)
@@ -70,9 +70,9 @@ function esx (components = {}) {
   const merge = (additionalComponents) => {
     Object.assign(components, additionalComponents)
   }
-  const set = (key, component) => { 
+  const set = (key, component) => {
     supported(key, component)
-    components[key] = component 
+    components[key] = component
   }
   render.register = (additionalComponents) => {
     validate(additionalComponents)

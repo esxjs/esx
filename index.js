@@ -7,9 +7,9 @@ const {
 } = tryToLoad('react-dom/server')
 const escapeHtml = require('./lib/escape')
 const parse = require('./lib/parse')
-const { 
+const {
   validate, validateOne, supported
- } = require('./lib/validate')
+} = require('./lib/validate')
 const attr = require('./lib/attr')
 var hooks = require('./lib/hooks/compatible')
 const {
@@ -87,12 +87,12 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
         spread[ix].after.indexOf(forbiddenKey) > -1 ||
         priorSpreadKeys.has(forbiddenKey) ||
         forbiddenKey in object ||
-        keyIsDSIH && childMap.length > 0
+        (keyIsDSIH && childMap.length > 0)
       if (collision) {
         throw SyntaxError('ESX: Can only set one of children or dangerouslySetInnerHTML.')
       }
       const overrideChildren = spread[ix].before.indexOf(key) > -1 ||
-        priorSpreadKeys && priorSpreadKeys.has(key) ||
+        (priorSpreadKeys && priorSpreadKeys.has(key)) ||
         childMap.length === 0
 
       if (overrideChildren) {
@@ -295,9 +295,9 @@ function esx (components = {}) {
     var root = null
     const map = {}
     while (i--) {
-      const [ , props, childMap, meta] = tree[i]
+      const [, props, childMap, meta] = tree[i]
       const { isComponent, name } = meta
-      const tag = isComponent ? components[meta.name] || Fragment: name
+      const tag = isComponent ? components[meta.name] || Fragment : name
       const children = new Array(childMap.length)
       const { dynAttrs, dynChildren, spread } = meta
       const spreads = spread && Object.keys(spread).map(Number)
@@ -361,7 +361,7 @@ function esx (components = {}) {
     const item = tree[0]
     if (item === undefined) return null
     const meta = item[3]
-    const { recompile } = meta 
+    const { recompile } = meta
     meta.values = values
     tree[esxValues] = values
     const { tmpl } = loadTmpl(state, values, recompile)
@@ -405,13 +405,15 @@ function esx (components = {}) {
     const type = typeof component
     const recompile = lastType !== type
     const references = components[ties][key]
-    if (references) for (var i = 0; i < references.length; i++) {
-      const item = references[i]
-      item[0] = components[key] //update the tag to the new component
-      prepare(item)
-      if (recompile) {
-        const root = item[3].tree[0]
-        root[3].recompile = true
+    if (references) {
+      for (var i = 0; i < references.length; i++) {
+        const item = references[i]
+        item[0] = components[key] // update the tag to the new component
+        prepare(item)
+        if (recompile) {
+          const root = item[3].tree[0]
+          root[3].recompile = true
+        }
       }
     }
   }
@@ -443,7 +445,7 @@ function renderComponent (item, values) {
   const [tag, props, childMap, meta] = item
   try { props[parent] = item } catch (e) {} // try/catch is for dev scenarios where object is frozen
   if (tag.$$typeof === REACT_PROVIDER_TYPE) {
-    for (var p in meta.dynAttrs) {
+    for (const p in meta.dynAttrs) {
       if (p === 'children') {
         meta.dynChildren[0] = meta.dynAttrs[p]
         childMap[0] = marker
@@ -458,7 +460,7 @@ function renderComponent (item, values) {
 
   const { dynAttrs, dynChildren } = meta
   if (values) {
-    for (var p in dynAttrs) {
+    for (const p in dynAttrs) {
       if (p[0] === '…') {
         const ix = dynAttrs[p]
         for (var sp in values[ix]) {
@@ -488,7 +490,7 @@ function renderComponent (item, values) {
       ? tagContext[provider][1].value
       : tagContext._currentValue2
     const props = Object.assign({ children: values[dynChildren[0]] }, item[1])
-    const result = props.children.call(props, context)
+    const result = props.children(context)
     if (meta.hooksUsed) hooks.after(item)
     return result
   }
@@ -503,7 +505,8 @@ function renderComponent (item, values) {
     return result
   }
   if (tag.prototype && tag.prototype.render) {
-    const element = new tag(props, context)
+    const Tag = tag
+    const element = new Tag(props, context)
     if ('componentWillMount' in element) element.componentWillMount()
     if ('UNSAFE_componentWillMount' in element) element.UNSAFE_componentWillMount()
     const result = element.render()
@@ -526,7 +529,7 @@ function childPropsGetter () {
 function prepare (item) {
   const [ tag, , , meta ] = item
   if (meta.isComponent && typeof tag.defaultProps === 'object') {
-    item[1] = Object.assign({}, tag.defaultProps,  meta.attributes)
+    item[1] = Object.assign({}, tag.defaultProps, meta.attributes)
   }
   const props = item[1]
   if (!('children' in props)) {
@@ -549,7 +552,7 @@ function loadTmpl (state, values, recompile = false) {
       const isVoidElement = VOID_ELEMENTS.has(tag)
       if (isVoidElement === true && meta.selfClosing === false) {
         fields[ix][pos - 1] = '/>'
-        meta.selfClosing === true
+        meta.selfClosing = true
         if (meta.closeTagStart) {
           const [ ix, pos ] = meta.closeTagStart
           replace(fields[ix], pos, meta.closeTagEnd[1])
@@ -604,7 +607,7 @@ function seekToEndOfTagName (fields, ix) {
 
   while (ix < fields.length - 1) {
     var pos = seek(fields[ix], boundary, /(^[\s/>]$)|^\$|^$/) - 1
-    if (pos === -1) pos === boundary
+    if (pos === -1) pos = boundary
     if (pos !== boundary) break
     boundary = 0
     ix++
@@ -730,7 +733,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         item = snips[--ix]
       }
       item = item[0]
-      const [ tag, props, childMap, meta] = item
+      const [ tag, props, childMap, meta ] = item
       if (typeof tag === 'function') {
         // setting the field to a space instead of ellipsis
         // and rewinding i allows for a second pass where it's
@@ -777,7 +780,8 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         let select = null
         const predicate = ([tag]) => tag === 'select'
         while (c >= 0) {
-          if (select = snips[c].reverse().find(predicate)) break
+          select = snips[c].reverse().find(predicate)
+          if (select) break
           c--
         }
         optionMayBeSelected = 'defaultValue' in select[1] || select[3].spreadIndices.length > 0
@@ -803,7 +807,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       snips[i].forEach((snip, ix) => {
         const { openTagStart, openTagEnd, selfClosing, closeTagEnd, isComponent, name } = snip[3]
         if (!isComponent) return
-        
+
         const [ from, start ] = openTagStart
         const [ to, end ] = selfClosing ? openTagEnd : closeTagEnd
         const [ tag ] = snip
@@ -818,7 +822,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
           priorCmpBounds = { to, end }
           return
         }
-        if (priorCmpBounds.to > from || priorCmpBounds.to === from && priorCmpBounds.end > start) {
+        if (priorCmpBounds.to > from || (priorCmpBounds.to === from && priorCmpBounds.end > start)) {
           return
         }
         priorCmpBounds = { to, end }
@@ -838,7 +842,6 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
             replace(fields[c], 0, c === to ? end : fields[c].length - 1)
           }
         }
-        
       })
     }
   }
@@ -898,7 +901,7 @@ function addRoot () {
 }
 
 function compileTmpl (body, state) {
-  return Function('values', `extra=''`, 'replace=null', 'return `' + body.join('') + '`').bind(state)
+  return Function('values', `extra=''`, 'replace=null', 'return `' + body.join('') + '`').bind(state) // eslint-disable-line
 }
 
 function compileChildTmpl (item, tree) {

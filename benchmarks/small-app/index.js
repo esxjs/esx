@@ -10,7 +10,7 @@ const assert = require('assert')
 
 esx.register({ EsxApp })
 
-// assert.equal(esx.renderToString `<EsxApp/>`, renderToString(createElement(CreateElementApp)))
+assert.strict.equal(esx.renderToString`<EsxApp/>`, renderToString(createElement(CreateElementApp)))
 
 const max = 1000
 const run = bench([

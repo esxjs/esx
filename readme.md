@@ -4,6 +4,7 @@
 
 [![Build Status](https://travis-ci.org/esxjs/esx.png)](https://travis-ci.org/esxjs/esx)
 [![Coverage](https://img.shields.io/codecov/c/github/esxjs/esx.svg)](https://codecov.io/gh/esxjs/esx)
+[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
 
 High throughput React Server Side Rendering
 
