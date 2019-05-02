@@ -803,38 +803,42 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       snips[i].forEach((snip, ix) => {
         const { openTagStart, openTagEnd, selfClosing, closeTagEnd, isComponent, name } = snip[3]
         if (!isComponent) return
+        
         const [ from, start ] = openTagStart
         const [ to, end ] = selfClosing ? openTagEnd : closeTagEnd
-        if (priorCmpBounds.to > from || priorCmpBounds.to === from && priorCmpBounds.end > start) {
-          return
-        }
-        priorCmpBounds = { to, end }
         const [ tag ] = snip
         const type = typeof tag
         if (type === 'string') {
-          replace(fields[from], start + 1, name.length)
+          replace(fields[from], start + 1, start + name.length)
           fields[from][start + 1] = `\${this.snips[${i}][${ix}][0]}`
           if (selfClosing === false) {
             replace(fields[to], end - name.length, end - 1)
             fields[to][end - 1] = `\${this.snips[${i}][${ix}][0]}`
           }
-        } else  {
-          if (type === 'symbol') {
-            tree[esxValues] = values
-            snip[2] = resolveChildren(snip[2], snip[3].dynChildren, tree, tree[0])
-            field[start] = `\${this.inject(this.snips[${i}][${ix}][2])}`
-          } else {
-            field[start] = `\${this.inject(this.renderComponent(this.snips[${i}][${ix}], values))}`
-          }
-          replace(field, start + 1, from === to ? end : field.length - 1)
-          if (from < to) {
-            valdex = to
-            var c = from
-            while (c++ < to && fields[c]) {
-              replace(fields[c], 0, c === to ? end : fields[c].length - 1)
-            }
+          priorCmpBounds = { to, end }
+          return
+        }
+        if (priorCmpBounds.to > from || priorCmpBounds.to === from && priorCmpBounds.end > start) {
+          return
+        }
+        priorCmpBounds = { to, end }
+
+        if (type === 'symbol') {
+          tree[esxValues] = values
+          snip[2] = resolveChildren(snip[2], snip[3].dynChildren, tree, tree[0])
+          field[start] = `\${this.inject(this.snips[${i}][${ix}][2])}`
+        } else {
+          field[start] = `\${this.inject(this.renderComponent(this.snips[${i}][${ix}], values))}`
+        }
+        replace(field, start + 1, from === to ? end : field.length - 1)
+        if (from < to) {
+          valdex = to
+          var c = from
+          while (c++ < to && fields[c]) {
+            replace(fields[c], 0, c === to ? end : fields[c].length - 1)
           }
         }
+        
       })
     }
   }

@@ -126,7 +126,7 @@ test('components with path syntax names', async ({ is }) => {
   is(esx.renderToString `<o[Component]/>`, renderToString(createElement(Component)))
 })
 
-test.only('element alias ("string" component)', async ({ is }) => {
+test('element alias ("string" component)', async ({ is }) => {
   const esx = init()
   esx.register({Component: 'div'})
   is(
@@ -137,6 +137,16 @@ test.only('element alias ("string" component)', async ({ is }) => {
   is(
     esx.renderToString `<Component/>`,
     renderToString(createElement('img'))
+  )
+  esx.register({Component: 'div'})
+  is(
+    esx.renderToString `<div><Component>test</Component></div>`,
+    renderToString(createElement('div', null, createElement('div', null, 'test')))
+  )
+  esx.register({Component: 'img'})
+  is(
+    esx.renderToString `<div><Component/></div>`,
+    renderToString(createElement('div', null, createElement('img')))
   )
 })
 
@@ -1617,6 +1627,14 @@ test('component spread props', async ({is, plan}) => {
   esx.renderToString `<Cmp ...${{a: 1, b: 2}}/>`
 })
 
+test('element alias ("string" component) spread props', async ({ is }) => {
+  const esx = init()
+  esx.register({Component: 'div'})
+  is(
+    esx.renderToString `<Component ...${{a: 1, b: 2}}>test</Component>`,
+    renderToString(createElement('div', {a: 1, b: 2}, 'test'))
+  )
+})
 
 test('component spread props do not overwrite prior static props when no collision', async ({is, plan}) => {
   const esx = init()
@@ -4505,7 +4523,7 @@ test('swapping aliases ("string" components) with register (dynamic registering)
   is(ssr2(), renderToString(createElement('link')))
 })
 
-test.only('swapping components of different types with register (dynamic registering)', async ({ is }) => {
+test('swapping components of different types with register (dynamic registering)', async ({ is }) => {
   const esx = init()
   const A = () => esx `<a>1</a>`
   const B = 'img'
