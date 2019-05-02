@@ -126,15 +126,19 @@ test('components with path syntax names', async ({ is }) => {
   is(esx.renderToString `<o[Component]/>`, renderToString(createElement(Component)))
 })
 
-// test.only('element alias ("string" component)', async ({ is }) => {
-//   const esx = init()
-//   const Component = 'div'
-//   esx.register({Component})
-//   is(
-//     esx.renderToString `<Component>test</Component>`,
-//     renderToString(createElement(Component, null, 'test'))
-//   )
-// })
+test.only('element alias ("string" component)', async ({ is }) => {
+  const esx = init()
+  esx.register({Component: 'div'})
+  is(
+    esx.renderToString `<Component>test</Component>`,
+    renderToString(createElement('div', null, 'test'))
+  )
+  esx.register({Component: 'img'})
+  is(
+    esx.renderToString `<Component/>`,
+    renderToString(createElement('img'))
+  )
+})
 
 test('sibling elements', async ({ is }) => {
   const Component = () => esx `<div><span>test</span><p>test2</p></div>`
@@ -4487,6 +4491,37 @@ test('defaultProps when swapping components with register (dynamic registering)'
   )
 })
 
+test('swapping aliases ("string" components) with register (dynamic registering)', async ({ is }) => {
+  const esx = init()
+  const ssr = () => esx.renderToString `<Component>test</Component>`
+  esx.register({Component: 'div'})
+  is(ssr(), renderToString(createElement('div', null, 'test')))
+  esx.register({Component: 'p'})
+  is(ssr(), renderToString(createElement('p', null, 'test')))
+  const ssr2 = () => esx.renderToString `<Component/>`
+  esx.register({Component: 'img'})
+  is(ssr2(), renderToString(createElement('img')))
+  esx.register({Component: 'link'})
+  is(ssr2(), renderToString(createElement('link')))
+})
+
+test.only('swapping components of different types with register (dynamic registering)', async ({ is }) => {
+  const esx = init()
+  const A = () => esx `<a>1</a>`
+  const B = 'img'
+  // esx.register({ Component: A })
+  // keep the same callsite
+  const ssr = () => esx.renderToString `<Component/>`
+  // is(
+  //   ssr(),
+  //   renderToString(createElement(A))
+  // )
+  esx.register({ Component: B })
+  is(
+    ssr(),
+    renderToString(createElement(B))
+  )
+})
 
 test('ssr.option will throw when called during renderToString', async ({throws}) => {
   throws(() => init.ssr.option('not-supported'), Error('invalid option'))

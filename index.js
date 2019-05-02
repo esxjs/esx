@@ -21,7 +21,7 @@ const {
   VOID_ELEMENTS
 } = require('./lib/constants')
 const {
-  ns, marker, skip, provider, esxValues, parent, owner, template, cmps, ties
+  ns, marker, skip, provider, esxValues, parent, owner, template, ties
 } = require('./lib/symbols')
 // singleton state for ssr
 var ssr = false
@@ -357,14 +357,16 @@ function esx (components = {}) {
     const state = cache.has(key)
       ? cache.get(key)
       : cache.set(key, parse(components, strings, values)).get(key)
-    const { tree, tmpl } = loadTmpl(state, values)
+    const { tree } = state
     const item = tree[0]
     if (item === undefined) return null
-    item[3].values = values
+    const meta = item[3]
+    const { recompile } = meta 
+    meta.values = values
     tree[esxValues] = values
-
+    const { tmpl } = loadTmpl(state, values, recompile)
+    if (recompile) meta.recompile = false
     const el = new EsxElement(item, tmpl, values)
-
     if (!(parent in el.props)) el.props[parent] = item
     return el
   }
@@ -399,11 +401,18 @@ function esx (components = {}) {
     if (current === component) return
     supported(key, component)
     components[key] = component
+    const lastType = typeof current
+    const type = typeof component
+    const recompile = lastType !== type
     const references = components[ties][key]
     if (references) for (var i = 0; i < references.length; i++) {
       const item = references[i]
       item[0] = components[key] //update the tag to the new component
       prepare(item)
+      if (recompile) {
+        const root = item[3].tree[0]
+        root[3].recompile = true
+      }
     }
   }
   render.register = (additionalComponents) => {
@@ -432,8 +441,7 @@ function esx (components = {}) {
 function renderComponent (item, values) {
   hooks.rendering(item)
   const [tag, props, childMap, meta] = item
-  try { props[parent] = item } catch (e) {} // try/catch is to dev scenarios where object is frozen
-
+  try { props[parent] = item } catch (e) {} // try/catch is for dev scenarios where object is frozen
   if (tag.$$typeof === REACT_PROVIDER_TYPE) {
     for (var p in meta.dynAttrs) {
       if (p === 'children') {
@@ -529,8 +537,8 @@ function prepare (item) {
   return item
 }
 
-function loadTmpl (state, values) {
-  if (state.tmpl) return state
+function loadTmpl (state, values, recompile = false) {
+  if (state.tmpl && recompile === false) return state
   const { tree, fields, attrPos } = state
   const snips = {}
   for (var cmi = 0; cmi < tree.length; cmi++) {
@@ -556,8 +564,7 @@ function loadTmpl (state, values) {
     if (snips[ix]) snips[ix].push(tree[cmi])
     else snips[ix] = [tree[cmi]]
   }
-
-  const body = generate(fields, values, snips, attrPos, tree)
+  const body = generate(fields.map((f) => f.slice()), values, snips, attrPos, tree)
   const tmpl = compileTmpl(body, {
     inject, attribute, style, spread, snips, renderComponent, addRoot, selected
   })
@@ -794,7 +801,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
     }
     if (i in snips) {
       snips[i].forEach((snip, ix) => {
-        const { openTagStart, openTagEnd, selfClosing, closeTagEnd, isComponent } = snip[3]
+        const { openTagStart, openTagEnd, selfClosing, closeTagEnd, isComponent, name } = snip[3]
         if (!isComponent) return
         const [ from, start ] = openTagStart
         const [ to, end ] = selfClosing ? openTagEnd : closeTagEnd
@@ -802,19 +809,30 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
           return
         }
         priorCmpBounds = { to, end }
-        if (typeof snip[0] === 'symbol') {
-          tree[esxValues] = values
-          snip[2] = resolveChildren(snip[2], snip[3].dynChildren, tree, tree[0])
-          field[start] = `\${this.inject(this.snips[${i}][${ix}][2])}`
-        } else {
-          field[start] = `\${this.inject(this.renderComponent(this.snips[${i}][${ix}], values))}`
-        }
-        replace(field, start + 1, from === to ? end : field.length - 1)
-        if (from < to) {
-          valdex = to
-          var c = from
-          while (c++ < to && fields[c]) {
-            replace(fields[c], 0, c === to ? end : fields[c].length - 1)
+        const [ tag ] = snip
+        const type = typeof tag
+        if (type === 'string') {
+          replace(fields[from], start + 1, name.length)
+          fields[from][start + 1] = `\${this.snips[${i}][${ix}][0]}`
+          if (selfClosing === false) {
+            replace(fields[to], end - name.length, end - 1)
+            fields[to][end - 1] = `\${this.snips[${i}][${ix}][0]}`
+          }
+        } else  {
+          if (type === 'symbol') {
+            tree[esxValues] = values
+            snip[2] = resolveChildren(snip[2], snip[3].dynChildren, tree, tree[0])
+            field[start] = `\${this.inject(this.snips[${i}][${ix}][2])}`
+          } else {
+            field[start] = `\${this.inject(this.renderComponent(this.snips[${i}][${ix}], values))}`
+          }
+          replace(field, start + 1, from === to ? end : field.length - 1)
+          if (from < to) {
+            valdex = to
+            var c = from
+            while (c++ < to && fields[c]) {
+              replace(fields[c], 0, c === to ? end : fields[c].length - 1)
+            }
           }
         }
       })
@@ -879,7 +897,7 @@ function compileTmpl (body, state) {
   return Function('values', `extra=''`, 'replace=null', 'return `' + body.join('') + '`').bind(state)
 }
 
-function compileChildTmpl (item, tree, top) {
+function compileChildTmpl (item, tree) {
   const meta = item[3]
   const { openTagStart, openTagEnd, selfClosing, closeTagEnd, attrPos } = meta
   const to = selfClosing ? openTagEnd[0] : closeTagEnd[0]
