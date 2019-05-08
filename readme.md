@@ -64,7 +64,7 @@ npm i esx
 
 ## Tests
 
-There are more 4350 passing tests.
+There are close to 3000 passing tests.
 
 ```sh
 git clone https://github.com/esxjs/esx

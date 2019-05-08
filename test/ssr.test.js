@@ -1,5 +1,5 @@
 'use strict'
-const test = require('aquatap')
+let test = require('aquatap')
 const { renderToString } = require('react-dom/server')
 const PropTypes = require('prop-types')
 const init = require('..')
@@ -15,6 +15,8 @@ if (!MODE) {
   }
   delete require.cache[require.resolve(__filename)]
   require(__filename)
+  test = () => {}
+  test.only = test
 } else {
   process.env.NODE_ENV = MODE
   if (MODE === 'development') {
@@ -830,7 +832,7 @@ test('children render props', async ({ is }) => {
   is(esx.renderToString`<App/>`, renderToString(createElement(App)))
 })
 
-test.only('dynamic component with static element children as prop', async ({ is }) => {
+test('dynamic component with static element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is)
   const A = ({ value, children }) => {

@@ -1,6 +1,6 @@
 'use strict'
 /* eslint-env node */
-const test = require('aquatap')
+let test = require('aquatap')
 const renderer = require('react-test-renderer')
 const PropTypes = require('prop-types')
 const render = (o) => renderer.create(o).toJSON()
@@ -18,6 +18,8 @@ if (typeof window === 'undefined') {
     }
     delete require.cache[require.resolve(__filename)]
     require(__filename)
+    test = () => {}
+    test.only = test
   } else {
     process.env.NODE_ENV = MODE
     if (MODE === 'development') {
