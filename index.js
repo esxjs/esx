@@ -71,7 +71,6 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
     }
     spread[ix].dynamic = keys
   }
-
   for (var k in keys) {
     const key = keys[k]
     if (attr.reserved(key)) continue
@@ -752,7 +751,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
 
       field[field.length - 1] = '`, `'
       const str = fields[openIx][openPos]
-      fields[openIx][openPos] = `\${this.spread(${offset + valdex++}, this.snips[${ix}][0], values, \``
+      fields[openIx][openPos] = `\${this.spread(${offset + valdex++}, this.snips[${ix}][${snips[ix].length -1}], values, \``
       if (str[0] === '$') fields[openIx][openPos] += str
 
       fields[closeIx][closePos] = '`)}' + fields[closeIx][closePos]
@@ -913,7 +912,6 @@ function compileChildTmpl (item, tree) {
   const snips = {}
   for (var cmi in tree) {
     const item = tree[cmi][3]
-    if (item.isComponent === false) continue
     const ix = item.openTagStart[0]
     if (ix > to || ix < from) continue
     const sPos = item.openTagStart[1]

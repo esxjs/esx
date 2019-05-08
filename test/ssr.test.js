@@ -830,7 +830,7 @@ test('children render props', async ({ is }) => {
   is(esx.renderToString`<App/>`, renderToString(createElement(App)))
 })
 
-test('dynamic component with static element children as prop', async ({ is }) => {
+test.only('dynamic component with static element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is)
   const A = ({ value, children }) => {
@@ -1612,6 +1612,30 @@ test('spread props and defaultProps', async ({ is }) => {
   Component.defaultProps = { a: 'default-a', b: 'default-b' }
   esx.register({ Component })
   is(esx.renderToString`<Component/>`, renderToString(esx`<Component/>`))
+})
+
+test('spread props in nested elements', async ({ is }) => {
+  const esx = init()
+  is(
+    esx.renderToString `<div><div ...${{className: 'a'}}></div></div>`,
+    renderToString(esx `<div><div ...${{className: 'a'}}></div></div>`)
+  )
+  is(
+    esx.renderToString `<a><div></div><div ...${{className: 'a'}}></div></a>`,
+    renderToString(esx `<a><div></div><div ...${{className: 'a'}}></div></a>`)
+  )
+  is(
+    esx.renderToString `<div><div ...${{className: 'a'}}></div></div>`,
+    renderToString(esx `<div><div ...${{className: 'a'}}></div></div>`)
+  )
+})
+
+test('spread props nested in fragment', async ({ is }) => {
+  const esx = init()
+  is(
+    esx.renderToString `<><div ...${{className: 'a'}}></div></>`,
+    renderToString(esx `<><div ...${{className: 'a'}}></div></>`)
+  )
 })
 
 test('component spread props', async ({ is, plan }) => {
@@ -4632,16 +4656,7 @@ function childValidator (is) {
   }
 }
 
-// cloneElement
-
-// react router
-// the infite render issue (from react router)
-
-// default value in select etc.
-
 // MULTI RENDERING, STATE CONFUSION ETC.
-
-// useContext hook
 
 // children attribute + children in element
 
