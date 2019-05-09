@@ -465,7 +465,13 @@ function renderComponent (item, values) {
         for (var sp in values[ix]) {
           if (meta.spread[ix].after.indexOf(sp) > -1) continue
           if (values[ix].hasOwnProperty(sp)) {
-            props[sp] = values[ix][sp]
+            if (sp === 'children') {
+              Object.defineProperty(props, 'children', { 
+                value: values[ix][sp] 
+              })
+            } else {
+              props[sp] = values[ix][sp]
+            }
           }
         }
       } else {

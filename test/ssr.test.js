@@ -1850,6 +1850,18 @@ test('spread props and defaultProps', async ({ is }) => {
   is(esx.renderToString`<Component/>`, renderToString(esx`<Component/>`))
 })
 
+test('spread props with children prop', async ({ is }) => {
+  const esx = init()
+  const Component = ({children}) => {
+    return esx`<p>${children}</p>`
+  }
+  esx.register({ Component })
+  const o = {children: 'test'}
+  const o2 = {children: 'test2'}
+  is(esx.renderToString`<Component ...${o}/>`, renderToString(esx`<Component  ...${o}/>`))
+  is(esx.renderToString`<Component ...${o} ...${o2}/>`, renderToString(esx`<Component  ...${o} ...${o2}/>`))
+})
+
 test('self closing void elements do not render with closing tag', async ({ is }) => {
   const esx = init()
   is(esx.renderToString`<area/>`, renderToString(esx`<area/>`))
