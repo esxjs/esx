@@ -1626,9 +1626,22 @@ test('spread props in nested elements', async ({ is }) => {
     esx.renderToString `<a><div></div><div ...${{className: 'a'}}></div></a>`,
     renderToString(esx `<a><div></div><div ...${{className: 'a'}}></div></a>`)
   )
+})
+
+test('spread props in nested elements that are siblings after dynamic children', async ({ is }) => {
+  const esx = init()
+  esx.register({Cmp: ({children}) => esx`<div>${children}</div>`})
   is(
-    esx.renderToString `<div><div ...${{className: 'a'}}></div></div>`,
-    renderToString(esx `<div><div ...${{className: 'a'}}></div></div>`)
+    esx.renderToString `<Cmp>${[]}<div ...${{className: 'a'}}></div></Cmp>`,
+    renderToString(esx `<Cmp>${[]}<div ...${{className: 'a'}}></div></Cmp>`)
+  )
+  is(
+    esx.renderToString `<>${[]}<div ...${{className: 'a'}}></div></>`,
+    renderToString(esx `<>${[]}<div ...${{className: 'a'}}></div></>`)
+  )
+  is(
+    esx.renderToString `<>${[esx `<a>test</a>`, esx `<a>test2</a>`]}<div ...${{className: 'a'}}></div></>`,
+    renderToString(esx `<>${[esx `<a>test</a>`, esx `<a>test2</a>`]}<div ...${{className: 'a'}}></div></>`)
   )
 })
 
@@ -4663,3 +4676,8 @@ function childValidator (is) {
 // children attribute + children in element
 
 // bug: <Cmp a=1 b=2/> -> b is true when next to /
+
+//  is(
+//   esx.renderToString `<div>${'x'}${'x'}<div></div></div>`,
+//   renderToString(esx `<div>${'x'}${'x'}<div></div></div>`)
+// )

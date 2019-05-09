@@ -910,17 +910,20 @@ function compileChildTmpl (item, tree) {
   const from = openTagStart[0]
   const fields = meta.fields.map((f) => f.split(''))
   const snips = {}
-  for (var cmi in tree) {
-    const item = tree[cmi][3]
-    const ix = item.openTagStart[0]
-    if (ix > to || ix < from) continue
-    const sPos = item.openTagStart[1]
+  const root = tree[0]
+  const dynamicChildIndices = Object.keys(root[3].dynChildren)
+  const offset = dynamicChildIndices.filter((i) => (i < from)).length
+  const posOffset = root[3].fields.slice(0, offset).join('').length
+  for (var cmi = 0; cmi < tree.length; cmi++) {
+    const cur = tree[cmi][3]
+    const ix = cur.openTagStart[0] + offset
+    const sPos = cur.openTagStart[1] + posOffset
+    if (ix < from || ix > to) continue
     if (sPos < openTagEnd[1]) continue
-
-    const ePos = item.selfClosing ? item.openTagEnd[1] : item.closeTagEnd[1]
+    const ePos = (cur.selfClosing ? cur.openTagEnd[1] : cur.closeTagEnd[1])
     if (ePos > (selfClosing ? openTagEnd[1] : closeTagEnd[1])) continue
-    if (snips[ix - from]) snips[ix - from].push(tree[cmi])
-    else snips[ix - from] = [tree[cmi]]
+    if (snips[ix - offset - from]) snips[ix - offset - from].push(tree[cmi])
+    else snips[ix - offset - from] = [tree[cmi]]
   }
   const values = tree[esxValues].slice(from, to)
   replace(fields[from], 0, openTagStart[1] - 1)
@@ -970,7 +973,7 @@ function resolveChildren (childMap, dynChildren, tree, top) {
             // this element has at some point been passed
             // through React.renderToString (or renderToStaticMarkup),
             // because props[parent] is there and has become readOnly.
-            // So there's nothing to do here, we need to avoid
+            // So there's nothing to do here, we just need to avoid
             // a throw.
           }
 
