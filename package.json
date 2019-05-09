@@ -1,6 +1,6 @@
 {
   "name": "esx",
-  "version": "2.2.9",
+  "version": "2.2.10",
   "description": "High throughput React Server Side Rendering",
   "main": "index.js",
   "browser": "./browser.js",
