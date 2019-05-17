@@ -204,7 +204,7 @@ import createEsx from 'esx'
 const createEsx = require('esx')
 ```
 
-The initialzer takes an object of component mappings which 
+The initializer takes an object of component mappings which 
 it then uses to look up component references within the template.
 
 When called, the Initializer returns a Template Engine instance.
