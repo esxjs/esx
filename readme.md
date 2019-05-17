@@ -91,7 +91,7 @@ Creating HTML with `esx` syntax is as close as possible to JSX:
 * `react` v16.8+ is required as a peer dependency
 * `react-dom` v16.8+ is required as a peer dependency
 * `esx` is built for Node 10+
-* Supported Operating Systems: Windows, Linux, macOs
+* Supported Operating Systems: Windows, Linux, macOS
 
 ## Limitations
 
@@ -114,7 +114,7 @@ Preload `esx/optimize` like so:
 node -r esx/optimize my-app.js
 ```
 
-That's is. This will convert all `JSX` and `createElement` calls to ESX format, 
+That's it. This will convert all `JSX` and `createElement` calls to ESX format, 
 unlocking the throughput benefits of SSR template rendering.
 
 ### As a JSX replacement
@@ -204,7 +204,7 @@ import createEsx from 'esx'
 const createEsx = require('esx')
 ```
 
-The initialzer takes an object of component mappings which 
+The initializer takes an object of component mappings which 
 it then uses to look up component references within the template.
 
 When called, the Initializer returns a Template Engine instance.
