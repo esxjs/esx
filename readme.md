@@ -114,7 +114,7 @@ Preload `esx/optimize` like so:
 node -r esx/optimize my-app.js
 ```
 
-That's is. This will convert all `JSX` and `createElement` calls to ESX format, 
+That's it. This will convert all `JSX` and `createElement` calls to ESX format, 
 unlocking the throughput benefits of SSR template rendering.
 
 ### As a JSX replacement
