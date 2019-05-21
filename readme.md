@@ -25,13 +25,13 @@ node -r esx/experimental-optimize my-app.js
 
 *Note this is experimental, once stable this will become esx/optimize*.
 
-Alternatively [babel-plugin-esx-ssr](../babel-plugin-esx-ssr) can be used to transpile for the same performance gains. The babel plugin would be a preferred option where speed of process initialization is important (such as serverless).
+Alternatively [babel-plugin-esx-ssr](https://github.com/esxjs/esx/blob/babel-plugin-esx-ssr) can be used to transpile for the same performance gains. The babel plugin would be a preferred option where speed of process initialization is important (such as serverless).
 
 Optionally, `esx` is also a universal **JSX-like syntax in plain JavaScript** that allows for the elimination of transpilation in development environments.
 
 * For the server side, using `esx` syntax  will yield the same high speed results as the optimizing preloader
 * For client side development, using `esx` syntax can enhance development workflow by removing the need for browser transpilation when developing in modern browsers
-* For client side production `esx` can be compiled away for production with [babel-plugin-esx-browser](../babel-plugin-esx-browser), resulting in zero-byte payload overhead. 
+* For client side production `esx` can be compiled away for production with [babel-plugin-esx-browser](https://github.com/esxjs/babel-plugin-esx-browser), resulting in zero-byte payload overhead. 
 
 It uses native [Tagged Templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) and works in all modern browsers.
 
