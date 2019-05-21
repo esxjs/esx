@@ -3611,14 +3611,14 @@ test('whitespace variations', async ({ is }) => {
   {
     const esx = init({
       Toolbar: ({ x }) => esx`<a>${x}</a>`,
-      App: () => esx`<p><Toolbar y=1   x=${'hi'}></Toolbar></p>`
+      App: () => esx`<p><Toolbar y="1"   x=${'hi'}></Toolbar></p>`
     })
     is(esx.renderToString`<App/>`, renderToString(esx`<App/>`))
   }
   {
     const esx = init({
       Toolbar: ({ x }) => esx`<a>${x}</a>`,
-      App: () => esx`<p><Toolbar x=${'hi'}  y=1  ></Toolbar></p>`
+      App: () => esx`<p><Toolbar x=${'hi'}  y="1"  ></Toolbar></p>`
     })
     is(esx.renderToString`<App/>`, renderToString(esx`<App/>`))
   }
@@ -4258,7 +4258,7 @@ test('compatible mode hooks: useMemo', async ({ is }) => {
   }
   esx.register({ App })
 
-  is(esx.renderToString`<App a=1 b=2/>`, renderToString(esx`<App a=1 b=2/>`))
+  is(esx.renderToString`<App a="1" b="2"/>`, renderToString(esx`<App a="1" b="2"/>`))
 })
 
 test('compatible mode hooks: useRef', async ({ is }) => {
@@ -4683,13 +4683,18 @@ function childValidator (is) {
   }
 }
 
-// MULTI RENDERING, STATE CONFUSION ETC.
+test('deviation: children in spread props on void element is ignored', async ({ doesNotThrow }) => {
+  const esx = init()
+  // rather than crashing the server when a dynamically inserted object may, at any point,
+  // contain a `children` property that it's spread onto a void element,
+  // we ignore and allow it to render without the children. If the props are spread client-side
+  // it will be throw there by react, and be much easier to debug.
+  // reasons for deviation: Server stays up, easier to debug, less spreading overhead.
+  doesNotThrow(() => esx.renderToString`<input ...${{ children: 'test' }}>`)
+})
 
-// children attribute + children in element
 
-// bug: <Cmp a=1 b=2/> -> b is true when next to /
-
-//  is(
-//   esx.renderToString `<div>${'x'}${'x'}<div></div></div>`,
-//   renderToString(esx `<div>${'x'}${'x'}<div></div></div>`)
-// )
+test('unquoted, non-interpolated attributes should throw a syntax error', async ({ throws }) => {
+  const esx = init({Cmp: ({a, b}) => esx `<x><a>${a}</a><b>${b}</b></x>`})
+  throws(() => esx `<Cmp a=1 />`, SyntaxError('ESX: attribute value should be either an expression or quoted text'))
+})
