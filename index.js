@@ -572,6 +572,7 @@ function loadTmpl (state, values, recompile = false) {
     if (snips[ix]) snips[ix].push(tree[cmi])
     else snips[ix] = [tree[cmi]]
   }
+
   const body = generate(fields.map((f) => f.slice()), values, snips, attrPos, tree)
   const tmpl = compileTmpl(body, {
     inject, attribute, style, spread, snips, renderComponent, addRoot, selected
@@ -598,7 +599,7 @@ function seek (array, pos, rx) {
 }
 function reverseSeek (array, pos, rx) {
   var i = pos
-  while (i--) {
+  while (i-- >= 0) {
     if (rx.test(array[i])) return i
   }
   return -1
@@ -656,7 +657,8 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
   const rootElement = tree.find(([tag]) => typeof tag === 'string')
   for (var i = 0; i < fields.length; i++) {
     const field = fields[i]
-    const priorChar = field[field.length - 1]
+    const fLen = field.length
+    const priorChar = field[fLen - 1]
     if (priorChar === '') continue
     if (priorChar === '=') {
       const { s, e } = attrPos[i + offset]
@@ -780,6 +782,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
     } else if (valdex < values.length) {
       let optionMayBeSelected = false
       const tag = getTag(fields, i)
+      
       if (tag === 'option') {
         let c = i
         let select = null
@@ -800,7 +803,15 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         ? '<!-- -->'
         : ''
 
-      field[field.length - 1] = `${field[field.length - 1]}${prefix}${output}${suffix}`
+    
+      if (field.length > 0) {
+        field[field.length - 1] = `${field[field.length - 1]}${prefix}${output}${suffix}`
+      } else {
+        // this happens when there are multiple adjacent interpolated children
+        // eg. <div>${'a'}${'b'}</div> - field.length will be 0 for the second
+        // child because it's represented as an empty string in callSite param
+        field[0] = `${output}${suffix}`
+      }
 
       if (optionMayBeSelected) {
         const text = fields[i + 1].slice(0, fields[i + 1].findIndex((c) => c === '<')).join('')
@@ -808,6 +819,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         field[pos] = `\${this.selected(values[${offset + valdex - 1}] + '${text}')}${field[pos]}`
       }
     }
+    
     if (i in snips) {
       snips[i].forEach((snip, ix) => {
         const { openTagStart, openTagEnd, selfClosing, closeTagEnd, isComponent, name } = snip[3]
@@ -850,7 +862,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       })
     }
   }
-
+  
   const body = fields.map((f) => f.join(''))
   if (rootElement) {
     const { keys } = rootElement[3]
@@ -888,7 +900,6 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       break
     }
   }
-
   return body
 }
 

@@ -4698,3 +4698,26 @@ test('unquoted, non-interpolated attributes should throw a syntax error', async 
   const esx = init({Cmp: ({a, b}) => esx `<x><a>${a}</a><b>${b}</b></x>`})
   throws(() => esx `<Cmp a=1 />`, SyntaxError('ESX: attribute value should be either an expression or quoted text'))
 })
+
+test('adjacent interpolated children', async ({ is }) => {
+  const esx = init()
+  is(
+    esx.renderToString `<div>${'w'}${'x'}${'y'}z</div>`,
+    renderToString(createElement('div', null, 'w', 'x', 'y', 'z'))
+  )
+})
+
+test('nested children override children prop on elements', async ({ is }) => {
+  const esx = init()
+  is(
+    renderToString(esx `<div children="test2">test</div>`),
+    renderToString(createElement('div', {children: 'test2'}, 'test'))
+  )
+  is(
+    esx.renderToString `<div children="test2">test</div>`,
+    renderToString(esx `<div children="test2">test</div>`)
+  )
+})
+
+// MULTI RENDERING, STATE CONFUSION ETC.
+
