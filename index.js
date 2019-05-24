@@ -156,6 +156,7 @@ const injectObject = (val) => {
     // case we've slipped a method through the cloning process that pulls the esx
     // state in from the old element
     const state = val[ns] || (val._owner && val._owner[owner] && val._owner())
+    
     if (!state) {
       return elementToMarkup(val)
     }
@@ -224,31 +225,26 @@ const ownerDesc = {
     var state = this[ns]
     var type = this.type
     var children = lastChildProp
+
     const propagate = typeof type === 'string' ? function propagate () {
       var extra = ''
       var replace = null
       var rewrite = ''
       var same = true
-      if (state === null) {
-        // this is now a clone of a clone, bail:
-        return null
-      }
       if (this.props.children !== children) {
         // cloneElement is overriding children, bail:
         return null
       }
       for (var k in this.props) {
         const mappedKey = attr.mapping(k, type)
-        if (mappedKey === 'children') continue
+        if (mappedKey === 'children' || !mappedKey) continue
         if (lastProps[k] !== this.props[k]) {
           same = false
           if (k in lastProps) {
             if (!rewrite) rewrite = state.tmpl.body
             if (replace === null) replace = {}
-            if (mappedKey) {
-              replace[mappedKey] = attribute(this.props[k], mappedKey, k)
-              rewrite = rewrite.replace(attribute(lastProps[k], mappedKey, k), replace[mappedKey])
-            }
+            replace[mappedKey] = attribute(this.props[k], mappedKey, k)
+            rewrite = rewrite.replace(attribute(lastProps[k], mappedKey, k), replace[mappedKey])
           } else {
             extra += attribute(this.props[k], mappedKey, k)
           }
@@ -270,7 +266,7 @@ const ownerDesc = {
       // if we don't clear state from scope, memory will grow infinitely
       // that means the propagate function can only be called once
       lastProps = state = type = children = null
-      return el ? el[ns] : null
+      return el[ns]
     }
     propagate[owner] = true
     return propagate

@@ -3712,9 +3712,20 @@ test('props.children.props.children of dynamic component with multiple component
 
 test('clone element', async ({ is }) => {
   const esx = init()
+  const Wrap = ({ children }) => React.cloneElement(children)
+  esx.register({ Wrap })
+  const App = () => esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
+  esx.register({ App })
+  is(esx.renderToString`<App/>`, renderToString(esx`<App/>`))
+})
+
+test('clone cloned element', async ({ is }) => {
+  const esx = init()
   const { Consumer, Provider } = React.createContext()
   esx.register({ Consumer, Provider })
-  const Wrap = ({ children }) => React.cloneElement(children)
+  const Wrap = ({ children }) => {
+    return React.cloneElement(React.cloneElement(children))
+  }
   esx.register({ Wrap })
   const App = () => esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
   esx.register({ App })
@@ -3723,8 +3734,6 @@ test('clone element', async ({ is }) => {
 
 test('clone element extend props', async ({ is }) => {
   const esx = init()
-  const { Consumer, Provider } = React.createContext()
-  esx.register({ Consumer, Provider })
   const Wrap = ({ children }) => React.cloneElement(children, { a: 1, b: true, c: false })
   esx.register({ Wrap })
   const App = () => esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
@@ -3734,19 +3743,15 @@ test('clone element extend props', async ({ is }) => {
 
 test('clone element replace props', async ({ is }) => {
   const esx = init()
-  const { Consumer, Provider } = React.createContext()
-  esx.register({ Consumer, Provider })
-  const Wrap = ({ children }) => React.cloneElement(children, { x: 1, path: '/foo' })
+  const Wrap = ({ children }) => React.cloneElement(children, { x: 1, y:3, path: '/foo', defaultValue: 'blah'})
   esx.register({ Wrap })
-  const App = () => esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
+  const App = () => esx`<main><Wrap><div path='/' y='2'>hi</div></Wrap></main>`
   esx.register({ App })
   is(esx.renderToString`<App/>`, renderToString(esx`<App/>`))
 })
 
 test('clone element replace children', async ({ is }) => {
   const esx = init()
-  const { Consumer, Provider } = React.createContext()
-  esx.register({ Consumer, Provider })
   const Wrap = ({ children }) => React.cloneElement(children, null, 'test')
   esx.register({ Wrap })
   const App = () => esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
@@ -3756,8 +3761,6 @@ test('clone element replace children', async ({ is }) => {
 
 test('clone element extend props and replace children', async ({ is }) => {
   const esx = init()
-  const { Consumer, Provider } = React.createContext()
-  esx.register({ Consumer, Provider })
   const Wrap = ({ children }) => React.cloneElement(children, { a: 1 }, 'test')
   esx.register({ Wrap })
   const App = () => esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
@@ -3767,8 +3770,8 @@ test('clone element extend props and replace children', async ({ is }) => {
 
 test('clone element in consumer child renderer', async ({ is }) => {
   const esx = init()
-  const { Consumer, Provider } = React.createContext()
-  esx.register({ Consumer, Provider })
+  const { Consumer } = React.createContext()
+  esx.register({ Consumer })
   class Wrap extends React.Component {
     render () {
       return esx`
