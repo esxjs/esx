@@ -664,6 +664,11 @@ test('lack of closing tag for auto closing elements does not throw', async ({ do
   doesNotThrow(() => esx`<App><colgroup></App>`, SyntaxError(`Expected corresponding ESX closing tag for <colgroup>`))
 })
 
+test('unquoted, non-interpolated attributes causes a syntax error', async ({ throws }) => {
+  const esx = init({Cmp: ({a, b}) => esx `<x><a>${a}</a><b>${b}</b></x>`})
+  throws(() => esx `<Cmp a=1 />`, SyntaxError('ESX: attribute value should be either an expression or quoted text'))
+})
+
 test('component in object', async ({ same }) => {
   const esx = init()
   const Cmp2 = ({ text }) => {

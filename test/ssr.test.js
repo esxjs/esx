@@ -535,6 +535,14 @@ test('deep nested, non-self closing components with child element + inline text'
   is(esx.renderToString`<Component/>`, renderToString(createElement(Component)))
 })
 
+test('adjacent interpolated children', async ({ is }) => {
+  const esx = init()
+  is(
+    esx.renderToString `<div>${'w'}${'x'}${'y'}z</div>`,
+    renderToString(createElement('div', null, 'w', 'x', 'y', 'z'))
+  )
+})
+
 test('deep nested, non-self closing components with array of child element + inline text', async ({ is }) => {
   const esx = init()
   const Cmp2 = ({ children }) => {
@@ -602,6 +610,18 @@ test('deep nested, no interpolated attrs, second level element wrapped', async (
 test('self closing element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString`<img src="http://example.com"/>`, renderToString(esx`<img src="http://example.com"/>`))
+})
+
+test('nested children override children prop on elements', async ({ is }) => {
+  const esx = init()
+  is(
+    renderToString(esx `<div children="test2">test</div>`),
+    renderToString(createElement('div', {children: 'test2'}, 'test'))
+  )
+  is(
+    esx.renderToString `<div children="test2">test</div>`,
+    renderToString(esx `<div children="test2">test</div>`)
+  )
 })
 
 test('class component context using contextType', async ({ is }) => {
@@ -4693,31 +4713,6 @@ test('deviation: children in spread props on void element is ignored', async ({ 
   doesNotThrow(() => esx.renderToString`<input ...${{ children: 'test' }}>`)
 })
 
-
-test('unquoted, non-interpolated attributes should throw a syntax error', async ({ throws }) => {
-  const esx = init({Cmp: ({a, b}) => esx `<x><a>${a}</a><b>${b}</b></x>`})
-  throws(() => esx `<Cmp a=1 />`, SyntaxError('ESX: attribute value should be either an expression or quoted text'))
-})
-
-test('adjacent interpolated children', async ({ is }) => {
-  const esx = init()
-  is(
-    esx.renderToString `<div>${'w'}${'x'}${'y'}z</div>`,
-    renderToString(createElement('div', null, 'w', 'x', 'y', 'z'))
-  )
-})
-
-test('nested children override children prop on elements', async ({ is }) => {
-  const esx = init()
-  is(
-    renderToString(esx `<div children="test2">test</div>`),
-    renderToString(createElement('div', {children: 'test2'}, 'test'))
-  )
-  is(
-    esx.renderToString `<div children="test2">test</div>`,
-    renderToString(esx `<div children="test2">test</div>`)
-  )
-})
 
 // MULTI RENDERING, STATE CONFUSION ETC.
 
