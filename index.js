@@ -582,10 +582,9 @@ function loadTmpl (state, values, recompile = false) {
   return state
 }
 
-function replace (array, s, e, ch = '', rx = null) {
+function replace (array, s, e, ch = '') {
   while (s <= e) {
-    if (rx === null) array[s] = ch
-    else if (rx.test(array[s])) array[s] = array[s].replace(rx, ch)
+    array[s] = ch
     s++
   }
 }
