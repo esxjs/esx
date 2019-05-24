@@ -4264,6 +4264,53 @@ test('compatible mode hooks: useContext', async ({ is }) => {
   is(esx.renderToString`<App/>`, renderToString(createElement(App)))
 })
 
+test('compatible mode hooks: useContext in a plain react element with esx provider', async ({ is }) => {
+  const esx = init()
+  const { useContext } = require('react')
+  const ThemeContext = React.createContext('light')
+  const Button = ({ theme }) => createElement('button', null, theme)
+  esx.register({ Button })
+  const ThemedButton = () => {
+    const context = useContext(ThemeContext)
+    return createElement(Button, {theme: context})
+  }
+  esx.register({ ThemedButton })
+  const Toolbar = () => createElement('div', null, createElement(ThemedButton))
+  esx.register({ Toolbar })
+  class App extends React.Component {
+    render () {
+      return esx`<div><Provider value='dark'><Toolbar/></Provider></div>`
+    }
+  }
+  const { Provider } = ThemeContext
+  esx.register({ App, Provider })
+  is(esx.renderToString`<App/>`, renderToString(createElement(App)))
+})
+
+
+test('compatible mode hooks: useContext all plain react elements except root', async ({ is }) => {
+  const esx = init()
+  const { useContext } = require('react')
+  const ThemeContext = React.createContext('light')
+  const Button = ({ theme }) => createElement('button', null, theme)
+  esx.register({ Button })
+  const ThemedButton = () => {
+    const context = useContext(ThemeContext)
+    return createElement(Button, {theme: context})
+  }
+  esx.register({ ThemedButton })
+  const Toolbar = () => createElement('div', null, createElement(ThemedButton))
+  esx.register({ Toolbar })
+  class App extends React.Component {
+    render () {
+      return createElement('div', null, createElement(Provider, {value: 'dark'}, createElement(Toolbar)))
+    }
+  }
+  const { Provider } = ThemeContext
+  esx.register({ App, Provider })
+  is(esx.renderToString`<App/>`, renderToString(createElement(App)))
+})
+
 test('compatible mode hooks: useMemo', async ({ is }) => {
   const esx = init()
 
@@ -4461,6 +4508,56 @@ test('stateful mode hooks: useContext', async ({ is }) => {
   class App extends React.Component {
     render () {
       return esx`<div><Provider value='dark'><Toolbar/></Provider></div>`
+    }
+  }
+  const { Provider } = ThemeContext
+  esx.register({ App, Provider })
+  is(esx.renderToString`<App/>`, renderToString(createElement(App)))
+  init.ssr.option('hooks-mode', 'compatible')
+})
+
+test('stateful mode hooks: useContext in a plain react element with esx provider', async ({ is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
+  const esx = init()
+  const { useContext } = require('react')
+  const ThemeContext = React.createContext('light')
+  const Button = ({ theme }) => esx`<button>${theme}</button>`
+  esx.register({ Button })
+  const ThemedButton = () => {
+    const context = useContext(ThemeContext)
+    return esx`<Button theme=${context}/>`
+  }
+  esx.register({ ThemedButton })
+  const Toolbar = () => esx`<div><ThemedButton/></div>`
+  esx.register({ Toolbar })
+  class App extends React.Component {
+    render () {
+      return esx`<div><Provider value='dark'><Toolbar/></Provider></div>`
+    }
+  }
+  const { Provider } = ThemeContext
+  esx.register({ App, Provider })
+  is(esx.renderToString`<App/>`, renderToString(createElement(App)))
+  init.ssr.option('hooks-mode', 'compatible')
+})
+
+test('stateful mode hooks: useContext all plain react elements except root', async ({ is }) => {
+  init.ssr.option('hooks-mode', 'stateful')
+  const esx = init()
+  const { useContext } = require('react')
+  const ThemeContext = React.createContext('light')
+  const Button = ({ theme }) => createElement('button', null, theme)
+  esx.register({ Button })
+  const ThemedButton = () => {
+    const context = useContext(ThemeContext)
+    return createElement(Button, {theme: context})
+  }
+  esx.register({ ThemedButton })
+  const Toolbar = () => createElement('div', null, createElement(ThemedButton))
+  esx.register({ Toolbar })
+  class App extends React.Component {
+    render () {
+      return createElement('div', null, createElement(Provider, {value: 'dark'}, createElement(Toolbar)))
     }
   }
   const { Provider } = ThemeContext
