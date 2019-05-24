@@ -55,7 +55,7 @@ const elementToMarkup = (el) => {
   }
   return renderToStaticMarkup(el)
 }
-const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAfter = '') => {
+const spread = (ix, [tag, props, childMap, meta], values, strBefore, strAfter = '') => {
   const object = values[ix]
   const keys = Object.keys(object)
   const { spread, spreadIndices } = meta
@@ -63,14 +63,12 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
   var priorSpreadKeys = spreadCount > 0 && new Set()
   var result = ''
   var dirtyBefore = false
-  if (spreadCount > 0) {
-    for (var si = 0; si < spreadCount; si++) {
-      const sIx = spreadIndices[si]
-      if (sIx >= ix) break
-      priorSpreadKeys.add(...spread[sIx].dynamic)
-    }
-    spread[ix].dynamic = keys
+  for (var si = 0; si < spreadCount; si++) {
+    const sIx = spreadIndices[si]
+    if (sIx >= ix) break
+    priorSpreadKeys.add(...spread[sIx].dynamic)
   }
+  spread[ix].dynamic = keys
   for (var k in keys) {
     const key = keys[k]
     if (attr.reserved(key)) continue
@@ -95,13 +93,13 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
         childMap.length === 0
 
       if (overrideChildren) {
-        const suspendRootAdding = ssrReactRootAdded === false
-        if (suspendRootAdding) ssrReactRootAdded = true
+        const rootAdded = ssrReactRootAdded
+        ssrReactRootAdded = true
         childMap[0] = (key === 'children' ||
           (tag === 'textarea' && key === 'defaultValue'))
           ? inject(object[key])
           : object[key].__html
-        if (suspendRootAdding) ssrReactRootAdded = false
+        ssrReactRootAdded = rootAdded
       }
       continue
     }
@@ -118,7 +116,6 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
       dirtyBefore = true
     }
   }
-
   if (dirtyBefore) {
     strBefore = ''
     for (var i = 0; i < spread[ix].before.length; i++) {
@@ -138,7 +135,7 @@ const spread = (ix, [tag, props, childMap, meta], values, strBefore = '', strAft
   return (out.length === 0 || out[0] === ' ') ? out : ' ' + out
 }
 
-const attribute = (val, attrKey = '', propKey = '', replace = null) => {
+const attribute = (val, attrKey, propKey, replace = null) => {
   if (replace !== null && propKey in replace) return replace[propKey]
   if (val == null) return ''
   const type = typeof val
@@ -212,14 +209,14 @@ function EsxElementUnopt (item) {
   this.esxUnopt = true
 }
 
-function EsxElement (item, tmpl, values) {
+function EsxElement (item, tmpl, values, replace = null) {
   this.$$typeof = REACT_ELEMENT_TYPE
-  const [type, props] = item
+  const [type, props ] = item
   this.type = type
   this.props = props
   this.key = props.key || null
   this.ref = props.ref || null
-  this[ns] = { tmpl, values, item }
+  this[ns] = { tmpl, values, item, replace }
 }
 const ownerDesc = {
   get: function _owner () {
@@ -230,6 +227,7 @@ const ownerDesc = {
     const propagate = typeof type === 'string' ? function propagate () {
       var extra = ''
       var replace = null
+      var rewrite = ''
       var same = true
       if (state === null) {
         // this is now a clone of a clone, bail:
@@ -245,22 +243,23 @@ const ownerDesc = {
         if (lastProps[k] !== this.props[k]) {
           same = false
           if (k in lastProps) {
+            if (!rewrite) rewrite = state.tmpl.body
             if (replace === null) replace = {}
-
             if (mappedKey) {
               replace[mappedKey] = attribute(this.props[k], mappedKey, k)
+              rewrite = rewrite.replace(attribute(lastProps[k], mappedKey, k), replace[mappedKey])
             }
           } else {
             extra += attribute(this.props[k], mappedKey, k)
           }
         }
       }
-      const result = same ? state : {
-        extra,
-        replace,
-        tmpl: state.tmpl,
-        values: state.values
+      if (same === false) {
+        state.extra = extra
+        state.replace = replace
+        if (rewrite) state.tmpl = compileTmpl(rewrite, state.tmpl.state)
       }
+      const result = state
       // if we don't clear state from scope, memory will grow infinitely
       // that means the propagate function can only be called once, the second
       // time it will return null (which will force a deopt to standard react rendering)
@@ -574,7 +573,7 @@ function loadTmpl (state, values, recompile = false) {
   }
 
   const body = generate(fields.map((f) => f.slice()), values, snips, attrPos, tree)
-  const tmpl = compileTmpl(body, {
+  const tmpl = compileTmpl(body.join(''), {
     inject, attribute, style, spread, snips, renderComponent, addRoot, selected
   })
   state.tmpl = tmpl
@@ -915,7 +914,10 @@ function addRoot () {
 }
 
 function compileTmpl (body, state) {
-  return Function('values', `extra=''`, 'replace=null', 'return `' + body.join('') + '`').bind(state) // eslint-disable-line
+  const fn = Function('values', `extra=''`, 'replace=null', 'return `' + body + '`').bind(state) // eslint-disable-line
+  fn.body = body
+  fn.state = state
+  return fn
 }
 
 function compileChildTmpl (item, tree) {
@@ -936,7 +938,7 @@ function compileChildTmpl (item, tree) {
     if (ix < from || ix > to) continue
     if (sPos < openTagEnd[1]) continue
     const ePos = (cur.selfClosing ? cur.openTagEnd[1] : cur.closeTagEnd[1])
-    if (ePos > (selfClosing ? openTagEnd[1] : closeTagEnd[1])) continue
+    if (ePos > closeTagEnd[1]) continue
     if (snips[ix - offset - from]) snips[ix - offset - from].push(tree[cmi])
     else snips[ix - offset - from] = [tree[cmi]]
   }
@@ -944,7 +946,7 @@ function compileChildTmpl (item, tree) {
   replace(fields[from], 0, openTagStart[1] - 1)
   fields[to].length = (selfClosing ? openTagEnd[1] : closeTagEnd[1]) + 1
   const body = generate(fields.slice(from, to + 1), values, snips, attrPos, tree, from)
-  const tmpl = compileTmpl(body, {
+  const tmpl = compileTmpl(body.join(''), {
     inject, attribute, style, spread, snips, renderComponent, addRoot, selected
   })
   return tmpl
@@ -964,7 +966,7 @@ function resolveChildren (childMap, dynChildren, tree, top) {
           } else {
             const state = element[ns] || (element._owner && element._owner[owner] && element._owner())
             if (state) {
-              children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values)
+              children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values, state.replace)
             } else {
               children[i] = new EsxElementUnopt(tree[childMap[i]])
             }

@@ -865,6 +865,19 @@ test('dynamic component with static element children as prop', async ({ is }) =>
   is(esx.renderToString`<App/>`, renderToString(createElement(App)))
 })
 
+test('dynamic component with static element self closing children as prop', async ({ is }) => {
+  const esx = init()
+  const childTest = childValidator(is)
+  const A = ({ value, children }) => {
+    childTest.register(children)
+    return esx`<div><span>${value}</span>${children}</div>`
+  }
+  esx.register({ A })
+  const App = () => esx`<A value=${'a'}><img/></A>`
+  esx.register({ App })
+  is(esx.renderToString`<App/>`, renderToString(createElement(App)))
+})
+
 test('dynamic component with dynamic element children as prop', async ({ is }) => {
   const esx = init()
   const childTest = childValidator(is)
@@ -2199,6 +2212,10 @@ test('defaultValue on multi select element', async ({ is }) => {
     esx.renderToString`<select defaultValue=${['a', 'b']}><option value="a"></option><option>${'b'}</option></select>`,
     renderToString(esx`<select defaultValue=${['a', 'b']}><option value="a"></option><option>${'b'}</option></select>`)
   )
+  is(
+    esx.renderToString`<select multiple defaultValue=${['a', 'b']}><option value="a"></option><option value="b"></option><option value="c"></option></select>`,
+    renderToString(esx`<select multiple defaultValue=${['a', 'b']}><option value="a"></option><option value="b"></option><option value="c"></option></select>`)
+  )
 })
 
 test('defaultValue on non-supporting element', async ({ is }) => {
@@ -2231,6 +2248,11 @@ test('defaultValue in spread props on select element', async ({ is }) => {
 test('defaultValue in spread props on non-supporting element', async ({ is }) => {
   const esx = init()
   is(esx.renderToString`<div ...${{ defaultValue: '1' }}/>`, renderToString(esx`<div ...${{ defaultValue: '1' }}/>`))
+})
+
+test('defaultValue between spread props on non-supporting element', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString`<div ...${{some:"attr"}} defaultValue="1" ...${{ some:'attr' }}/>`, renderToString(esx`<div ...${{some:"attr"}} defaultValue="1" ...${{ some:'attr' }}/>`))
 })
 
 test('suppressContentEditableWarning', async ({ is }) => {
@@ -2476,6 +2498,29 @@ test('overloaded boolean attributes', async ({ is }) => {
   is(esx.renderToString`<div capture=""/>`, renderToString(esx`<div capture=""/>`))
   is(esx.renderToString`<div capture=${false}/>`, renderToString(esx`<div capture=${false}/>`))
   is(esx.renderToString`<div capture="string"/>`, renderToString(esx`<div capture="string"/>`))
+})
+
+test('undefined attribute value', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString`<div id=${undefined}/>`, renderToString(createElement('div', {id: undefined})))
+  is(esx.renderToString`<div capture=${undefined}/>`, renderToString(createElement('div', {capture: undefined})))
+  is(esx.renderToString`<div readOnly=${undefined}/>`, renderToString(createElement('div', {readOnly: undefined})))
+})
+
+test('symbol attribute value', async ({ is }) => {
+  const esx = init()
+  const sym = Symbol('x')
+  is(esx.renderToString`<div id=${sym}/>`, renderToString(createElement('div', {id: sym})))
+  is(esx.renderToString`<div capture=${sym}/>`, renderToString(createElement('div', {capture: sym})))
+  is(esx.renderToString`<div readOnly=${sym}/>`, renderToString(createElement('div', {readOnly: sym})))
+})
+
+test('function attribute value', async ({ is }) => {
+  const esx = init()
+  const fn = () => {}
+  is(esx.renderToString`<div id=${fn}/>`, renderToString(createElement('div', {id: fn})))
+  is(esx.renderToString`<div capture=${fn}/>`, renderToString(createElement('div', {capture: fn})))
+  is(esx.renderToString`<div readOnly=${fn}/>`, renderToString(createElement('div', {readOnly: fn})))
 })
 
 test('known camel case attributes are converted to special case equivalents (or not) as neccessary', async ({ is }) => {
@@ -3681,6 +3726,17 @@ test('clone element extend props', async ({ is }) => {
   const { Consumer, Provider } = React.createContext()
   esx.register({ Consumer, Provider })
   const Wrap = ({ children }) => React.cloneElement(children, { a: 1, b: true, c: false })
+  esx.register({ Wrap })
+  const App = () => esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
+  esx.register({ App })
+  is(esx.renderToString`<App/>`, renderToString(esx`<App/>`))
+})
+
+test('clone element replace props', async ({ is }) => {
+  const esx = init()
+  const { Consumer, Provider } = React.createContext()
+  esx.register({ Consumer, Provider })
+  const Wrap = ({ children }) => React.cloneElement(children, { x: 1, path: '/foo' })
   esx.register({ Wrap })
   const App = () => esx`<main><Wrap><div path='/'>hi</div></Wrap></main>`
   esx.register({ App })
