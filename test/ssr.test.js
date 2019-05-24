@@ -379,7 +379,7 @@ test('val escaping in deep nested, non-self closing components with array of tex
     return esx`<div a=${props.a}><Cmp2>${['concat me', props.a, '>>xy']}</Cmp2></div>`
   }
   esx.register({ Cmp1 })
-  const value = '<<hia'
+  const value = '<<\'"&hia'
   const Component = () => esx`<Cmp1 a=${value} text='hi'/>`
   esx.register({ Component })
   is(esx.renderToString`<Component/>`, renderToString(createElement(Component)))
