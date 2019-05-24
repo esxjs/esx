@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "debug": "^4.1.0",
-    "escape-html": "^1.0.3",
     "esx-optimize": "^1.0.0"
   },
   "directories": {
