@@ -612,7 +612,6 @@ function seekToEndOfTagName (fields, ix) {
 
   while (ix < fields.length - 1) {
     var pos = seek(fields[ix], boundary, /(^[\s/>]$)|^\$|^$/) - 1
-    if (pos === -1) pos = boundary
     if (pos !== boundary) break
     boundary = 0
     ix++
