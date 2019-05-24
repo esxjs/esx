@@ -182,7 +182,7 @@ const injectArray = (val) => {
       result += injectObject(item)
       priorItemWasString = false
     }
-    if (type === 'string') {
+    if (type === 'string' || type === 'number') {
       if (priorItemWasString) result += '<!-- -->'
       result += escapeHtml(item)
       priorItemWasString = true

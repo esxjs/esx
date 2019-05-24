@@ -166,6 +166,12 @@ test('deep element-nested children array', async ({ is }) => {
   is(esx.renderToString`<Component/>`, renderToString(createElement(Component)))
 })
 
+test('deep element-nested children array – all types', async ({ is }) => {
+  const Component = () => esx`<div><span>${['dynamic', ()=> {}, 'inline', Symbol('x'), null, undefined, 1]}</span></div>`
+  const esx = init({ Component })
+  is(esx.renderToString`<Component/>`, renderToString(createElement(Component)))
+})
+
 test('deep element-nested dynamic + inline children', async ({ is }) => {
   const Component = () => esx`<div><span>${'dynamic'} inline</span></div>`
   const esx = init({ Component })
