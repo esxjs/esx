@@ -311,22 +311,18 @@ function esx (components = {}) {
           }
         }
       }
-      if (dynAttrs) {
-        for (var p in dynAttrs) {
-          const overridden = spread && spreads.filter(n => {
-            return dynAttrs[p] < n
-          }).some((n) => {
-            return p in values[n] && spread[n].before.indexOf(p) > -1
-          })
-          if (overridden) continue
-          if (props[p] !== marker) continue // this means later static property, should override
-          props[p] = values[dynAttrs[p]]
-        }
+      for (var p in dynAttrs) {
+        const overridden = spread && spreads.filter(n => {
+          return dynAttrs[p] < n
+        }).some((n) => {
+          return p in values[n] && spread[n].before.indexOf(p) > -1
+        })
+        if (overridden) continue
+        if (props[p] !== marker) continue // this means later static property, should override
+        props[p] = values[dynAttrs[p]]
       }
-      if (dynChildren) {
-        for (var n in dynChildren) {
-          children[n] = values[dynChildren[n]]
-        }
+      for (var n in dynChildren) {
+        children[n] = values[dynChildren[n]]
       }
       const reactChildren = children.length === 0 ? (props.children || null) : (children.length === 1 ? children[0] : children)
       root = reactChildren === null ? createElement(tag, props) : createElement(tag, props, reactChildren)
@@ -648,6 +644,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
   var valdex = 0
   var priorCmpBounds = {}
   const rootElement = tree.find(([tag]) => typeof tag === 'string')
+
   for (var i = 0; i < fields.length; i++) {
     const field = fields[i]
     const fLen = field.length
@@ -868,10 +865,8 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
 
     for (var fi = 0; fi < body.length; fi++) {
       const field = body[fi]
-      if (typeof field !== 'string') continue
       const match = field.match(/\/>|>/)
       if (match === null) continue
-      if (match.input[match.index - 1] === '-') continue
       if (attrs.length > 0) {
         body.slice(0, fi + 1).forEach((f, i) => {
           if (i === fi) {
@@ -952,55 +947,48 @@ function resolveChildren (childMap, dynChildren, tree, top) {
   const children = []
   for (var i = 0; i < childMap.length; i++) {
     if (typeof childMap[i] === 'number') {
-      if (tree[childMap[i]]) {
-        const [ tag, props, , elMeta ] = tree[childMap[i]]
-        if (typeof tag === 'function') {
-          const element = renderComponent(tree[childMap[i]], tree[esxValues])
-          if (typeof element !== 'object') {
-            Object.defineProperty(props, 'children', { value: element })
-            children[i] = new EsxElementUnopt(tree[childMap[i]])
-          } else {
-            const state = element[ns] || (element._owner && element._owner[owner] && element._owner())
-            if (state) {
-              children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values, state.replace)
-            } else {
-              children[i] = new EsxElementUnopt(tree[childMap[i]])
-            }
-          }
+      const [ tag, props, , elMeta ] = tree[childMap[i]]
+      if (typeof tag === 'function') {
+        const element = renderComponent(tree[childMap[i]], tree[esxValues])
+        if (typeof element !== 'object') {
+          Object.defineProperty(props, 'children', { value: element })
+          children[i] = new EsxElementUnopt(tree[childMap[i]])
         } else {
-          if (elMeta.dynAttrs) {
-            for (var p in elMeta.dynAttrs) {
-              if (!(p in props)) {
-                props[p] = tree[esxValues][elMeta.dynAttrs[p]]
-              }
-            }
+          const state = element[ns] || (element._owner && element._owner[owner] && element._owner())
+          if (state) {
+            children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values, state.replace)
+          } else {
+            children[i] = new EsxElementUnopt(tree[childMap[i]])
           }
-          tree[childMap[i]][3][ns] = tree[childMap[i]][3][ns] || {
-            tmpl: compileChildTmpl(tree[childMap[i]], tree, top),
-            values: tree[esxValues]
-          }
-
-          try {
-            props[parent] = tree[childMap[i]]
-          } catch (e) {
-            // this element has at some point been passed
-            // through React.renderToString (or renderToStaticMarkup),
-            // because props[parent] is there and has become readOnly.
-            // So there's nothing to do here, we just need to avoid
-            // a throw.
-          }
-
-          children[i] = new EsxElement(tree[childMap[i]], tree[childMap[i]][3][ns].tmpl, tree[esxValues])
         }
+      } else {
+        for (var p in elMeta.dynAttrs) {
+          if (!(p in props)) {
+            props[p] = tree[esxValues][elMeta.dynAttrs[p]]
+          }
+        }
+        tree[childMap[i]][3][ns] = tree[childMap[i]][3][ns] || {
+          tmpl: compileChildTmpl(tree[childMap[i]], tree, top),
+          values: tree[esxValues]
+        }
+
+        try {
+          props[parent] = tree[childMap[i]]
+        } catch (e) {
+          // this element has at some point been passed
+          // through React.renderToString (or renderToStaticMarkup),
+          // because props[parent] is there and has become readOnly.
+          // So there's nothing to do here, we just need to avoid
+          // a throw.
+        }
+        children[i] = new EsxElement(tree[childMap[i]], tree[childMap[i]][3][ns].tmpl, tree[esxValues])
       }
     } else {
       children[i] = childMap[i]
     }
-    if (dynChildren) {
-      for (var n in dynChildren) {
-        const val = tree[esxValues][dynChildren[n]]
-        children[n] = val
-      }
+    for (var n in dynChildren) {
+      const val = tree[esxValues][dynChildren[n]]
+      children[n] = val
     }
   }
   if (children.length === 0) return null
