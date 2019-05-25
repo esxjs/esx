@@ -481,7 +481,7 @@ function renderComponent (item, values) {
     ) : {}
 
   if (tag.$$typeof === REACT_CONSUMER_TYPE) {
-    const tagContext = tag._context || tag
+    const tagContext = tag._context
     const context = tagContext[provider]
       ? tagContext[provider][1].value
       : tagContext._currentValue2
@@ -950,16 +950,11 @@ function resolveChildren (childMap, dynChildren, tree, top) {
       const [ tag, props, , elMeta ] = tree[childMap[i]]
       if (typeof tag === 'function') {
         const element = renderComponent(tree[childMap[i]], tree[esxValues])
-        if (typeof element !== 'object') {
-          Object.defineProperty(props, 'children', { value: element })
-          children[i] = new EsxElementUnopt(tree[childMap[i]])
+        const state = element[ns] || (element._owner && element._owner[owner] && element._owner())
+        if (state) {
+          children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values, state.replace)
         } else {
-          const state = element[ns] || (element._owner && element._owner[owner] && element._owner())
-          if (state) {
-            children[i] = new EsxElement(tree[childMap[i]], state.tmpl, state.values, state.replace)
-          } else {
-            children[i] = new EsxElementUnopt(tree[childMap[i]])
-          }
+          children[i] = new EsxElementUnopt(tree[childMap[i]])
         }
       } else {
         for (var p in elMeta.dynAttrs) {

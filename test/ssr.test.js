@@ -28,6 +28,11 @@ if (!MODE) {
   }
 }
 
+test('blank', async ({ is }) => {
+  const esx = init()
+  is(esx.renderToString``, renderToString(esx``))
+})
+
 test('basic', async ({ is }) => {
   const esx = init()
   is(esx.renderToString`<div>hi</div>`, renderToString(esx`<div>hi</div>`))
@@ -1538,6 +1543,22 @@ test('spread props', async ({ is }) => {
   is(
     esx.renderToString`<img ...${{ a: 1, b: 2 }}/>`,
     renderToString(createElement('img', { a: 1, b: 2 }))
+  )
+})
+
+test('spread props with proto', async ({ is }) => {
+  const esx = init()
+  is(
+    esx.renderToString`<img ...${{ a: 1, __proto__: { b: 2 }}}/>`,
+    renderToString(createElement('img', { a: 1, __proto__: { b: 2 } }))
+  )
+  const Cmp = (props) => {
+    return esx `<img ...${props}/>`
+  }
+  esx.register({Cmp})
+  is(
+    esx.renderToString`<Cmp ...${{ a: 1, __proto__: { b: 2 }}}/>`,
+    renderToString(createElement(Cmp, { a: 1, __proto__: { b: 2 } }))
   )
 })
 
