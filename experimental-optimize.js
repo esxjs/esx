@@ -1,3 +1,3 @@
 'use strict'
-require('esx-optimize')
+module.exports = require('esx-optimize')
 
