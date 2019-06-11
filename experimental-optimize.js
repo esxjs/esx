@@ -1,3 +1,3 @@
 'use strict'
-require('esx-optimize').install()
+require('esx-optimize')
 
