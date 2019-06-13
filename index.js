@@ -428,6 +428,7 @@ function esx (components = {}) {
     return render
   }
   render.register.one.lax = set
+  render._r = render.register.one.lax
   render.renderToString = render.ssr = renderToString
   render.createElement = createElement
   return render
