@@ -255,8 +255,7 @@ esx.register({ App })
 console.log(esx `<App/>`) 
 ```
 
-Each key in the `components` object should correspond to the name of 
-a component as referenced within an ESX template literal.
+Each key in the `components` object should correspond to the name of a component as referenced within an ESX template literal.
 
 #### `esx.register.one(name, component)`
 

@@ -406,6 +406,7 @@ function esx (components = {}) {
         }
       }
     }
+    return render
   }
   render.register = (additionalComponents) => {
     for (var key in additionalComponents) {
@@ -413,16 +414,18 @@ function esx (components = {}) {
       validateOne(key, component)
       set(key, component)
     }
+    return render
   }
   render.register.one = (key, component) => {
     validateOne(key, component)
-    set(key, component)
+    return set(key, component)
   }
   render.register.lax = (additionalComponents) => {
     for (var key in additionalComponents) {
       const component = additionalComponents[key]
       set(key, component)
     }
+    return render
   }
   render.register.one.lax = set
   render.renderToString = render.ssr = renderToString
