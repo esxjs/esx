@@ -388,7 +388,7 @@ function esx (components = {}) {
   }
   const set = (key, component) => {
     const current = components[key]
-    if (current === component) return
+    if (current === component) return render
     supported(key, component)
     components[key] = component
     const lastType = typeof current
