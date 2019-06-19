@@ -20,10 +20,10 @@ It can be used with **absolutely no code base changes**.
 Use it with a [preloader flag](https://nodejs.org/api/cli.html#cli_r_require_module) like so:
 
 ```sh
-node -r esx/experimental-optimize my-app.js
+node -r esx/optimize my-app.js
 ```
 
-*Note this is experimental, once stable this will become esx/optimize*.
+*Note: transpiling is still experimental*.
 
 Alternatively [babel-plugin-esx-ssr](https://github.com/esxjs/esx/blob/babel-plugin-esx-ssr) can be used to transpile for the same performance gains. The babel plugin would be a preferred option where speed of process initialization is important (such as serverless).
 
