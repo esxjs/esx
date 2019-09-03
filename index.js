@@ -11,6 +11,7 @@ const {
   validate, validateOne, supported
 } = require('./lib/validate')
 const attr = require('./lib/attr')
+const plugins = require('./lib/plugins')
 var hooks = require('./lib/hooks/compatible')
 const {
   REACT_PROVIDER_TYPE,
@@ -21,7 +22,7 @@ const {
   VOID_ELEMENTS
 } = require('./lib/constants')
 const {
-  ns, marker, skip, provider, esxValues, parent, owner, template, ties
+  ns, marker, skip, provider, esxValues, parent, owner, template, ties, prePlugins, postPlugins
 } = require('./lib/symbols')
 // singleton state for ssr
 var ssr = false
@@ -278,9 +279,11 @@ function esx (components = {}) {
   validate(components)
   components = Object.assign({}, components)
   components[ties] = {}
+  const pre = plugins[prePlugins]
   const cache = new WeakMap()
   const raw = (strings, ...values) => {
     const key = strings
+    if (pre !== null) [strings, values] = pre(strings, ...values)
     const state = cache.has(key)
       ? cache.get(key)
       : cache.set(key, parse(components, strings, values)).get(key)
@@ -342,8 +345,9 @@ function esx (components = {}) {
   }
   const render = function (strings, ...values) {
     if (ssr === false) return raw(strings, ...values)
-    currentValues = values
     const key = strings
+    if (pre !== null) [strings, values] = pre(strings, ...values)
+    currentValues = values
     const state = cache.has(key)
       ? cache.get(key)
       : cache.set(key, parse(components, strings, values)).get(key)
@@ -1019,5 +1023,7 @@ esx.ssr = {
     hooks = require(`./lib/hooks/${value}`)
   }
 }
+
+esx.plugins = plugins
 
 module.exports = esx
