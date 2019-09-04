@@ -38,7 +38,7 @@ test('exits process if react is not installed as a peer dep ', async ({ is }) =>
   const { exports } = require.cache[require.resolve('react')]
   delete require.cache[require.resolve('..')]
   Object.defineProperty(require.cache[require.resolve('react')], 'exports', {
-    get() {
+    get () {
       const err = Error('Cannot find module \'react\'')
       err.code = 'MODULE_NOT_FOUND'
       throw err
@@ -64,7 +64,7 @@ test('exits process if react-dom is not installed as a peer dep ', async ({ is }
   const { exports } = require.cache[require.resolve('react-dom/server')]
   delete require.cache[require.resolve('..')]
   Object.defineProperty(require.cache[require.resolve('react-dom/server')], 'exports', {
-    get() {
+    get () {
       const err = Error('Cannot find module \'react\'')
       err.code = 'MODULE_NOT_FOUND'
       throw err
@@ -83,7 +83,6 @@ test('exits process if react-dom is not installed as a peer dep ', async ({ is }
   }
   try { require('..') } catch (e) {}
 })
-
 
 test('components parameter must be a plain object or undefined', async ({ throws, doesNotThrow }) => {
   throws(() => init(null), Error('ESX: supplied components must be a plain object'))
@@ -719,8 +718,8 @@ test('lack of closing tag for auto closing elements does not throw', async ({ do
 })
 
 test('unquoted, non-interpolated attributes causes a syntax error', async ({ throws }) => {
-  const esx = init({Cmp: ({a, b}) => esx `<x><a>${a}</a><b>${b}</b></x>`})
-  throws(() => esx `<Cmp a=1 />`, SyntaxError('ESX: attribute value should be either an expression or quoted text'))
+  const esx = init({ Cmp: ({ a, b }) => esx`<x><a>${a}</a><b>${b}</b></x>` })
+  throws(() => esx`<Cmp a=1 />`, SyntaxError('ESX: attribute value should be either an expression or quoted text'))
 })
 
 test('component in object', async ({ same }) => {

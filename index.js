@@ -157,7 +157,7 @@ const injectObject = (val) => {
     // case we've slipped a method through the cloning process that pulls the esx
     // state in from the old element
     const state = val[ns] || (val._owner && val._owner[owner] && val._owner())
-    
+
     if (!state) {
       return elementToMarkup(val)
     }
@@ -465,8 +465,8 @@ function renderComponent (item, values) {
           if (meta.spread[ix].after.indexOf(sp) > -1) continue
           if (values[ix].hasOwnProperty(sp)) {
             if (sp === 'children') {
-              Object.defineProperty(props, 'children', { 
-                value: values[ix][sp] 
+              Object.defineProperty(props, 'children', {
+                value: values[ix][sp]
               })
             } else {
               props[sp] = values[ix][sp]
@@ -757,7 +757,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
 
       field[field.length - 1] = '`, `'
       const str = fields[openIx][openPos]
-      fields[openIx][openPos] = `\${this.spread(${offset + valdex++}, this.snips[${ix}][${snips[ix].length -1}], values, \``
+      fields[openIx][openPos] = `\${this.spread(${offset + valdex++}, this.snips[${ix}][${snips[ix].length - 1}], values, \``
       if (str[0] === '$') fields[openIx][openPos] += str
 
       fields[closeIx][closePos] = '`)}' + fields[closeIx][closePos]
@@ -780,7 +780,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
     } else if (valdex < values.length) {
       let optionMayBeSelected = false
       const tag = getTag(fields, i)
-      
+
       if (tag === 'option') {
         let c = i
         let select = null
@@ -801,7 +801,6 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         ? '<!-- -->'
         : ''
 
-    
       if (field.length > 0) {
         field[field.length - 1] = `${field[field.length - 1]}${prefix}${output}${suffix}`
       } else {
@@ -817,7 +816,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
         field[pos] = `\${this.selected(values[${offset + valdex - 1}] + '${text}')}${field[pos]}`
       }
     }
-    
+
     if (i in snips) {
       snips[i].forEach((snip, ix) => {
         const { openTagStart, openTagEnd, selfClosing, closeTagEnd, isComponent, name } = snip[3]
@@ -860,7 +859,7 @@ function generate (fields, values, snips, attrPos, tree, offset = 0) {
       })
     }
   }
-  
+
   const body = fields.map((f) => f.join(''))
   if (rootElement) {
     const { keys } = rootElement[3]

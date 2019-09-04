@@ -172,7 +172,7 @@ test('deep element-nested children array', async ({ is }) => {
 })
 
 test('deep element-nested children array – all types', async ({ is }) => {
-  const Component = () => esx`<div><span>${['dynamic', ()=> {}, 'inline', Symbol('x'), null, undefined, 1]}</span></div>`
+  const Component = () => esx`<div><span>${['dynamic', () => {}, 'inline', Symbol('x'), null, undefined, 1]}</span></div>`
   const esx = init({ Component })
   is(esx.renderToString`<Component/>`, renderToString(createElement(Component)))
 })
@@ -549,7 +549,7 @@ test('deep nested, non-self closing components with child element + inline text'
 test('adjacent interpolated children', async ({ is }) => {
   const esx = init()
   is(
-    esx.renderToString `<div>${'w'}${'x'}${'y'}z</div>`,
+    esx.renderToString`<div>${'w'}${'x'}${'y'}z</div>`,
     renderToString(createElement('div', null, 'w', 'x', 'y', 'z'))
   )
 })
@@ -626,12 +626,12 @@ test('self closing element', async ({ is }) => {
 test('nested children override children prop on elements', async ({ is }) => {
   const esx = init()
   is(
-    renderToString(esx `<div children="test2">test</div>`),
-    renderToString(createElement('div', {children: 'test2'}, 'test'))
+    renderToString(esx`<div children="test2">test</div>`),
+    renderToString(createElement('div', { children: 'test2' }, 'test'))
   )
   is(
-    esx.renderToString `<div children="test2">test</div>`,
-    renderToString(esx `<div children="test2">test</div>`)
+    esx.renderToString`<div children="test2">test</div>`,
+    renderToString(esx`<div children="test2">test</div>`)
   )
 })
 
@@ -1549,15 +1549,15 @@ test('spread props', async ({ is }) => {
 test('spread props with proto', async ({ is }) => {
   const esx = init()
   is(
-    esx.renderToString`<img ...${{ a: 1, __proto__: { b: 2 }}}/>`,
+    esx.renderToString`<img ...${{ a: 1, __proto__: { b: 2 } }}/>`,
     renderToString(createElement('img', { a: 1, __proto__: { b: 2 } }))
   )
   const Cmp = (props) => {
-    return esx `<img ...${props}/>`
+    return esx`<img ...${props}/>`
   }
-  esx.register({Cmp})
+  esx.register({ Cmp })
   is(
-    esx.renderToString`<Cmp ...${{ a: 1, __proto__: { b: 2 }}}/>`,
+    esx.renderToString`<Cmp ...${{ a: 1, __proto__: { b: 2 } }}/>`,
     renderToString(createElement(Cmp, { a: 1, __proto__: { b: 2 } }))
   )
 })
@@ -1679,37 +1679,37 @@ test('spread props and defaultProps', async ({ is }) => {
 test('spread props in nested elements', async ({ is }) => {
   const esx = init()
   is(
-    esx.renderToString `<div><div ...${{className: 'a'}}></div></div>`,
-    renderToString(esx `<div><div ...${{className: 'a'}}></div></div>`)
+    esx.renderToString`<div><div ...${{ className: 'a' }}></div></div>`,
+    renderToString(esx`<div><div ...${{ className: 'a' }}></div></div>`)
   )
   is(
-    esx.renderToString `<a><div></div><div ...${{className: 'a'}}></div></a>`,
-    renderToString(esx `<a><div></div><div ...${{className: 'a'}}></div></a>`)
+    esx.renderToString`<a><div></div><div ...${{ className: 'a' }}></div></a>`,
+    renderToString(esx`<a><div></div><div ...${{ className: 'a' }}></div></a>`)
   )
 })
 
 test('spread props in nested elements that are siblings after dynamic children', async ({ is }) => {
   const esx = init()
-  esx.register({Cmp: ({children}) => esx`<div>${children}</div>`})
+  esx.register({ Cmp: ({ children }) => esx`<div>${children}</div>` })
   is(
-    esx.renderToString `<Cmp>${[]}<div ...${{className: 'a'}}></div></Cmp>`,
-    renderToString(esx `<Cmp>${[]}<div ...${{className: 'a'}}></div></Cmp>`)
+    esx.renderToString`<Cmp>${[]}<div ...${{ className: 'a' }}></div></Cmp>`,
+    renderToString(esx`<Cmp>${[]}<div ...${{ className: 'a' }}></div></Cmp>`)
   )
   is(
-    esx.renderToString `<>${[]}<div ...${{className: 'a'}}></div></>`,
-    renderToString(esx `<>${[]}<div ...${{className: 'a'}}></div></>`)
+    esx.renderToString`<>${[]}<div ...${{ className: 'a' }}></div></>`,
+    renderToString(esx`<>${[]}<div ...${{ className: 'a' }}></div></>`)
   )
   is(
-    esx.renderToString `<>${[esx `<a>test</a>`, esx `<a>test2</a>`]}<div ...${{className: 'a'}}></div></>`,
-    renderToString(esx `<>${[esx `<a>test</a>`, esx `<a>test2</a>`]}<div ...${{className: 'a'}}></div></>`)
+    esx.renderToString`<>${[esx`<a>test</a>`, esx`<a>test2</a>`]}<div ...${{ className: 'a' }}></div></>`,
+    renderToString(esx`<>${[esx`<a>test</a>`, esx`<a>test2</a>`]}<div ...${{ className: 'a' }}></div></>`)
   )
 })
 
 test('spread props nested in fragment', async ({ is }) => {
   const esx = init()
   is(
-    esx.renderToString `<><div ...${{className: 'a'}}></div></>`,
-    renderToString(esx `<><div ...${{className: 'a'}}></div></>`)
+    esx.renderToString`<><div ...${{ className: 'a' }}></div></>`,
+    renderToString(esx`<><div ...${{ className: 'a' }}></div></>`)
   )
 })
 
@@ -1912,12 +1912,12 @@ test('spread props and defaultProps', async ({ is }) => {
 
 test('spread props with children prop', async ({ is }) => {
   const esx = init()
-  const Component = ({children}) => {
+  const Component = ({ children }) => {
     return esx`<p>${children}</p>`
   }
   esx.register({ Component })
-  const o = {children: 'test'}
-  const o2 = {children: 'test2'}
+  const o = { children: 'test' }
+  const o2 = { children: 'test2' }
   is(esx.renderToString`<Component ...${o}/>`, renderToString(esx`<Component  ...${o}/>`))
   is(esx.renderToString`<Component ...${o} ...${o2}/>`, renderToString(esx`<Component  ...${o} ...${o2}/>`))
 })
@@ -2279,7 +2279,7 @@ test('defaultValue in spread props on non-supporting element', async ({ is }) =>
 
 test('defaultValue between spread props on non-supporting element', async ({ is }) => {
   const esx = init()
-  is(esx.renderToString`<div ...${{some:"attr"}} defaultValue="1" ...${{ some:'attr' }}/>`, renderToString(esx`<div ...${{some:"attr"}} defaultValue="1" ...${{ some:'attr' }}/>`))
+  is(esx.renderToString`<div ...${{ some: 'attr' }} defaultValue="1" ...${{ some: 'attr' }}/>`, renderToString(esx`<div ...${{ some: 'attr' }} defaultValue="1" ...${{ some: 'attr' }}/>`))
 })
 
 test('suppressContentEditableWarning', async ({ is }) => {
@@ -2529,25 +2529,25 @@ test('overloaded boolean attributes', async ({ is }) => {
 
 test('undefined attribute value', async ({ is }) => {
   const esx = init()
-  is(esx.renderToString`<div id=${undefined}/>`, renderToString(createElement('div', {id: undefined})))
-  is(esx.renderToString`<div capture=${undefined}/>`, renderToString(createElement('div', {capture: undefined})))
-  is(esx.renderToString`<div readOnly=${undefined}/>`, renderToString(createElement('div', {readOnly: undefined})))
+  is(esx.renderToString`<div id=${undefined}/>`, renderToString(createElement('div', { id: undefined })))
+  is(esx.renderToString`<div capture=${undefined}/>`, renderToString(createElement('div', { capture: undefined })))
+  is(esx.renderToString`<div readOnly=${undefined}/>`, renderToString(createElement('div', { readOnly: undefined })))
 })
 
 test('symbol attribute value', async ({ is }) => {
   const esx = init()
   const sym = Symbol('x')
-  is(esx.renderToString`<div id=${sym}/>`, renderToString(createElement('div', {id: sym})))
-  is(esx.renderToString`<div capture=${sym}/>`, renderToString(createElement('div', {capture: sym})))
-  is(esx.renderToString`<div readOnly=${sym}/>`, renderToString(createElement('div', {readOnly: sym})))
+  is(esx.renderToString`<div id=${sym}/>`, renderToString(createElement('div', { id: sym })))
+  is(esx.renderToString`<div capture=${sym}/>`, renderToString(createElement('div', { capture: sym })))
+  is(esx.renderToString`<div readOnly=${sym}/>`, renderToString(createElement('div', { readOnly: sym })))
 })
 
 test('function attribute value', async ({ is }) => {
   const esx = init()
   const fn = () => {}
-  is(esx.renderToString`<div id=${fn}/>`, renderToString(createElement('div', {id: fn})))
-  is(esx.renderToString`<div capture=${fn}/>`, renderToString(createElement('div', {capture: fn})))
-  is(esx.renderToString`<div readOnly=${fn}/>`, renderToString(createElement('div', {readOnly: fn})))
+  is(esx.renderToString`<div id=${fn}/>`, renderToString(createElement('div', { id: fn })))
+  is(esx.renderToString`<div capture=${fn}/>`, renderToString(createElement('div', { capture: fn })))
+  is(esx.renderToString`<div readOnly=${fn}/>`, renderToString(createElement('div', { readOnly: fn })))
 })
 
 test('known camel case attributes are converted to special case equivalents (or not) as neccessary', async ({ is }) => {
@@ -3770,7 +3770,7 @@ test('clone element extend props', async ({ is }) => {
 
 test('clone element replace props', async ({ is }) => {
   const esx = init()
-  const Wrap = ({ children }) => React.cloneElement(children, { x: 1, y:3, path: '/foo', defaultValue: 'blah'})
+  const Wrap = ({ children }) => React.cloneElement(children, { x: 1, y: 3, path: '/foo', defaultValue: 'blah' })
   esx.register({ Wrap })
   const App = () => esx`<main><Wrap><div path='/' y='2'>hi</div></Wrap></main>`
   esx.register({ App })
@@ -4358,7 +4358,7 @@ test('compatible mode hooks: useContext in a plain react element with esx provid
   esx.register({ Button })
   const ThemedButton = () => {
     const context = useContext(ThemeContext)
-    return createElement(Button, {theme: context})
+    return createElement(Button, { theme: context })
   }
   esx.register({ ThemedButton })
   const Toolbar = () => createElement('div', null, createElement(ThemedButton))
@@ -4373,7 +4373,6 @@ test('compatible mode hooks: useContext in a plain react element with esx provid
   is(esx.renderToString`<App/>`, renderToString(createElement(App)))
 })
 
-
 test('compatible mode hooks: useContext all plain react elements except root', async ({ is }) => {
   const esx = init()
   const { useContext } = require('react')
@@ -4382,14 +4381,14 @@ test('compatible mode hooks: useContext all plain react elements except root', a
   esx.register({ Button })
   const ThemedButton = () => {
     const context = useContext(ThemeContext)
-    return createElement(Button, {theme: context})
+    return createElement(Button, { theme: context })
   }
   esx.register({ ThemedButton })
   const Toolbar = () => createElement('div', null, createElement(ThemedButton))
   esx.register({ Toolbar })
   class App extends React.Component {
     render () {
-      return createElement('div', null, createElement(Provider, {value: 'dark'}, createElement(Toolbar)))
+      return createElement('div', null, createElement(Provider, { value: 'dark' }, createElement(Toolbar)))
     }
   }
   const { Provider } = ThemeContext
@@ -4636,14 +4635,14 @@ test('stateful mode hooks: useContext all plain react elements except root', asy
   esx.register({ Button })
   const ThemedButton = () => {
     const context = useContext(ThemeContext)
-    return createElement(Button, {theme: context})
+    return createElement(Button, { theme: context })
   }
   esx.register({ ThemedButton })
   const Toolbar = () => createElement('div', null, createElement(ThemedButton))
   esx.register({ Toolbar })
   class App extends React.Component {
     render () {
-      return createElement('div', null, createElement(Provider, {value: 'dark'}, createElement(Toolbar)))
+      return createElement('div', null, createElement(Provider, { value: 'dark' }, createElement(Toolbar)))
     }
   }
   const { Provider } = ThemeContext
@@ -4896,6 +4895,4 @@ test('deviation: children in spread props on void element is ignored', async ({ 
   doesNotThrow(() => esx.renderToString`<input ...${{ children: 'test' }}>`)
 })
 
-
 // MULTI RENDERING, STATE CONFUSION ETC.
-
