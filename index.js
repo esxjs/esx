@@ -56,6 +56,8 @@ const elementToMarkup = (el) => {
   }
   return renderToStaticMarkup(el)
 }
+const postprocess = (str) => plugins[postPlugins](str)
+
 const spread = (ix, [tag, props, childMap, meta], values, strBefore, strAfter = '') => {
   const object = values[ix]
   const keys = Object.keys(object)
@@ -574,7 +576,7 @@ function loadTmpl (state, values, recompile = false) {
 
   const body = generate(fields.map((f) => f.slice()), values, snips, attrPos, tree)
   const tmpl = compileTmpl(body.join(''), {
-    inject, attribute, style, spread, snips, renderComponent, addRoot, selected
+    inject, attribute, style, spread, snips, renderComponent, addRoot, selected, postprocess
   })
   state.tmpl = tmpl
   state.snips = snips
@@ -912,7 +914,9 @@ function addRoot () {
 }
 
 function compileTmpl (body, state) {
-  const fn = Function('values', `extra=''`, 'replace=null', 'return `' + body + '`').bind(state) // eslint-disable-line
+  const fn = state.postprocess
+    ? Function('values', `extra=''`, 'replace=null', 'return this.postprocess(`' + body + '`)').bind(state) : // eslint-disable-line
+    Function('values', `extra=''`, 'replace=null', 'return `' + body + '`').bind(state)
   fn.body = body
   fn.state = state
   return fn
