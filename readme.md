@@ -327,6 +327,40 @@ esx.renderToString `<div/>`
 esx.renderToString(esx `<div/>`)
 ```
 
+### Plugins
+
+Pre and Post plugins are also provided to allow for additional manipulation of templates and output. A Post plugin
+could be used to write output directly to a stream, or inject additional
+HTML.
+
+#### `esx.plugins.pre((strings, ...values) => [strings, values])`
+
+The `esx.plugins.pre` method registers a Pre plugin. Plugins 
+will be executed in the order that there are registered.
+
+A Pre plugin should be passed a function that has the same signature
+as a [tagged template function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates).
+
+It must return an array containing two arrays. The first is an array of
+strings, the second is an array of values.
+
+The pre plugin can be used to reshape the strings array and/or apply mutations to the interpolated values. An example of a Pre plugin
+could be to apply a transform, turning an alternative template syntax
+(such as Pug) into ESX syntax.
+
+#### `esx.plugins.post((htmlString) => htmlString))`
+
+The `esx.plugins.post` method registers a Post plugin. Plugins 
+will be executed in the order that there are registered. Unlike
+Pre plugins, Post plugins can only be used Server Side and will
+only be invoked for components that are rendered via `esx.renderToString`.
+
+A Post plugin is passed the HTML string output of a component
+at the time it is rendered. A Post plugin can be used to inject
+extra HTML, apply additional transforms to the HTML, or capture
+the HTML as each component is being rendered.
+
+
 ### SSR Options
 
 On the server side the Initializer has an `ssr` property, which
