@@ -4895,4 +4895,57 @@ test('deviation: children in spread props on void element is ignored', async ({ 
   doesNotThrow(() => esx.renderToString`<input ...${{ children: 'test' }}>`)
 })
 
+
+test('exits process if react-dom is not installed as a peer dep ', async ({ is }) => {
+  const { exit } = process
+  const { error } = console
+  const { exports } = require.cache[require.resolve('react-dom/server')]
+  delete require.cache[require.resolve('..')]
+  Object.defineProperty(require.cache[require.resolve('react-dom/server')], 'exports', {
+    get () {
+      const err = Error('Cannot find module \'react\'')
+      err.code = 'MODULE_NOT_FOUND'
+      throw err
+    }
+  }, { enumerable: true, configurable: true, writable: true })
+  console.error = (s) => {
+    is(s.trim().split('\n')[0], `esx depends on react-dom/server as a peer dependency, `)
+  }
+  process.exit = (code) => {
+    is(code, 1)
+    Object.defineProperty(require.cache[require.resolve('react-dom/server')], 'exports', {
+      value: exports
+    }, { enumerable: true, configurable: true, writable: true })
+    process.exit = exit
+    console.error = error
+  }
+  try { require('..') } catch (e) {}
+})
+
+test('exits process if react is not installed as a peer dep ', async ({ is }) => {
+  const { exit } = process
+  const { error } = console
+  const { exports } = require.cache[require.resolve('react')]
+  delete require.cache[require.resolve('..')]
+  Object.defineProperty(require.cache[require.resolve('react')], 'exports', {
+    get () {
+      const err = Error('Cannot find module \'react\'')
+      err.code = 'MODULE_NOT_FOUND'
+      throw err
+    }
+  }, { enumerable: true, configurable: true, writable: true })
+  console.error = (s) => {
+    is(s.trim().split('\n')[0], `esx depends on react as a peer dependency, `)
+  }
+  process.exit = (code) => {
+    is(code, 1)
+    Object.defineProperty(require.cache[require.resolve('react')], 'exports', {
+      value: exports
+    }, { enumerable: true, configurable: true, writable: true })
+    process.exit = exit
+    console.error = error
+  }
+  try { require('..') } catch (e) {}
+})
+
 // MULTI RENDERING, STATE CONFUSION ETC.
