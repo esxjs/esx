@@ -12,6 +12,7 @@ const {
 } = require('./lib/validate')
 const attr = require('./lib/attr')
 const plugins = require('./lib/plugins')
+
 var hooks = require('./lib/hooks/compatible')
 const {
   REACT_PROVIDER_TYPE,
@@ -22,8 +23,9 @@ const {
   VOID_ELEMENTS
 } = require('./lib/constants')
 const {
-  ns, marker, skip, provider, esxValues, parent, owner, template, ties, prePlugins, postPlugins
+  ns, marker, skip, provider, esxValues, parent, owner, template, ties, runners
 } = require('./lib/symbols')
+const { pre, post } = plugins[runners]()
 // singleton state for ssr
 var ssr = false
 var ssrReactRootAdded = false
@@ -56,7 +58,7 @@ const elementToMarkup = (el) => {
   }
   return renderToStaticMarkup(el)
 }
-const postprocess = (str) => plugins[postPlugins](str)
+const postprocess = post
 
 const spread = (ix, [tag, props, childMap, meta], values, strBefore, strAfter = '') => {
   const object = values[ix]
@@ -215,7 +217,7 @@ function EsxElementUnopt (item) {
 
 function EsxElement (item, tmpl, values, replace = null) {
   this.$$typeof = REACT_ELEMENT_TYPE
-  const [type, props ] = item
+  const [type, props] = item
   this.type = type
   this.props = props
   this.key = props.key || null
@@ -281,11 +283,10 @@ function esx (components = {}) {
   validate(components)
   components = Object.assign({}, components)
   components[ties] = {}
-  const pre = plugins[prePlugins]
   const cache = new WeakMap()
   const raw = (strings, ...values) => {
     const key = strings
-    if (pre !== null) [strings, values] = pre(strings, ...values)
+    ;[strings, values] = pre(strings, values)
     const state = cache.has(key)
       ? cache.get(key)
       : cache.set(key, parse(components, strings, values)).get(key)
@@ -348,7 +349,7 @@ function esx (components = {}) {
   const render = function (strings, ...values) {
     if (ssr === false) return raw(strings, ...values)
     const key = strings
-    if (pre !== null) [strings, values] = pre(strings, ...values)
+    ;[strings, values] = pre(strings, values)
     currentValues = values
     const state = cache.has(key)
       ? cache.get(key)
@@ -916,7 +917,7 @@ function addRoot () {
 function compileTmpl (body, state) {
   const fn = state.postprocess
     ? Function('values', `extra=''`, 'replace=null', 'return this.postprocess(`' + body + '`)').bind(state) : // eslint-disable-line
-    Function('values', `extra=''`, 'replace=null', 'return `' + body + '`').bind(state)
+    Function('values', `extra=''`, 'replace=null', 'return `' + body + '`').bind(state) // eslint-disable-line
   fn.body = body
   fn.state = state
   return fn

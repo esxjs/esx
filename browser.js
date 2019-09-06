@@ -5,6 +5,7 @@ const {
   validate, validateOne, supported
 } = require('./lib/validate')
 const { marker, ties } = require('./lib/symbols')
+const plugins = require('./lib/plugins')
 
 function esx (components = {}) {
   validate(components)
@@ -88,6 +89,11 @@ function esx (components = {}) {
   }
   render.register.one.lax = set
   return render
+}
+
+esx.plugins = plugins
+esx.plugins.post = () => {
+  throw Error('Post Plugins can only be used server side')
 }
 
 module.exports = esx

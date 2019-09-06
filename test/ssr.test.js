@@ -4895,7 +4895,6 @@ test('deviation: children in spread props on void element is ignored', async ({ 
   doesNotThrow(() => esx.renderToString`<input ...${{ children: 'test' }}>`)
 })
 
-
 test('exits process if react-dom is not installed as a peer dep ', async ({ is }) => {
   const { exit } = process
   const { error } = console
@@ -4948,4 +4947,23 @@ test('exits process if react is not installed as a peer dep ', async ({ is }) =>
   try { require('..') } catch (e) {}
 })
 
-// MULTI RENDERING, STATE CONFUSION ETC.
+test('pre plugin', async ({ is }) => {
+  const esx = init()
+  const remove = init.plugins.pre((strings, ...values) => {
+    return [
+      strings.map((s) => s.replace(/(.+)d>/, '$1div>')),
+      values.map((v) => v.toUpperCase())
+    ]
+  })
+  is(esx.renderToString`<d>${'hi'}</d>`, renderToString(esx`<div>HI</div>`))
+  remove()
+})
+
+test('post plugin', async ({ is }) => {
+  const esx = init()
+  const remove = init.plugins.post((string) => {
+    return string.toUpperCase()
+  })
+  is(esx.renderToString`<div>hi</div>`, `<DIV DATA-REACTROOT="">HI</DIV>`)
+  remove()
+})
