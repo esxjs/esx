@@ -3401,12 +3401,12 @@ test('whitespace variations', async ({ is }) => {
   is(
     esx.renderToString`
       <p>
-        <span>   xyz    </span>  
+        <span>   xyz    </span>
       </p>
     `,
     renderToString(esx`
       <p>
-        <span>   xyz    </span>  
+        <span>   xyz    </span>
       </p>
     `)
   )
@@ -4966,4 +4966,13 @@ test('post plugin', async ({ is }) => {
   })
   is(esx.renderToString`<div>hi</div>`, `<DIV DATA-REACTROOT="">HI</DIV>`)
   remove()
+})
+
+test('renderToString separate esx root instance', async ({ is }) => {
+  const esx = init()
+  const esx2 = init()
+  const Cmp = ({ test }) => esx`<div>${test}</div>`
+  esx.register({ Cmp })
+  const foo = esx`<Cmp test="test"/>`
+  is(esx2.renderToString(foo), `<div data-reactroot="">test</div>`)
 })

@@ -27,11 +27,11 @@ const {
 } = require('./lib/symbols')
 const { pre, post } = plugins[runners]()
 // singleton state for ssr
+const cache = new WeakMap()
 var ssr = false
 var ssrReactRootAdded = false
 var currentValues = null
 var lastChildProp = null
-
 function selected (val, wasSelected) {
   if (Array.isArray(selected.defaultValue)) {
     return selected.defaultValue.includes(val) ? ' selected=""' : ''
@@ -283,7 +283,7 @@ function esx (components = {}) {
   validate(components)
   components = Object.assign({}, components)
   components[ties] = {}
-  const cache = new WeakMap()
+
   const raw = (strings, ...values) => {
     const key = strings
     ;[strings, values] = pre(strings, values)
