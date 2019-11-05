@@ -1005,7 +1005,9 @@ function resolveChildren (childMap, dynChildren, tree, top) {
 
 function tryToLoad (peer) {
   try {
-    return require(peer)
+    // explicit requires for webpacks benefit
+    if (peer === 'react') return require('react')
+    if (peer === 'react-dom/server') return require('react-dom/server')
   } catch (e) {
     console.error(`
       esx depends on ${peer} as a peer dependency, 
