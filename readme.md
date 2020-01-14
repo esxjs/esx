@@ -1,5 +1,3 @@
-# If you need help with Server Side Rendering and performance, <a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>.
-
 # esx 
 
 [![Build Status](https://img.shields.io/travis/esxjs/esx.svg)](https://travis-ci.org/esxjs/esx)
@@ -51,10 +49,6 @@ This should only be used in production when:
 
 `esx` needs use cases and battle testing. All issues are very welcome,
 PR's are extremely welcome and Collaborators are exceptionally, extraordinarily, exceedingly welcome.
-
-If you or your team want support in integrating `esx`, or need help
-with server side rendering in general please feel free to 
-<a href="https://twitter.com/messages/compose?recipient_id=323355503">contact me</a>.
 
 ## Install
 
