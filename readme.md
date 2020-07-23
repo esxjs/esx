@@ -23,7 +23,7 @@ node -r esx/optimize my-app.js
 
 *Note: transpiling is still experimental*.
 
-Alternatively [babel-plugin-esx-ssr](https://github.com/esxjs/esx/blob/babel-plugin-esx-ssr) can be used to transpile for the same performance gains. The babel plugin would be a preferred option where speed of process initialization is important (such as serverless).
+Alternatively [babel-plugin-esx-ssr](https://github.com/esxjs/babel-plugin-esx-ssr) can be used to transpile for the same performance gains. The babel plugin would be a preferred option where speed of process initialization is important (such as serverless).
 
 Optionally, `esx` is also a universal **JSX-like syntax in plain JavaScript** that allows for the elimination of transpilation in development environments.
 
